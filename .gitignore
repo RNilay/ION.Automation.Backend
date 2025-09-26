@@ -1,0 +1,98 @@
+# Ignore build artifacts
+bin/
+obj/
+build/
+out/
+.config/
+**/bin/**
+bin/**/*
+**/obj/**/*
+**/bin/Debug/**
+
+# Visual Studio related folders
+.vs/**
+*.user
+*.suo
+*.cache
+*.ilk
+*.pdb
+*.aps
+*.ncb
+*.opendb
+*.sdf
+*.sqlite
+
+# Visual Studio Code settings
+.vscode/
+
+# Rider (JetBrains)
+.idea/
+*.sln.iml
+
+# Copilot-related files
+.copilot/
+.copilotignore
+
+# Package and dependency caches
+node_modules/
+packages/
+npm-debug.log
+yarn-error.log
+pnpm-debug.log
+
+# .NET Core and NuGet files
+project.lock.json
+global.json
+.nuget/
+*.nupkg
+*.snupkg
+*.lock.json
+
+# Logs, crash reports, and other system files
+*.log
+*.tlog
+*.log.*
+*.dmp
+*.mdmp
+hs_err_pid*
+**/logs/**
+
+# Generated files
+Generated/
+Generated_Code/
+GeneratedFiles/
+
+# Temporary files
+*.tmp
+*.bak
+*.swp
+*.swo
+
+# IDE-specific configurations
+*.rsuser
+*.sln.dotsettings
+*.dotCover
+ReSharper/
+
+# MacOS/Linux
+.DS_Store
+Thumbs.db
+*.orig
+
+# Ignore test results
+TestResults/
+Coverage/
+*.coverage
+*.coveragexml
+*.trx
+
+# Ignore environment files
+.env
+.env.local
+.env.development
+.env.test
+.env.production
+
+# Ignore JetBrains Rider / Resharper files
+.idea/
+*.sln.iml

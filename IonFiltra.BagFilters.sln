@@ -1,0 +1,46 @@
+﻿
+Microsoft Visual Studio Solution File, Format Version 12.00
+# Visual Studio Version 17
+VisualStudioVersion = 17.0.31903.59
+MinimumVisualStudioVersion = 10.0.40219.1
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "IonFiltra.BagFilters.Api", "IonFiltra.BagFilters.Api\IonFiltra.BagFilters.Api.csproj", "{83B8A6A8-EF35-4B0D-B55E-D66EE5864432}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "IonFiltra.BagFilters.Application", "IonFiltra.BagFilters.Application\IonFiltra.BagFilters.Application.csproj", "{B96D14BD-25B1-4872-8555-0D1B0BD60950}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "IonFiltra.BagFilters.Core", "IonFiltra.BagFilters.Core\IonFiltra.BagFilters.Core.csproj", "{1A4EEC13-C8D5-41D9-95A8-2AAF2EE4D0D3}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "IonFiltra.BagFilters.Infrastructure", "IonFiltra.BagFilters.Infrastructure\IonFiltra.BagFilters.Infrastructure.csproj", "{12C9AC94-B0FB-450A-907E-3538E390A875}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "IonFiltra.BagFilters.Tests", "IonFiltra.BagFilters.Tests\IonFiltra.BagFilters.Tests.csproj", "{77009DE5-A4FA-4425-88E7-97E2B45A8E45}"
+EndProject
+Global
+	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+		Debug|Any CPU = Debug|Any CPU
+		Release|Any CPU = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(SolutionProperties) = preSolution
+		HideSolutionNode = FALSE
+	EndGlobalSection
+	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{83B8A6A8-EF35-4B0D-B55E-D66EE5864432}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{83B8A6A8-EF35-4B0D-B55E-D66EE5864432}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{83B8A6A8-EF35-4B0D-B55E-D66EE5864432}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{83B8A6A8-EF35-4B0D-B55E-D66EE5864432}.Release|Any CPU.Build.0 = Release|Any CPU
+		{B96D14BD-25B1-4872-8555-0D1B0BD60950}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{B96D14BD-25B1-4872-8555-0D1B0BD60950}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{B96D14BD-25B1-4872-8555-0D1B0BD60950}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{B96D14BD-25B1-4872-8555-0D1B0BD60950}.Release|Any CPU.Build.0 = Release|Any CPU
+		{1A4EEC13-C8D5-41D9-95A8-2AAF2EE4D0D3}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{1A4EEC13-C8D5-41D9-95A8-2AAF2EE4D0D3}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{1A4EEC13-C8D5-41D9-95A8-2AAF2EE4D0D3}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{1A4EEC13-C8D5-41D9-95A8-2AAF2EE4D0D3}.Release|Any CPU.Build.0 = Release|Any CPU
+		{12C9AC94-B0FB-450A-907E-3538E390A875}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{12C9AC94-B0FB-450A-907E-3538E390A875}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{12C9AC94-B0FB-450A-907E-3538E390A875}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{12C9AC94-B0FB-450A-907E-3538E390A875}.Release|Any CPU.Build.0 = Release|Any CPU
+		{77009DE5-A4FA-4425-88E7-97E2B45A8E45}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{77009DE5-A4FA-4425-88E7-97E2B45A8E45}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{77009DE5-A4FA-4425-88E7-97E2B45A8E45}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{77009DE5-A4FA-4425-88E7-97E2B45A8E45}.Release|Any CPU.Build.0 = Release|Any CPU
+	EndGlobalSection
+EndGlobal

@@ -9,6 +9,7 @@ using IonFiltra.BagFilters.Core.Entities.Assignment;
 using IonFiltra.BagFilters.Core.Entities.Bagfilters.BagfilterInputs;
 using IonFiltra.BagFilters.Core.Entities.Bagfilters.BagfilterMasterEntity;
 using IonFiltra.BagFilters.Core.Entities.EnquiryEntity;
+using IonFiltra.BagFilters.Core.Entities.SkyCivEntities;
 using Microsoft.EntityFrameworkCore;
 
 
@@ -27,6 +28,11 @@ namespace IonFiltra.BagFilters.Infrastructure.Data
         public DbSet<AssignmentEntity> AssignmentEntitys { get; set; }
         public DbSet<BagfilterMaster> BagfilterMasters { get; set; }
         public DbSet<BagfilterInput> BagfilterInputs { get; set; }
+
+
+        public DbSet<AnalysisSession> AnalysisSessions { get; set; }
+        public DbSet<AnalysisResult> AnalysisResults { get; set; }
+
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {

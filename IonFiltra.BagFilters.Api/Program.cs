@@ -6,6 +6,11 @@ using Microsoft.IdentityModel.Tokens;
 using System.Text;
 using IonFiltra.BagFilters.Infrastructure;
 using Microsoft.OpenApi.Models;
+using Microsoft.Extensions.Configuration;
+using IonFiltra.BagFilters.Core.Common;
+using Microsoft.Extensions.Options;
+using IonFiltra.BagFilters.Infrastructure.Http.Interface;
+using IonFiltra.BagFilters.Infrastructure.Http.Implementation;
 
 try
 {
@@ -14,7 +19,7 @@ try
 
     // Add Infrastructure (DbContext + repositories)
     builder.Services.AddInfrastructure(builder.Configuration.GetConnectionString("DefaultConnection"));
-
+   
     // Configure JWT authentication
     var jwtKey = builder.Configuration["Jwt:Key"];
     var keyBytes = Encoding.UTF8.GetBytes(jwtKey);
@@ -35,7 +40,15 @@ try
         });
 
     // Add Controllers
-    builder.Services.AddControllers();
+    //builder.Services.AddControllers();
+    // Add Controllers and enable Newtonsoft for JObject binding
+    builder.Services.AddControllers()
+        .AddNewtonsoftJson(options =>
+        {
+            // Optional: tune serializer settings if needed
+            options.SerializerSettings.NullValueHandling = Newtonsoft.Json.NullValueHandling.Ignore;
+        });
+
     builder.Services.AddEndpointsApiExplorer();
 
     // Add Swagger with OpenAPI Info + JWT support
@@ -82,6 +95,25 @@ try
                             .AllowAnyHeader()
                             .AllowAnyMethod());
     });
+
+
+    // Bind SkyCivOptions from configuration (appsettings + env + user-secrets)
+    builder.Services.Configure<SkyCivOptions>(builder.Configuration.GetSection("SkyCiv"));
+
+    // Register a typed HttpClient for SkyCiv
+    builder.Services.AddHttpClient<ISkyCivClient, SkyCivClient>((sp, http) =>
+    {
+        var opts = sp.GetRequiredService<IOptions<SkyCivOptions>>().Value;
+        http.BaseAddress = new Uri(opts.ApiUrl);
+        http.Timeout = TimeSpan.FromSeconds(opts.TimeoutSeconds);
+        // default headers (optional)
+        http.DefaultRequestHeaders.Accept.Add(new System.Net.Http.Headers.MediaTypeWithQualityHeaderValue("application/json"));
+    });
+    //// Optional: add Polly retry for transient errors
+    //.AddTransientHttpErrorPolicy(policy =>
+    //    policy.WaitAndRetryAsync(3, retryAttempt => TimeSpan.FromSeconds(Math.Pow(2, retryAttempt))));
+
+
 
     var app = builder.Build();
 

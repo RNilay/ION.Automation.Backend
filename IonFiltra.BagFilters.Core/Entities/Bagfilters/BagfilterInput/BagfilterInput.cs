@@ -1,5 +1,5 @@
 using IonFiltra.BagFilters.Core.Entities.Bagfilters.BagfilterMasterEntity;
-
+using Newtonsoft.Json.Linq;
 namespace IonFiltra.BagFilters.Core.Entities.Bagfilters.BagfilterInputs
 {
     public class BagfilterInput
@@ -90,6 +90,9 @@ namespace IonFiltra.BagFilters.Core.Entities.Bagfilters.BagfilterInputs
         public bool IsMatched { get; set; } = false;
         public int? MatchedBagfilterInputId { get; set; }
         public int? MatchedBagfilterMasterId { get; set; }
+
+        public string? S3dModel { get; set; }
+        public string? AnalysisResult { get; set; }
         public DateTime? MatchedAt { get; set; }
 
         public DateTime CreatedAt { get; set; }

@@ -6,6 +6,7 @@ using System.Threading.Tasks;
 using System.Xml;
 using IonFiltra.BagFilters.Core.Common;
 using IonFiltra.BagFilters.Core.Entities.Assignment;
+using IonFiltra.BagFilters.Core.Entities.BagfilterDatabase.WithoutCanopy;
 using IonFiltra.BagFilters.Core.Entities.Bagfilters.BagfilterInputs;
 using IonFiltra.BagFilters.Core.Entities.Bagfilters.BagfilterMasterEntity;
 using IonFiltra.BagFilters.Core.Entities.EnquiryEntity;
@@ -32,6 +33,9 @@ namespace IonFiltra.BagFilters.Infrastructure.Data
 
         public DbSet<AnalysisSession> AnalysisSessions { get; set; }
         public DbSet<AnalysisResult> AnalysisResults { get; set; }
+
+        // Database from ion filtra for bag filters
+        public DbSet<IFI_Bagfilter_Database_Without_Canopy> IFI_Bagfilter_Database_Without_Canopys { get; set; }
 
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)
@@ -65,6 +69,12 @@ namespace IonFiltra.BagFilters.Infrastructure.Data
                 entity.ToTable("BagfilterInput", GlobalConstants.IONFILTRA_SCHEMA);
                 entity.HasKey(u => u.BagfilterInputId);
                 entity.Property(u => u.BagfilterMasterId).IsRequired();
+            });
+
+            modelBuilder.Entity<IFI_Bagfilter_Database_Without_Canopy>(entity =>
+            {
+                entity.ToTable("IFI_Bagfilter_Database_Without_Canopy", GlobalConstants.IONFILTRA_SCHEMA);
+                entity.HasKey(u => u.Id);
             });
         }
     }

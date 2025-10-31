@@ -284,6 +284,19 @@ namespace IonFiltra.BagFilters.Infrastructure.Repositories.Bagfilters.BagfilterI
             });
         }
 
+
+        public async Task UpdateS3dModelAsync(int bagfilterInputId, string s3dModelJson, string? sessionId)
+        {
+            await _transactionHelper.ExecuteAsync(async db =>
+            {
+                var entity = await db.BagfilterInputs.FindAsync(bagfilterInputId);
+                if (entity == null) return;
+                entity.AnalysisResult = s3dModelJson;
+                db.BagfilterInputs.Update(entity);
+                await db.SaveChangesAsync();
+            });
+        }
+
     }
 }
     

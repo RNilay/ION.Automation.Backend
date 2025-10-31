@@ -1,3 +1,5 @@
+using Newtonsoft.Json.Linq;
+
 namespace IonFiltra.BagFilters.Application.DTOs.Bagfilters.BagfilterInputs
 {
     public class BagfilterInputDto
@@ -76,6 +78,8 @@ namespace IonFiltra.BagFilters.Application.DTOs.Bagfilters.BagfilterInputs
         public decimal? Roof_Door_Thickness { get; set; }
         public decimal? Bag_Per_Row { get; set; } //calculated values
         public decimal? Number_Of_Rows { get; set; } //calculated values
+
+        public string? S3dModel { get; set; }
 
     }
 

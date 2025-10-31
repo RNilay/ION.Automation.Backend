@@ -11,5 +11,6 @@ namespace IonFiltra.BagFilters.Core.Interfaces.SkyCiv
     public interface ISkyCivAnalysisService
     {
         Task<AnalysisResponseDto> RunAnalysisAsync(JObject s3dModel, CancellationToken ct);
+       
     }
 }

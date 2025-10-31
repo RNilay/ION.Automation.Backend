@@ -108,14 +108,14 @@ namespace IonFiltra.BagFilters.API.Controllers.Bagfilters.BagfilterInputs
         //}
 
         [HttpPost("add-batch")]
-        public async Task<IActionResult> AddBatch([FromBody] List<BagfilterInputMainDto> dtos)
+        public async Task<IActionResult> AddBatch([FromBody] List<BagfilterInputMainDto> dtos, CancellationToken ct)
         {
             if (dtos == null || dtos.Count == 0)
                 return BadRequest("Request body cannot be empty.");
 
             try
             {
-                var result = await _service.AddRangeAsync(dtos);
+                var result = await _service.AddRangeAsync(dtos, ct);
                 return StatusCode(201, result);
             }
             catch (Exception ex)

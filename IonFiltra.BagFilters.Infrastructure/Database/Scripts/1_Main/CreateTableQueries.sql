@@ -121,6 +121,8 @@ CREATE TABLE
         MatchedBagfilterInputId INT NULL,
         MatchedBagfilterMasterId INT NULL,
         MatchedAt DATETIME NULL,
+        S3dModel JSON NULL,
+        AnalysisResult JSON NULL,
         CreatedAt DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
         UpdatedAt DATETIME NULL ON UPDATE CURRENT_TIMESTAMP,
         FOREIGN KEY (BagfilterMasterId) REFERENCES ionfiltrabagfilters.BagfilterMaster (BagfilterMasterId) ON DELETE CASCADE
@@ -129,3 +131,41 @@ CREATE TABLE
     -- index for the above table:
     CREATE INDEX IX_BagfilterInputs_CompositeKey
 ON BagfilterInput (Location(100), No_Of_Column, Ground_Clearance, Bag_Per_Row, Number_Of_Rows);
+
+
+--- Master Table for Database of Without Canpoy Bagfilters
+
+CREATE TABLE
+  `IFI_Bagfilter_Database_Without_Canopy` (
+    `Id` INT AUTO_INCREMENT PRIMARY KEY,
+    `Process_Volume_m3hr` TEXT,
+    `Hopper_type` TEXT,
+    `Number_of_columns` DECIMAL(10, 2),
+    `Number_of_bays_in_X_direction` DECIMAL(10, 2),
+    `Number_of_bays_in_Y_direction` DECIMAL(10, 2),
+    `Column_CC_distance_in_X_direction_mm` DECIMAL(10, 2),
+    `Column_CC_distance_in_Y_direction_mm` DECIMAL(10, 2),
+    `Clearance_Below_Hopper_Flange_mm` DECIMAL(10, 2),
+    `Height_upto_mm_Column` DECIMAL(10, 2),
+    `Height_upto_mm_Tube_Sheet` DECIMAL(10, 2),
+    `Height_upto_mm_Capsule_Top` DECIMAL(10, 2),
+    `Member_Sizes_Column` TEXT,
+    `Member_Sizes_Beam` TEXT,
+    `Member_Sizes_Bracing_and_Ties` TEXT,
+    `Member_Sizes_RAV` TEXT,
+    `Member_Sizes_Staging_Beam` TEXT,
+    `Member_Sizes_Grid_Beam` TEXT,
+    `Bolts_No_of_Bolt` DECIMAL(10, 2),
+    `Bolts_Dia_of_Bolt` DECIMAL(10, 2),
+    `Bolts_Grade_of_Bolt` DECIMAL(10, 2),
+    `Bolts_Sleeve_Size_mm` TEXT,
+    `Bolts_Embedded_Length_mm` DECIMAL(10, 2),
+    `Bolt_CC_Distance_Confirguration_RCC` TEXT,
+    `Bolt_CC_Distance_Confirguration_Steel` TEXT,
+    `Base_Plate_Dimension_RCC` TEXT,
+    `Base_Plate_Dimension_Steel` TEXT,
+    `Weight_of_Base_Plate_kg` DECIMAL(10, 2),
+    `Total_Weight_of_Structure_kg` DECIMAL(10, 2),
+    `CreatedAt` DATETIME NULL DEFAULT CURRENT_TIMESTAMP,
+    `UpdatedAt` DATETIME NULL ON UPDATE CURRENT_TIMESTAMP,
+  );

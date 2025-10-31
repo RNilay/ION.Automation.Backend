@@ -18,6 +18,9 @@ namespace IonFiltra.BagFilters.Core.Interfaces.Repositories.Bagfilters.Bagfilter
 
         Task<List<BagfilterInput>> FindCandidatesByGroupKeysAsync(IEnumerable<GroupKey> keys);
         Task<Dictionary<int, Enquiry>> GetEnquiriesByIdsAsync(IEnumerable<int> enquiryIds);
+
+        Task UpdateS3dModelAsync(int bagfilterInputId, string s3dModelJson, string? sessionId);
+
     }
 }
     

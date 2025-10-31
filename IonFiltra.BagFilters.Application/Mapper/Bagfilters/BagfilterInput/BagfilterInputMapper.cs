@@ -87,7 +87,8 @@ namespace IonFiltra.BagFilters.Application.Mappers.Bagfilters.BagfilterInputs
                     Access_Stool_Size_Kg = entity.Access_Stool_Size_Kg,
                     Roof_Door_Thickness = entity.Roof_Door_Thickness,
                     Bag_Per_Row = entity.Bag_Per_Row, //calculated
-                    Number_Of_Rows = entity.Number_Of_Rows //calculated
+                    Number_Of_Rows = entity.Number_Of_Rows, //calculated
+                    S3dModel = entity.S3dModel,
                 },
 
             };
@@ -174,6 +175,7 @@ namespace IonFiltra.BagFilters.Application.Mappers.Bagfilters.BagfilterInputs
                 Roof_Door_Thickness = dto.BagfilterInput.Roof_Door_Thickness,
                 Bag_Per_Row = dto.BagfilterInput.Bag_Per_Row, //calculated
                 Number_Of_Rows = dto.BagfilterInput.Number_Of_Rows, //calculated
+                S3dModel = dto.BagfilterInput.S3dModel,
             };
         }
     }

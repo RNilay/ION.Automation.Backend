@@ -1,5 +1,6 @@
 using System.Globalization;
 using IonFiltra.BagFilters.Application.DTOs.Bagfilters.BagfilterInputs;
+using IonFiltra.BagFilters.Application.DTOs.SkyCiv;
 using IonFiltra.BagFilters.Application.Interfaces;
 using IonFiltra.BagFilters.Application.Mappers.Bagfilters.BagfilterInputs;
 using IonFiltra.BagFilters.Core.Entities.Bagfilters.BagfilterInputs;
@@ -7,21 +8,27 @@ using IonFiltra.BagFilters.Core.Entities.Bagfilters.BagfilterInputs;
 using IonFiltra.BagFilters.Core.Entities.Bagfilters.BagfilterMasterEntity;
 using IonFiltra.BagFilters.Core.Entities.EnquiryEntity;
 using IonFiltra.BagFilters.Core.Interfaces.Repositories.Bagfilters.BagfilterInputs;
+using IonFiltra.BagFilters.Core.Interfaces.SkyCiv;
 using Microsoft.Extensions.Logging;
+using Newtonsoft.Json;
+using Newtonsoft.Json.Linq;
 
 namespace IonFiltra.BagFilters.Application.Services.Bagfilters.BagfilterInputs
 {
     public class BagfilterInputService : IBagfilterInputService
     {
         private readonly IBagfilterInputRepository _repository;
+        private readonly ISkyCivAnalysisService _skyCivService;
         private readonly ILogger<BagfilterInputService> _logger;
 
         public BagfilterInputService(
             IBagfilterInputRepository repository,
-            ILogger<BagfilterInputService> logger)
+            ILogger<BagfilterInputService> logger,
+            ISkyCivAnalysisService skyCivService)
         {
             _repository = repository;
             _logger = logger;
+            _skyCivService = skyCivService;
         }
 
         public async Task<BagfilterInputMainDto> GetByProjectId(int id)
@@ -111,7 +118,7 @@ namespace IonFiltra.BagFilters.Application.Services.Bagfilters.BagfilterInputs
         //}
 
         //new method 
-        public async Task<AddRangeResultDto> AddRangeAsync(List<BagfilterInputMainDto> dtos)
+        public async Task<AddRangeResultDto> AddRangeAsync(List<BagfilterInputMainDto> dtos, CancellationToken ct)
         {
             if (dtos == null || dtos.Count == 0) return new AddRangeResultDto();
 
@@ -187,121 +194,6 @@ namespace IonFiltra.BagFilters.Application.Services.Bagfilters.BagfilterInputs
 
             // 3) Fetch candidate existing DB rows for all group keys (single DB query)
             var candidates = await _repository.FindCandidatesByGroupKeysAsync(groupKeys); // returns BagfilterInput with BagfilterMaster included
-
-            //// 4) For each group, find the first matching candidate that does NOT have the same EnquiryId as the incoming group's EnquiryId
-            //var groupMatchMap = new Dictionary<string, BagfilterMatchDto>(); // groupKey -> matchDto
-            //foreach (var groupKey in groups.Keys)
-            //{
-            //    var representativePairIndex = groups[groupKey].First();
-            //    var incomingEnquiryId = dtoHasEnquiryId(pairs[representativePairIndex]); // helper to pick EnquiryId from DTO or input/master
-
-            //    // find first candidate with exact tuple match for this groupKey
-            //    var matchCandidate = candidates
-            //        .FirstOrDefault(c =>
-            //            string.Equals(c.Location ?? "", pairs[representativePairIndex].Input.Location ?? "", StringComparison.InvariantCultureIgnoreCase)
-            //            && EqualsNullable(c.No_Of_Column, pairs[representativePairIndex].Input.No_Of_Column)
-            //            && EqualsNullable(c.Ground_Clearance, pairs[representativePairIndex].Input.Ground_Clearance)
-            //            && EqualsNullable(c.Bag_Per_Row, pairs[representativePairIndex].Input.Bag_Per_Row)
-            //            && EqualsNullable(c.Number_Of_Rows, pairs[representativePairIndex].Input.Number_Of_Rows)
-            //            // exclude same enquiry id if present (incomingEnquiryId may be null)
-            //            && (incomingEnquiryId == null || c.EnquiryId != incomingEnquiryId)
-            //        );
-
-            //    if (matchCandidate != null)
-            //    {
-            //        groupMatchMap[groupKey] = new BagfilterMatchDto
-            //        {
-            //            BagfilterInputId = matchCandidate.BagfilterInputId,
-            //            BagfilterMasterId = matchCandidate.BagfilterMasterId,
-            //            AssignmentId = matchCandidate.BagfilterMaster?.AssignmentId,
-            //            EnquiryId = matchCandidate.EnquiryId,
-            //            BagFilterName = matchCandidate.BagfilterMaster?.BagFilterName,
-            //            No_Of_Column = matchCandidate.No_Of_Column,
-            //            Ground_Clearance = matchCandidate.Ground_Clearance,
-            //            Bag_Per_Row = matchCandidate.Bag_Per_Row,
-            //            Number_Of_Rows = matchCandidate.Number_Of_Rows
-            //        };
-            //    }
-            //}
-
-            //// We'll create a map groupKey -> GroupId ("Group 1", etc.) and groupKey -> representativeLocation
-            //var groupKeysList = groups.Keys.ToList();
-            //var groupIdByKey = new Dictionary<string, string>(groupKeysList.Count);
-            //for (int i = 0; i < groupKeysList.Count; i++)
-            //{
-            //    groupIdByKey[groupKeysList[i]] = $"Group {i + 1}";
-            //}
-
-            //// 4) For each group, find the first matching candidate (excluding same enquiry) and prepare preliminary match DTO
-            //var groupMatchMap = new Dictionary<string, BagfilterMatchDto>(); // groupKey -> matchDto
-            //var matchedEnquiryIds = new HashSet<int?>();
-
-            //foreach (var groupKey in groupKeysList)
-            //{
-            //    var representativePairIndex = groups[groupKey].First();
-            //    var incomingEnquiryId = dtoHasEnquiryId(pairs[representativePairIndex]); // helper
-
-            //    // find first candidate with exact tuple match for this groupKey
-            //    var repInput = pairs[representativePairIndex].Input;
-
-            //    var matchCandidate = candidates
-            //        .FirstOrDefault(c =>
-            //            string.Equals(c.Location ?? "", repInput.Location ?? "", StringComparison.InvariantCultureIgnoreCase)
-            //            && EqualsNullable(c.No_Of_Column, repInput.No_Of_Column)
-            //            && EqualsNullable(c.Ground_Clearance, repInput.Ground_Clearance)
-            //            && EqualsNullable(c.Bag_Per_Row, repInput.Bag_Per_Row)
-            //            && EqualsNullable(c.Number_Of_Rows, repInput.Number_Of_Rows)
-            //            // exclude same enquiry id if present (incomingEnquiryId may be null)
-            //            && (incomingEnquiryId == null || c.EnquiryId != incomingEnquiryId)
-            //        );
-
-            //    if (matchCandidate != null)
-            //    {
-            //        // build a preliminary DTO (we'll enrich CustomerName + CreatedAt after fetching Enquiry)
-            //        var dtoMatch = new BagfilterMatchDto
-            //        {
-            //            GroupId = groupIdByKey[groupKey],
-            //            Location = repInput.Location,
-            //            BagfilterInputId = matchCandidate.BagfilterInputId,
-            //            BagfilterMasterId = matchCandidate.BagfilterMasterId,
-            //            AssignmentId = matchCandidate.BagfilterMaster?.AssignmentId,
-            //            EnquiryId = matchCandidate.EnquiryId,
-            //            BagFilterName = matchCandidate.BagfilterMaster?.BagFilterName,
-            //            No_Of_Column = matchCandidate.No_Of_Column,
-            //            Ground_Clearance = matchCandidate.Ground_Clearance,
-            //            Bag_Per_Row = matchCandidate.Bag_Per_Row,
-            //            Number_Of_Rows = matchCandidate.Number_Of_Rows
-            //        };
-
-            //        groupMatchMap[groupKey] = dtoMatch;
-
-            //        if (matchCandidate.EnquiryId.HasValue)
-            //            matchedEnquiryIds.Add(matchCandidate.EnquiryId.Value);
-            //    }
-            //}
-
-            //// 4b) Fetch all matched Enquiry rows in one go
-            //Dictionary<int, Enquiry> enquiryMap = new();
-            //if (matchedEnquiryIds.Any())
-            //{
-            //    // call repository method we added
-            //    var enquiryDict = await _repository.GetEnquiriesByIdsAsync(matchedEnquiryIds.Cast<int>());
-            //    if (enquiryDict != null && enquiryDict.Any())
-            //        enquiryMap = enquiryDict;
-            //}
-
-            //// 4c) Enrich groupMatchMap entries with CustomerName and CreatedAt
-            //foreach (var kv in groupMatchMap.ToList()) // ToList to avoid modifying during enumeration
-            //{
-            //    var groupKey = kv.Key;
-            //    var matchDto = kv.Value;
-            //    if (matchDto.EnquiryId.HasValue && enquiryMap.TryGetValue(matchDto.EnquiryId.Value, out var enquiry))
-            //    {
-            //        matchDto.CustomerName = enquiry.Customer;
-            //        matchDto.CreatedAt = enquiry.CreatedAt;
-            //    }
-            //    // else leave CustomerName/CreatedAt null
-            //}
 
             // --- Build Group labels (Group 1, Group 2, ...) ---
             var groupKeysList = groups.Keys.ToList();
@@ -404,26 +296,7 @@ namespace IonFiltra.BagFilters.Application.Services.Bagfilters.BagfilterInputs
                 }
             }
 
-            // At this point you can call repository.AddRangeAsync(pairs, matchMappingByPairIndex)
-            // and later set result.Matches = groupKeysList.Select(k => groupMatchMap[k]).ToList();
-            // and set result.Message/MatchedItemsCount if any IsMatched == true.
-
-
-            //// 5) Create matchMappingByPairIndex to tell repository which created pairs should get match-tracking info
-            //// For each pair index: if its groupKey had a match -> record the matched candidate ids
-            //var matchMappingByPairIndex = new Dictionary<int, (int matchedBagfilterInputId, int matchedBagfilterMasterId)>();
-            //foreach (var kv in groups)
-            //{
-            //    var groupKey = kv.Key;
-            //    if (!groupMatchMap.TryGetValue(groupKey, out var matchDto)) continue;
-
-            //    // For every pair index in this group, mark mapping to matchDto
-            //    foreach (var pairIndex in kv.Value)
-            //    {
-            //        matchMappingByPairIndex[pairIndex] = (matchDto.BagfilterInputId, matchDto.BagfilterMasterId);
-            //    }
-            //}
-
+            
             // 6) Insert all (masters + inputs) and apply match mapping inside repository in same transaction
             var createdInputIds = await _repository.AddRangeAsync(pairs, matchMappingByPairIndex);
             var matchesList = groupKeysList.Select(k => groupMatchMap[k]).ToList();
@@ -441,6 +314,93 @@ namespace IonFiltra.BagFilters.Application.Services.Bagfilters.BagfilterInputs
                 TotalGroupsCount = totalGroups,            // optional but handy
                 MatchedGroupsCount = matchedGroupsCount   // optional
             };
+
+            // after createdInputIds = await _repository.AddRangeAsync(...)
+            var unmatchedPairIndices = new List<int>();
+            for (int pairIndex = 0; pairIndex < pairs.Count; pairIndex++)
+            {
+                var groupKey = pairGroupKeys[pairIndex];
+                if (!groupMatchMap.TryGetValue(groupKey, out var gm)) continue;
+                if (!gm.IsMatched)
+                {
+                    unmatchedPairIndices.Add(pairIndex);
+                }
+            }
+
+            // If nothing to run, skip
+            if (unmatchedPairIndices.Any())
+            {
+                // limiter to avoid flooding SkyCiv — adjust concurrency as needed
+                var maxConcurrency = 2; // or 1 if you want strictly sequential
+                using var sem = new SemaphoreSlim(maxConcurrency);
+                var tasks = new List<Task>();
+
+                foreach (var pairIndex in unmatchedPairIndices)
+                {
+                    await sem.WaitAsync(); // respect cancellation
+                    tasks.Add(Task.Run(async () =>
+                    {
+                        try
+                        {
+                            // get model to send
+                            var inputEntity = pairs[pairIndex].Input;
+                            // assume the DTO or entity stored s3dModel as JObject (if not, adapt to convert string->JObject)
+                            var s3dModel = inputEntity.S3dModel != null
+                                ? JObject.Parse(inputEntity.S3dModel) // if stored as string
+                                : null;
+
+                            if (s3dModel == null)
+                            {
+                                _logger?.LogWarning("No S3D model present for pairIndex {idx}", pairIndex);
+                                return;
+                            }
+                            
+                            // Call analysis service
+                            AnalysisResponseDto analysisResponse;
+                            try
+                            {
+                                analysisResponse = await _skyCivService.RunAnalysisAsync(s3dModel, ct);
+                            }
+                            catch (Exception ex)
+                            {
+                                _logger?.LogError(ex, "SkyCiv analysis failed for pairIndex {idx}", pairIndex);
+                                return;
+                            }
+
+                            if (analysisResponse != null && analysisResponse.Status == "Succeeded")
+                            {
+                                // Persist model data and session id to the DB row that was created earlier
+                                var createdId = createdInputIds[pairIndex]; // createdInputIds indexes map to pairs
+                                var modelJson = analysisResponse.ModelData?.ToString(Formatting.None) ?? string.Empty;
+                                var sessionId = analysisResponse.SessionId;
+
+                                // Call repository to update the row (you need to implement this)
+                                await _repository.UpdateS3dModelAsync(createdId, modelJson, sessionId);
+
+                                // Optionally update the groupMatchMap or matchesList for return DTOs
+                                var groupKey = pairGroupKeys[pairIndex];
+                                if (groupMatchMap.TryGetValue(groupKey, out var gm2))
+                                {
+                                    // annotate placeholder to indicate analysis was run
+                                    gm2.IsMatched = false; // still unmatched, but tried analysis
+
+                                }
+                            }
+                            else
+                            {
+                                _logger?.LogWarning("Analysis didn't succeed for pairIndex {idx}. Status: {status}", pairIndex, analysisResponse?.Status);
+                            }
+                        }
+                        finally
+                        {
+                            sem.Release();
+                        }
+                    }));
+                }
+
+                // Wait for all tasks to complete
+                await Task.WhenAll(tasks);
+            }
 
             return result;
         }
@@ -530,7 +490,8 @@ namespace IonFiltra.BagFilters.Application.Services.Bagfilters.BagfilterInputs
                 Number_Of_Rows = dto.Number_Of_Rows,
 
                 // NEW: EnquiryId - used to exclude same enquiry matches
-                EnquiryId = dto.EnquiryId
+                EnquiryId = dto.EnquiryId,
+                S3dModel = dto.S3dModel,
             };
 
             return e;

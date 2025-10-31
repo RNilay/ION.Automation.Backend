@@ -22,8 +22,7 @@ namespace IonFiltra.BagFilters.Api.Controllers.SkyCiv
             var result = await _service.RunAnalysisAsync(s3dModel, ct);
             if (result == null) return StatusCode(500, "Analysis failed");
             var json = JsonConvert.SerializeObject(result);
-            //return Ok(result);
-            return Ok(new { success = true, session = result?.SessionId });
+            return Ok(new { success = true, analysisResult = json });
         }
     }
 }

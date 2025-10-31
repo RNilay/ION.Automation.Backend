@@ -2,6 +2,7 @@
 using IonFiltra.BagFilters.Application.Interfaces.Bagfilters.BagfilterMaster;
 using IonFiltra.BagFilters.Application.Interfaces.Enquiry;
 using IonFiltra.BagFilters.Application.Services.Assignment;
+using IonFiltra.BagFilters.Application.Services.BagfilterDatabase.WithoutCanopy;
 using IonFiltra.BagFilters.Application.Services.Bagfilters.BagfilterInputs;
 using IonFiltra.BagFilters.Application.Services.Bagfilters.BagfilterMasterEntity;
 using IonFiltra.BagFilters.Application.Services.EnquiryService;
@@ -9,11 +10,13 @@ using IonFiltra.BagFilters.Application.Services.SkyCiv;
 using IonFiltra.BagFilters.Core.Interfaces.Bagfilters.BagfilterMasters;
 using IonFiltra.BagFilters.Core.Interfaces.EnquiryRep;
 using IonFiltra.BagFilters.Core.Interfaces.Repositories.Assignment;
+using IonFiltra.BagFilters.Core.Interfaces.Repositories.BagfilterDatabase.WithoutCanopy;
 using IonFiltra.BagFilters.Core.Interfaces.Repositories.Bagfilters.BagfilterInputs;
 using IonFiltra.BagFilters.Core.Interfaces.SkyCiv;
 using IonFiltra.BagFilters.Infrastructure.Data;
 using IonFiltra.BagFilters.Infrastructure.EnquiryRepo;
 using IonFiltra.BagFilters.Infrastructure.Repositories.Assignment;
+using IonFiltra.BagFilters.Infrastructure.Repositories.BagfilterDatabase.WithoutCanopy;
 using IonFiltra.BagFilters.Infrastructure.Repositories.Bagfilters.BagfilterInputs;
 using IonFiltra.BagFilters.Infrastructure.Repositories.Bagfilters.BagfilterMasters;
 using IonFiltra.BagFilters.Infrastructure.Repositories.SkyCiv;
@@ -59,6 +62,10 @@ namespace IonFiltra.BagFilters.Infrastructure
             // In Program.cs or DependencyInjection
             services.AddScoped<ISkyCivAnalysisService, SkyCivAnalysisService>();
             services.AddScoped<IAnalysisSessionRepository, AnalysisSessionRepository>();
+
+            // Ion filtra Data base for Bagfilters
+            services.AddScoped<IIFI_Bagfilter_Database_Without_CanopyService, IFI_Bagfilter_Database_Without_CanopyService>();
+            services.AddScoped<IIFI_Bagfilter_Database_Without_CanopyRepository, IFI_Bagfilter_Database_Without_CanopyRepository>();
 
             return services;
         }

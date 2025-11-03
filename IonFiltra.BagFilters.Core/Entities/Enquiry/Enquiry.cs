@@ -11,10 +11,7 @@ namespace IonFiltra.BagFilters.Core.Entities.EnquiryEntity
         // store as JSON in the DB (see DbContext config below)
         public List<int> ProcessVolumes { get; set; } = new();
 
-        // keep Location as list (JSON) if you want; optional:
-        public List<string> Location { get; set; } = new();
-
-        public string? SubLocation { get; set; }
+       
 
         public DateTime CreatedAt { get; set; }
         public DateTime? UpdatedAt { get; set; }

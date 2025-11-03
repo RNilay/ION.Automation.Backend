@@ -18,8 +18,6 @@ namespace IonFiltra.BagFilters.Application.Mappers.EnquiryMappper
                     Customer = entity.Customer,
                     RequiredBagFilters = entity.RequiredBagFilters,
                     ProcessVolumes = entity.ProcessVolumes,
-                    Location = entity.Location,
-                    SubLocation = entity.SubLocation,
                     CreatedAt = entity.CreatedAt
                 },
 
@@ -37,8 +35,6 @@ namespace IonFiltra.BagFilters.Application.Mappers.EnquiryMappper
                 Customer = dto.Enquiry.Customer,
                 RequiredBagFilters = dto.Enquiry.RequiredBagFilters,
                 ProcessVolumes = dto.Enquiry.ProcessVolumes ?? new List<int>(),
-                Location = dto.Enquiry.Location ?? new List<string>(),
-                SubLocation = dto.Enquiry.SubLocation,
                 CreatedAt = dto.Enquiry.CreatedAt
             };
         }

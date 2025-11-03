@@ -7,7 +7,7 @@ CREATE TABLE Enquiry (
     EnquiryId VARCHAR(255) NOT NULL,
     Customer TEXT,
     RequiredBagFilters INT,
-    ProcessVolumes INT,
+    ProcessVolumes JSON,
     CreatedAt DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
     UpdatedAt DATETIME NULL ON UPDATE CURRENT_TIMESTAMP,
     UNIQUE (EnquiryId)

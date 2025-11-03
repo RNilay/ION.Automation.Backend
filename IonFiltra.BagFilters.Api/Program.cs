@@ -85,7 +85,7 @@ try
     // Enable CORS for React
     var allowedOrigins = new[]
     {
-        "http://localhost:3006"
+        "http://localhost:3006", "http://localhost:3008"
     };
 
     builder.Services.AddCors(options =>

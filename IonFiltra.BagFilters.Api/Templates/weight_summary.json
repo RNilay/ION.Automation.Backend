@@ -1,0 +1,80 @@
+{
+    "Id": 1,
+    "ReportName": "WeightSummary",
+    "Title": "Weight Summary",
+    "Logo": "wwwroot/images/company.png",
+    "EntityDbName": "WeightSummary",
+    "Layout": {
+        "Columns": 1,
+        "ColumnWidths": [ "100%" ],
+        "ReportWidth": "210mm"
+    },
+    "Header": {
+        "TextRows": [
+            "<div style='background-color:#F2F2F2; padding:6px; border:1px solid #000;'>",
+            "<table style='width:100%; font-size:12px;'><tr><th colspan='3' style='text-align:center'>{Title}</th></tr></table>",
+            "</div>"
+        ]
+    },
+    "Footer": {
+        "TextRows": [ "{Logo}", "Page Footer" ]
+    },
+    "Rows": [
+        {
+            "Type": "table",
+            "LayoutColumns": ["", "", "", "", "", "", "", "", "", "" ],
+            "ColumnWidths": [10, 10, 10, 10, 10, 10, 10, 10, 10, 10 ],
+            "Rows": [
+                {
+                    "RowData": [
+                        "Bagfilter",
+                        "Casing",
+                        "Hopper",
+                        "Tube sheet",
+                        "Structure",
+                        "Ladder / Staircase",
+                        "Midlanding Platform",
+                        "Maintenance Platform",
+                        "Access Tool",
+                        "Total Weight (Kg)"
+                    ],
+                    "RowStyle": {
+                        "FontSize": 12,
+                        "Bold": true,
+                        "InlineCss": "background-color:#F9C043; font-weight: bolder;"
+                    }
+                },
+                {
+                    "RowData": [
+                        "{BagFilterName}",
+                        "{Casing_Weight}",
+                        "{Hopper_Weight}",
+                        "{Tubesheet_Weight}",
+                        "{Structure_Weight}",
+                        "{Weight_Of_Cage_Ladder}",
+                        "{Weight_Of_Mid_Landing_Plt}",
+                        "{Weight_Of_Maintainence_Pltform}",
+                        "{Hopper_Access_Stool_Weight}",
+                        "{Weight_Total}"
+                    ],
+                    "RowStyle": { "FontSize": 11 }
+                }
+            ],
+            "RepeatRow": {
+                "SourceKey": "list_values",
+                "TemplateRowIndex": 1,
+                "Columns": [
+                    "BagFilterName",
+                    "Casing_Weight",
+                    "Hopper_Weight",
+                    "Tubesheet_Weight",
+                    "Structure_Weight",
+                    "Weight_Of_Cage_Ladder",
+                    "Weight_Of_Mid_Landing_Plt",
+                    "Hopper_Access_Stool_Weight",
+                    "Weight_Total"
+                ]
+            }
+        }
+    ]
+}

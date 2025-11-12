@@ -7,6 +7,7 @@ namespace IonFiltra.BagFilters.Core.Interfaces.Repositories.Bagfilters.Bagfilter
     public interface IBagfilterInputRepository
     {
         Task<BagfilterInput?> GetByProjectId(int projectId);
+        Task<List<BagfilterInput>> GetByIdsAsync(IEnumerable<int> bagfilterInputIds);
         Task<int> AddAsync(BagfilterInput entity);
         Task UpdateAsync(BagfilterInput entity);
 

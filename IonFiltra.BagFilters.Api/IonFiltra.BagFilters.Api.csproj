@@ -8,6 +8,18 @@
   </PropertyGroup>
 
 	<ItemGroup>
+	  <Content Remove="Templates\weight_summary.json" />
+	</ItemGroup>
+
+	<ItemGroup>
+	  <None Include="Templates\weight_summary.json">
+	    <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+	    <ExcludeFromSingleFile>true</ExcludeFromSingleFile>
+	    <CopyToPublishDirectory>PreserveNewest</CopyToPublishDirectory>
+	  </None>
+	</ItemGroup>
+
+	<ItemGroup>
 		<PackageReference Include="Microsoft.AspNetCore.Authentication.JwtBearer" Version="9.0.8" />
 		<PackageReference Include="Microsoft.AspNetCore.Mvc.NewtonsoftJson" Version="9.0.10" />
 		<PackageReference Include="Microsoft.AspNetCore.OpenApi" Version="9.0.1" />
@@ -17,6 +29,12 @@
 	<ItemGroup>
 		<ProjectReference Include="..\IonFiltra.BagFilters.Application\IonFiltra.BagFilters.Application.csproj" />
 		<ProjectReference Include="..\IonFiltra.BagFilters.Infrastructure\IonFiltra.BagFilters.Infrastructure.csproj" />
+	</ItemGroup>
+
+	<ItemGroup>
+	  <Content Update="wwwroot\images\company.png">
+	    <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+	  </Content>
 	</ItemGroup>
 
 </Project>

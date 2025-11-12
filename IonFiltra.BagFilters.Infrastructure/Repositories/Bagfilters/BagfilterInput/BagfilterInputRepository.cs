@@ -35,6 +35,32 @@ namespace IonFiltra.BagFilters.Infrastructure.Repositories.Bagfilters.BagfilterI
             });
         }
 
+        public async Task<List<BagfilterInput>> GetByIdsAsync(IEnumerable<int> bagfilterInputIds)
+        {
+            if (bagfilterInputIds == null || !bagfilterInputIds.Any())
+                return new List<BagfilterInput>();
+
+            return await _transactionHelper.ExecuteAsync(async dbContext =>
+            {
+                _logger.LogInformation("Fetching BagfilterInputs for Ids: {Ids}", string.Join(",", bagfilterInputIds));
+
+                var inputs = await dbContext.BagfilterInputs
+                    .AsNoTracking()
+                    .Where(x => bagfilterInputIds.Contains(x.BagfilterInputId))
+                    .Select(x => new BagfilterInput
+                    {
+                        BagfilterInputId = x.BagfilterInputId,
+                        BagfilterMasterId = x.BagfilterMasterId,
+                        EnquiryId = x.EnquiryId
+                        // (optional: include other fields if needed)
+                    })
+                    .ToListAsync();
+
+                return inputs;
+            });
+        }
+
+
         public async Task<int> AddAsync(BagfilterInput entity)
         {
             return await _transactionHelper.ExecuteAsync(async dbContext =>

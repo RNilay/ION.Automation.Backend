@@ -9,6 +9,17 @@ using IonFiltra.BagFilters.Core.Entities.Assignment;
 using IonFiltra.BagFilters.Core.Entities.BagfilterDatabase.WithoutCanopy;
 using IonFiltra.BagFilters.Core.Entities.Bagfilters.BagfilterInputs;
 using IonFiltra.BagFilters.Core.Entities.Bagfilters.BagfilterMasterEntity;
+using IonFiltra.BagFilters.Core.Entities.Bagfilters.Sections.Access_Group;
+using IonFiltra.BagFilters.Core.Entities.Bagfilters.Sections.Bag_Selection;
+using IonFiltra.BagFilters.Core.Entities.Bagfilters.Sections.Cage_Inputs;
+using IonFiltra.BagFilters.Core.Entities.Bagfilters.Sections.Capsule_Inputs;
+using IonFiltra.BagFilters.Core.Entities.Bagfilters.Sections.Casing_Inputs;
+using IonFiltra.BagFilters.Core.Entities.Bagfilters.Sections.Hopper_Trough;
+using IonFiltra.BagFilters.Core.Entities.Bagfilters.Sections.Process_Info;
+using IonFiltra.BagFilters.Core.Entities.Bagfilters.Sections.Roof_Door;
+using IonFiltra.BagFilters.Core.Entities.Bagfilters.Sections.Structure_Inputs;
+using IonFiltra.BagFilters.Core.Entities.Bagfilters.Sections.Support_Structure;
+using IonFiltra.BagFilters.Core.Entities.Bagfilters.Sections.Weight_Summary;
 using IonFiltra.BagFilters.Core.Entities.EnquiryEntity;
 using IonFiltra.BagFilters.Core.Entities.SkyCivEntities;
 using Microsoft.EntityFrameworkCore;
@@ -34,9 +45,23 @@ namespace IonFiltra.BagFilters.Infrastructure.Data
         public DbSet<AnalysisSession> AnalysisSessions { get; set; }
         public DbSet<AnalysisResult> AnalysisResults { get; set; }
 
+        //Sections tables
+        public DbSet<WeightSummary> WeightSummarys { get; set; }
+        public DbSet<ProcessInfo> ProcessInfos { get; set; }
+        public DbSet<CageInputs> CageInputss { get; set; }
+        public DbSet<BagSelection> BagSelections { get; set; }
+        public DbSet<StructureInputs> StructureInputss { get; set; }
+        public DbSet<CapsuleInputs> CapsuleInputss { get; set; }
+        public DbSet<CasingInputs> CasingInputss { get; set; }
+        public DbSet<HopperInputs> HopperInputss { get; set; }
+        public DbSet<SupportStructure> SupportStructures { get; set; }
+        public DbSet<AccessGroup> AccessGroups { get; set; }
+        public DbSet<RoofDoor> RoofDoors { get; set; }
+
+
         // Database from ion filtra for bag filters
         public DbSet<IFI_Bagfilter_Database_Without_Canopy> IFI_Bagfilter_Database_Without_Canopys { get; set; }
-
+     
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
@@ -71,6 +96,85 @@ namespace IonFiltra.BagFilters.Infrastructure.Data
                 entity.Property(u => u.BagfilterMasterId).IsRequired();
             });
 
+            //Section tables
+            modelBuilder.Entity<WeightSummary>(entity =>
+            {
+                entity.ToTable("WeightSummary", GlobalConstants.IONFILTRA_SCHEMA);
+                entity.HasKey(u => u.Id);
+                entity.Property(u => u.EnquiryId).IsRequired();
+            });
+
+            modelBuilder.Entity<ProcessInfo>(entity =>
+            {
+                entity.ToTable("ProcessInfo", GlobalConstants.IONFILTRA_SCHEMA);
+                entity.HasKey(u => u.Id);
+                entity.Property(u => u.EnquiryId).IsRequired();
+            });
+
+            modelBuilder.Entity<CageInputs>(entity =>
+            {
+                entity.ToTable("CageInputs", GlobalConstants.IONFILTRA_SCHEMA);
+                entity.HasKey(u => u.Id);
+                entity.Property(u => u.EnquiryId).IsRequired();
+            });
+
+            modelBuilder.Entity<BagSelection>(entity =>
+            {
+                entity.ToTable("BagSelection", GlobalConstants.IONFILTRA_SCHEMA);
+                entity.HasKey(u => u.Id);
+                entity.Property(u => u.EnquiryId).IsRequired();
+            });
+
+            modelBuilder.Entity<StructureInputs>(entity =>
+            {
+                entity.ToTable("StructureInputs", GlobalConstants.IONFILTRA_SCHEMA);
+                entity.HasKey(u => u.Id);
+                entity.Property(u => u.EnquiryId).IsRequired();
+            });
+
+            modelBuilder.Entity<CapsuleInputs>(entity =>
+            {
+                entity.ToTable("CapsuleInputs", GlobalConstants.IONFILTRA_SCHEMA);
+                entity.HasKey(u => u.Id);
+                entity.Property(u => u.EnquiryId).IsRequired();
+            });
+
+            modelBuilder.Entity<CasingInputs>(entity =>
+            {
+                entity.ToTable("CasingInputs", GlobalConstants.IONFILTRA_SCHEMA);
+                entity.HasKey(u => u.Id);
+                entity.Property(u => u.EnquiryId).IsRequired();
+            });
+
+            modelBuilder.Entity<HopperInputs>(entity =>
+            {
+                entity.ToTable("HopperInputs", GlobalConstants.IONFILTRA_SCHEMA);
+                entity.HasKey(u => u.Id);
+                entity.Property(u => u.EnquiryId).IsRequired();
+            });
+
+            modelBuilder.Entity<SupportStructure>(entity =>
+            {
+                entity.ToTable("SupportStructure", GlobalConstants.IONFILTRA_SCHEMA);
+                entity.HasKey(u => u.Id);
+                entity.Property(u => u.EnquiryId).IsRequired();
+            });
+
+            modelBuilder.Entity<AccessGroup>(entity =>
+            {
+                entity.ToTable("AccessGroup", GlobalConstants.IONFILTRA_SCHEMA);
+                entity.HasKey(u => u.Id);
+                entity.Property(u => u.EnquiryId).IsRequired();
+            });
+
+            modelBuilder.Entity<RoofDoor>(entity =>
+            {
+                entity.ToTable("RoofDoor", GlobalConstants.IONFILTRA_SCHEMA);
+                entity.HasKey(u => u.Id);
+                entity.Property(u => u.EnquiryId).IsRequired();
+            });
+
+            // Ion filtra database for bagfilters
             modelBuilder.Entity<IFI_Bagfilter_Database_Without_Canopy>(entity =>
             {
                 entity.ToTable("IFI_Bagfilter_Database_Without_Canopy", GlobalConstants.IONFILTRA_SCHEMA);

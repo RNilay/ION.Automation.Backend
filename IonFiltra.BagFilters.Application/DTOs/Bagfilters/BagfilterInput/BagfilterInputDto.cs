@@ -76,6 +76,7 @@ namespace IonFiltra.BagFilters.Application.DTOs.Bagfilters.BagfilterInputs
         public decimal? Access_Stool_Size_Mm { get; set; }
         public decimal? Access_Stool_Size_Kg { get; set; }
         public decimal? Roof_Door_Thickness { get; set; }
+        public decimal? Column_Height { get; set; }
         public decimal? Bag_Per_Row { get; set; } //calculated values
         public decimal? Number_Of_Rows { get; set; } //calculated values
 

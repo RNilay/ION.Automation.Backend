@@ -1,0 +1,14 @@
+﻿using System;
+using System.Collections.Generic;
+using System.Linq;
+using System.Text;
+using System.Threading.Tasks;
+
+namespace IonFiltra.BagFilters.Application.Interfaces.GenericView
+{
+    public interface IGenericViewService
+    {
+        Task<List<Dictionary<string, object>>> GetViewData(string viewName);
+        Task<List<Dictionary<string, object>>> GetViewDataWithParam(string viewName, Dictionary<string, object> parameters);
+    }
+}

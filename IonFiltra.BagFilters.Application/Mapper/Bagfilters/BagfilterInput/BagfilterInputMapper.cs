@@ -86,6 +86,7 @@ namespace IonFiltra.BagFilters.Application.Mappers.Bagfilters.BagfilterInputs
                     Access_Stool_Size_Mm = entity.Access_Stool_Size_Mm,
                     Access_Stool_Size_Kg = entity.Access_Stool_Size_Kg,
                     Roof_Door_Thickness = entity.Roof_Door_Thickness,
+                    Column_Height = entity.Column_Height,
                     Bag_Per_Row = entity.Bag_Per_Row, //calculated
                     Number_Of_Rows = entity.Number_Of_Rows, //calculated
                     S3dModel = entity.S3dModel,
@@ -173,6 +174,7 @@ namespace IonFiltra.BagFilters.Application.Mappers.Bagfilters.BagfilterInputs
                 Access_Stool_Size_Mm = dto.BagfilterInput.Access_Stool_Size_Mm,
                 Access_Stool_Size_Kg = dto.BagfilterInput.Access_Stool_Size_Kg,
                 Roof_Door_Thickness = dto.BagfilterInput.Roof_Door_Thickness,
+                Column_Height = dto.BagfilterInput.Column_Height,
                 Bag_Per_Row = dto.BagfilterInput.Bag_Per_Row, //calculated
                 Number_Of_Rows = dto.BagfilterInput.Number_Of_Rows, //calculated
                 S3dModel = dto.BagfilterInput.S3dModel,

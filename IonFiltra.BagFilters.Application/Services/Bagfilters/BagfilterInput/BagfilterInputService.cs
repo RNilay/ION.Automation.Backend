@@ -6,8 +6,30 @@ using IonFiltra.BagFilters.Application.Mappers.Bagfilters.BagfilterInputs;
 using IonFiltra.BagFilters.Core.Entities.Bagfilters.BagfilterInputs;
 
 using IonFiltra.BagFilters.Core.Entities.Bagfilters.BagfilterMasterEntity;
+using IonFiltra.BagFilters.Core.Entities.Bagfilters.Sections.Access_Group;
+using IonFiltra.BagFilters.Core.Entities.Bagfilters.Sections.Bag_Selection;
+using IonFiltra.BagFilters.Core.Entities.Bagfilters.Sections.Cage_Inputs;
+using IonFiltra.BagFilters.Core.Entities.Bagfilters.Sections.Capsule_Inputs;
+using IonFiltra.BagFilters.Core.Entities.Bagfilters.Sections.Casing_Inputs;
+using IonFiltra.BagFilters.Core.Entities.Bagfilters.Sections.Hopper_Trough;
+using IonFiltra.BagFilters.Core.Entities.Bagfilters.Sections.Process_Info;
+using IonFiltra.BagFilters.Core.Entities.Bagfilters.Sections.Roof_Door;
+using IonFiltra.BagFilters.Core.Entities.Bagfilters.Sections.Structure_Inputs;
+using IonFiltra.BagFilters.Core.Entities.Bagfilters.Sections.Support_Structure;
+using IonFiltra.BagFilters.Core.Entities.Bagfilters.Sections.Weight_Summary;
 using IonFiltra.BagFilters.Core.Entities.EnquiryEntity;
 using IonFiltra.BagFilters.Core.Interfaces.Repositories.Bagfilters.BagfilterInputs;
+using IonFiltra.BagFilters.Core.Interfaces.Repositories.Bagfilters.Sections.Access_Group;
+using IonFiltra.BagFilters.Core.Interfaces.Repositories.Bagfilters.Sections.Bag_Selection;
+using IonFiltra.BagFilters.Core.Interfaces.Repositories.Bagfilters.Sections.Cage_Inputs;
+using IonFiltra.BagFilters.Core.Interfaces.Repositories.Bagfilters.Sections.Capsule_Inputs;
+using IonFiltra.BagFilters.Core.Interfaces.Repositories.Bagfilters.Sections.Casing_Inputs;
+using IonFiltra.BagFilters.Core.Interfaces.Repositories.Bagfilters.Sections.Hopper_Trough;
+using IonFiltra.BagFilters.Core.Interfaces.Repositories.Bagfilters.Sections.Process_Info;
+using IonFiltra.BagFilters.Core.Interfaces.Repositories.Bagfilters.Sections.Roof_Door;
+using IonFiltra.BagFilters.Core.Interfaces.Repositories.Bagfilters.Sections.Structure_Inputs;
+using IonFiltra.BagFilters.Core.Interfaces.Repositories.Bagfilters.Sections.Support_Structure;
+using IonFiltra.BagFilters.Core.Interfaces.Repositories.Bagfilters.Sections.Weight_Summary;
 using IonFiltra.BagFilters.Core.Interfaces.SkyCiv;
 using Microsoft.Extensions.Logging;
 using Newtonsoft.Json;
@@ -20,16 +42,76 @@ namespace IonFiltra.BagFilters.Application.Services.Bagfilters.BagfilterInputs
         private readonly IBagfilterInputRepository _repository;
         private readonly ISkyCivAnalysisService _skyCivService;
         private readonly ILogger<BagfilterInputService> _logger;
+        // new: specific repo for weight summary (inject similar repos for other child entities)
+        private readonly IWeightSummaryRepository _weightSummaryRepository;
+        private readonly IProcessInfoRepository _processInfoRepository;
+        private readonly ICageInputsRepository _cageInputsRepository;
+        private readonly IBagSelectionRepository _bagSelectionRepository;
+        private readonly IStructureInputsRepository _structureInputsRepository;
+        private readonly ICapsuleInputsRepository _capsuleInputsRepository;
+        private readonly ICasingInputsRepository _casingInputsRepository;
+        private readonly IHopperInputsRepository _hopperInputsRepository;
+        private readonly ISupportStructureRepository _supportStructureRepository;
+        private readonly IAccessGroupRepository _accessGroupRepository;
+        private readonly IRoofDoorRepository _roofDoorRepository;
+        // new: registry of handlers keyed by DTO property name (case-insensitive)
+        private readonly Dictionary<string, Func<BagfilterInputMainDto, int, CancellationToken, Task>> _childHandlers;
+
+
 
         public BagfilterInputService(
             IBagfilterInputRepository repository,
             ILogger<BagfilterInputService> logger,
-            ISkyCivAnalysisService skyCivService)
+            ISkyCivAnalysisService skyCivService,
+            IWeightSummaryRepository weightSummaryRepository,
+            IProcessInfoRepository processInfoRepository,
+            ICageInputsRepository cageInputsRepository,
+            IBagSelectionRepository bagSelectionRepository,
+            IStructureInputsRepository structureInputsRepository,
+            ICapsuleInputsRepository capsuleInputsRepository,
+            ICasingInputsRepository casingInputsRepository,
+            IHopperInputsRepository hopperInputsRepository,
+            ISupportStructureRepository supportStructureRepository,
+            IAccessGroupRepository accessGroupRepository,
+            IRoofDoorRepository roofDoorRepository
+        )
         {
             _repository = repository;
             _logger = logger;
             _skyCivService = skyCivService;
+
+            _weightSummaryRepository = weightSummaryRepository ?? throw new ArgumentNullException(nameof(weightSummaryRepository));
+            _processInfoRepository = processInfoRepository ?? throw new ArgumentNullException(nameof(processInfoRepository));
+            _cageInputsRepository = cageInputsRepository ?? throw new ArgumentNullException(nameof(cageInputsRepository));
+            _bagSelectionRepository = bagSelectionRepository ?? throw new ArgumentNullException(nameof(bagSelectionRepository));
+            _structureInputsRepository = structureInputsRepository ?? throw new ArgumentNullException(nameof(structureInputsRepository));
+            _capsuleInputsRepository = capsuleInputsRepository ?? throw new ArgumentNullException(nameof(capsuleInputsRepository));
+            _casingInputsRepository = casingInputsRepository ?? throw new ArgumentNullException(nameof(casingInputsRepository));
+            _hopperInputsRepository = hopperInputsRepository ?? throw new ArgumentNullException(nameof(hopperInputsRepository));
+            _supportStructureRepository = supportStructureRepository ?? throw new ArgumentNullException(nameof(supportStructureRepository));
+            _accessGroupRepository = accessGroupRepository ?? throw new ArgumentNullException(nameof(accessGroupRepository));
+            _roofDoorRepository = roofDoorRepository ?? throw new ArgumentNullException(nameof(roofDoorRepository));
+
+            // initialize handler registry
+            _childHandlers = new Dictionary<string, Func<BagfilterInputMainDto, int, CancellationToken, Task>>(StringComparer.OrdinalIgnoreCase)
+            {
+                // key is the DTO property name (e.g. "WeightSummary" or "weightSummary" - registry is case-insensitive)
+                ["weightSummary"] = HandleWeightSummaryAsync,
+                ["processInfo"] = HandleProcessInfoAsync,
+                ["cageInputs"] = HandleCageInputsAsync,
+                ["bagSelection"] = HandleBagSelectionAsync,
+                ["structureInputs"] = HandleStructureInputsAsync,
+                ["capsuleInputs"] = HandleCapsuleInputsAsync,
+                ["casingInputs"] = HandleCasingInputsAsync,
+                ["hopperInputs"] = HandleHopperInputsAsync,
+                ["supportStructure"] = HandleSupportStructureAsync,
+                ["accessGroup"] = HandleAccessGroupAsync,
+                ["roofDoor"] = HandleRoofDoorAsync,
+            };
+
         }
+
+        
 
         public async Task<BagfilterInputMainDto> GetByProjectId(int id)
         {
@@ -53,69 +135,6 @@ namespace IonFiltra.BagFilters.Application.Services.Bagfilters.BagfilterInputs
             await _repository.UpdateAsync(entity);
         }
 
-
-        //old method
-        //public async Task<List<int>> AddRangeAsync(List<BagfilterInputMainDto> dtos)
-        //{
-        //    if (dtos == null || dtos.Count == 0) return new List<int>();
-
-        //    _logger.LogInformation("Adding batch of BagfilterInputs. Count={Count}", dtos.Count);
-
-        //    // Map DTOs to entity pairs (master + input)
-        //    var pairs = new List<(BagfilterMaster Master, BagfilterInput Input)>(dtos.Count);
-
-        //    foreach (var dto in dtos)
-        //    {
-        //        // validation: ensure master info present OR masterId provided
-        //        if (dto.BagfilterMaster == null && dto.BagfilterMasterId <= 0)
-        //        {
-        //            // either throw or skip; here we throw for clarity
-        //            throw new ArgumentException("Each item must include BagfilterMaster data or an existing BagfilterMasterId.");
-        //        }
-
-        //        // create master entity (if BagfilterMaster provided)
-        //        var masterEntity = dto.BagfilterMaster != null
-        //            ? new BagfilterMaster
-        //            {
-        //                BagFilterName = dto.BagfilterMaster.BagfilterMaster.BagFilterName,
-        //                Status = dto.BagfilterMaster.BagfilterMaster.Status,
-        //                Revision = dto.BagfilterMaster.BagfilterMaster.Revision,
-        //                CreatedAt = DateTime.Now
-        //            }
-        //            : new BagfilterMaster
-        //            {
-        //                // if frontend provided only existing BagfilterMasterId, set that and don't create a new master.
-        //                BagfilterMasterId = dto.BagfilterMasterId,
-        //                CreatedAt = DateTime.Now
-        //            };
-
-        //        // map input DTO -> input entity (explicit map to avoid reflection overhead):
-        //        var inputDto = dto.BagfilterInput ?? throw new ArgumentException("BagfilterInput is required.");
-        //        var inputEntity = MapBagfilterInputDtoToEntity(inputDto);
-
-        //        // keep CreatedAt to be set in repository too (optional)
-        //        inputEntity.CreatedAt = DateTime.Now;
-
-        //        // If masterEntity has Id prefilled (existing master), set foreign key now; otherwise repository will wire navigation
-        //        if (masterEntity.BagfilterMasterId > 0)
-        //        {
-        //            inputEntity.BagfilterMasterId = masterEntity.BagfilterMasterId;
-        //        }
-        //        else
-        //        {
-        //            // set navigation so EF will wire FK for new masters
-        //            inputEntity.BagfilterMaster = masterEntity;
-        //        }
-
-        //        pairs.Add((masterEntity, inputEntity));
-        //    }
-
-        //    // Call repository which will insert all masters + inputs within a single transaction and SaveChanges once
-        //    var createdInputIds = await _repository.AddRangeAsync(pairs);
-
-        //    _logger.LogInformation("Batch insert completed. Created {Count} inputs.", createdInputIds);
-        //    return createdInputIds;
-        //}
 
         //new method 
         public async Task<AddRangeResultDto> AddRangeAsync(List<BagfilterInputMainDto> dtos, CancellationToken ct)
@@ -296,15 +315,41 @@ namespace IonFiltra.BagFilters.Application.Services.Bagfilters.BagfilterInputs
                 }
             }
 
-            
+
             // 6) Insert all (masters + inputs) and apply match mapping inside repository in same transaction
             var createdInputIds = await _repository.AddRangeAsync(pairs, matchMappingByPairIndex);
+
+            // Batch fetch all inputs (one DB call)
+            var inputs = await _repository.GetByIdsAsync(createdInputIds);
+
+            // Build a dictionary for quick lookup
+            var masterMap = inputs.ToDictionary(x => x.BagfilterInputId, x => x.BagfilterMasterId);
+
+            // 7)
+            // AFTER you have createdInputIds, invoke handlers for each dto:
+            var childTasks = new List<Task>();
+            for (int i = 0; i < dtos.Count; i++)
+            {
+                var dto = dtos[i];
+                var createdInputId = createdInputIds.ElementAtOrDefault(i); // safe access
+                var masterId = masterMap.TryGetValue(createdInputId, out var mid) ? mid : 0;
+                foreach (var handlerKv in _childHandlers)
+                {
+                    // handler function itself checks dto.* == null and returns early if not present
+                    // so we can call it safely; you can also check dto props before calling to save calls
+                    childTasks.Add(handlerKv.Value(dto, masterId, ct));
+                }
+            }
+
+
+
+            //8)
             var matchesList = groupKeysList.Select(k => groupMatchMap[k]).ToList();
             var matchedGroupsCount = matchesList.Count(m => m.IsMatched);
             var totalGroups = matchesList.Count;
             var matchedItemsCount = groups.Where(g => groupMatchMap[g.Key].IsMatched)
                                           .Sum(g => g.Value.Count); // sum of sizes of matched groups
-            // 7) Prepare result DTO: created ids + matches summary
+                                                                    // 7) Prepare result DTO: created ids + matches summary
             var result = new AddRangeResultDto
             {
                 CreatedBagfilterInputIds = createdInputIds,
@@ -315,7 +360,6 @@ namespace IonFiltra.BagFilters.Application.Services.Bagfilters.BagfilterInputs
                 MatchedGroupsCount = matchedGroupsCount   // optional
             };
 
-            // after createdInputIds = await _repository.AddRangeAsync(...)
             var unmatchedPairIndices = new List<int>();
             for (int pairIndex = 0; pairIndex < pairs.Count; pairIndex++)
             {
@@ -354,7 +398,7 @@ namespace IonFiltra.BagFilters.Application.Services.Bagfilters.BagfilterInputs
                                 _logger?.LogWarning("No S3D model present for pairIndex {idx}", pairIndex);
                                 return;
                             }
-                            
+
                             // Call analysis service
                             AnalysisResponseDto analysisResponse;
                             try
@@ -484,6 +528,7 @@ namespace IonFiltra.BagFilters.Application.Services.Bagfilters.BagfilterInputs
                 Access_Stool_Size_Mm = dto.Access_Stool_Size_Mm,
                 Access_Stool_Size_Kg = dto.Access_Stool_Size_Kg,
                 Roof_Door_Thickness = dto.Roof_Door_Thickness,
+                Column_Height = dto.Column_Height,
 
                 // computed values (you already had)
                 Bag_Per_Row = dto.Bag_Per_Row,
@@ -520,6 +565,465 @@ namespace IonFiltra.BagFilters.Application.Services.Bagfilters.BagfilterInputs
             return null;
         }
 
+
+        // Section Helper methods
+        private async Task HandleWeightSummaryAsync(BagfilterInputMainDto dto, int bagfilterMasterId, CancellationToken ct)
+        {
+            if (dto == null) throw new ArgumentNullException(nameof(dto));
+            if (dto.WeightSummary == null)
+                return; // nothing to do for this DTO
+
+            // Map DTO -> Entity (adjust property names to match your DTO/entity)
+            var entity = new WeightSummary
+            {
+
+                EnquiryId = (int)dto.BagfilterInput.EnquiryId,
+                BagfilterMasterId = bagfilterMasterId,
+                Casing_Weight = dto.WeightSummary.Casing_Weight,
+                Capsule_Weight = dto.WeightSummary.Capsule_Weight,
+                Tot_Weight_Per_Compartment = dto.WeightSummary.Tot_Weight_Per_Compartment,
+                Hopper_Weight = dto.WeightSummary.Hopper_Weight,
+                Weight_Of_Cage_Ladder = dto.WeightSummary.Weight_Of_Cage_Ladder,
+                Railing_Weight = dto.WeightSummary.Railing_Weight,
+                Tubesheet_Weight = dto.WeightSummary.Tubesheet_Weight,
+                Air_Header_Blow_Pipe = dto.WeightSummary.Air_Header_Blow_Pipe,
+                Hopper_Access_Stool_Weight = dto.WeightSummary.Hopper_Access_Stool_Weight,
+                Weight_Of_Mid_Landing_Plt = dto.WeightSummary.Weight_Of_Mid_Landing_Plt,
+                Weight_Of_Maintainence_Pltform = dto.WeightSummary.Weight_Of_Maintainence_Pltform,
+                Cage_Weight = dto.WeightSummary.Cage_Weight,
+                Structure_Weight = dto.WeightSummary.Structure_Weight,
+                Weight_Total = dto.WeightSummary.Weight_Total,
+
+                CreatedAt = DateTime.UtcNow
+            };
+
+            // Persist using the dedicated repository
+            // Implement AddAsync on IWeightSummaryRepository if not present.
+            try
+            {
+                await _weightSummaryRepository.AddAsync(entity);
+            }
+            catch (Exception ex)
+            {
+                // decide how to handle child persistence failure: log and continue, or rethrow to fail the whole flow
+                _logger.LogError(ex, "Failed to persist WeightSummary for BagfilterMasterId {Id}", bagfilterMasterId);
+                throw; // rethrow if you want to fail the parent transaction/operation
+                // OR remove the throw; to log and continue
+            }
+        }
+
+        private async Task HandleProcessInfoAsync(BagfilterInputMainDto dto, int bagfilterMasterId, CancellationToken ct)
+        {
+            if (dto == null) throw new ArgumentNullException(nameof(dto));
+            if (dto.BagfilterInput == null)
+                return; // nothing to process
+
+            var input = dto.ProcessInfo;
+
+            // Map DTO -> Entity
+            var entity = new ProcessInfo
+            {
+                EnquiryId = (int)dto.BagfilterInput.EnquiryId,
+                BagfilterMasterId = bagfilterMasterId,
+                Process_Volume_M3h = input.Process_Volume_M3h,
+                Location = dto.ProcessInfo.Location,
+                ProcessVolumeMin = input.Process_Vol_M3_Min,
+                Process_Acrmax = input.Process_Acrmax, 
+                ClothArea = input.ClothArea,
+                Process_Dust = input.Process_Dust,
+                Process_Dustload_gmspm3 = input.Process_Dustload_gmspm3,
+                Process_Temp_C = input.Process_Temp_C,
+                Dew_Point_C = input.Dew_Point_C,
+                Outlet_Emission_mgpm3 = input.Outlet_Emission_mgpm3,
+                Process_Cloth_Ratio = input.Process_Cloth_Ratio,
+                Specific_Gravity = input.Specific_Gravity,
+                Customer_Equipment_Tag_No = input.Customer_Equipment_Tag_No,
+                Bagfilter_Cleaning_Type = input.Bagfilter_Cleaning_Type,
+                Offline_Maintainence = input.Offline_Maintainence,
+                Bag_Filter_Capacity_V = input.Bag_Filter_Capacity_V,
+                Process_Vol_M3_Sec = input.Process_Vol_M3_Sec,    // if you have in DTO, map it
+                Process_Vol_M3_Min = input.Process_Vol_M3_Min,
+                Bag_Area = input.Bag_Area,
+                Bag_Bottom_Area = input.Bag_Bottom_Area,
+                Min_Cloth_Area_Req = input.Min_Cloth_Area_Req,
+                Min_Bag_Req = input.Min_Bag_Req,
+                CreatedAt = DateTime.UtcNow
+            };
+
+            try
+            {
+                await _processInfoRepository.AddAsync(entity);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Failed to persist ProcessInfo for BagfilterMasterId {Id}", bagfilterMasterId);
+                throw;
+            }
+        }
+
+        private async Task HandleCageInputsAsync(BagfilterInputMainDto dto, int bagfilterMasterId, CancellationToken ct)
+        {
+            if (dto == null) throw new ArgumentNullException(nameof(dto));
+            if (dto.BagfilterInput == null)
+                return; // nothing to process
+
+            var input = dto.CageInputs;
+
+            // Map DTO -> Entity
+            var entity = new CageInputs
+            {
+                EnquiryId = (int)dto.BagfilterInput.EnquiryId,
+                BagfilterMasterId = bagfilterMasterId,
+                Cage_Wire_Dia = input.Cage_Wire_Dia,
+                No_Of_Cage_Wires = input.No_Of_Cage_Wires,
+                Ring_Spacing = input.Ring_Spacing,
+
+                CreatedAt = DateTime.UtcNow
+            };
+
+            try
+            {
+                await _cageInputsRepository.AddAsync(entity);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Failed to persist CageInputs for BagfilterMasterId {Id}", bagfilterMasterId);
+                throw;
+            }
+        }
+
+        private async Task HandleBagSelectionAsync(BagfilterInputMainDto dto, int bagfilterMasterId, CancellationToken ct)
+        {
+            if (dto == null) throw new ArgumentNullException(nameof(dto));
+            if (dto.BagSelection == null)
+                return; // nothing to process
+
+            var input = dto.BagSelection;
+
+            // Map DTO -> Entity
+            var entity = new BagSelection
+            {
+                EnquiryId = (int)dto.BagfilterInput.EnquiryId,
+                BagfilterMasterId = bagfilterMasterId,
+                Filter_Bag_Dia = input.Filter_Bag_Dia,
+                Fil_Bag_Length = input.Fil_Bag_Length,
+                ClothAreaPerBag = input.ClothAreaPerBag,
+                noOfBags = input.noOfBags,
+                Fil_Bag_Recommendation = input.Fil_Bag_Recommendation,
+                Bag_Per_Row = input.Bag_Per_Row,
+                Number_Of_Rows = input.Number_Of_Rows,
+                Actual_Bag_Req = input.Actual_Bag_Req,
+                Wire_Cross_Sec_Area = input.Wire_Cross_Sec_Area,
+                No_Of_Rings = input.No_Of_Rings,
+                Tot_Wire_Length = input.Tot_Wire_Length,
+                Cage_Weight = input.Cage_Weight,
+                CreatedAt = DateTime.UtcNow
+            };
+
+            try
+            {
+                await _bagSelectionRepository.AddAsync(entity);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Failed to persist BagSelection for BagfilterMasterId {Id}", bagfilterMasterId);
+                throw;
+            }
+        }
+
+        private async Task HandleStructureInputsAsync(BagfilterInputMainDto dto, int bagfilterMasterId, CancellationToken ct)
+        {
+            if (dto == null) throw new ArgumentNullException(nameof(dto));
+            if (dto.StructureInputs == null)
+                return; // nothing to process
+
+            var input = dto.StructureInputs;
+
+            // Map DTO -> Entity
+            var entity = new StructureInputs
+            {
+                EnquiryId = (int)dto.BagfilterInput.EnquiryId,
+                BagfilterMasterId = bagfilterMasterId,
+                Gas_Entry = input.Gas_Entry,
+                Support_Structure_Type = input.Support_Structure_Type,
+                Can_Correction = input.Can_Correction,
+                Nominal_Width = input.Nominal_Width,
+                Max_Bags_And_Pitch = input.Max_Bags_And_Pitch,
+                Nominal_Width_Meters = input.Nominal_Width_Meters,
+                Nominal_Length = input.Nominal_Length,
+                Nominal_Length_Meters = input.Nominal_Length_Meters,
+                Area_Adjust_Can_Vel = input.Area_Adjust_Can_Vel,
+                Can_Area_Req = input.Can_Area_Req,
+                Total_Avl_Area = input.Total_Avl_Area,
+                Length_Correction = input.Length_Correction,
+                Length_Correction_Derived = input.Length_Correction_Derived,
+                Actual_Length = input.Actual_Length,
+                Actual_Length_Meters = input.Actual_Length_Meters,
+                Ol_Flange_Length = input.Ol_Flange_Length,
+                Ol_Flange_Length_Mm = input.Ol_Flange_Length_Mm,
+
+                CreatedAt = DateTime.UtcNow
+            };
+
+            try
+            {
+                await _structureInputsRepository.AddAsync(entity);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Failed to persist StructureInputs for BagfilterMasterId {Id}", bagfilterMasterId);
+                throw;
+            }
+        }
+
+        private async Task HandleCapsuleInputsAsync(BagfilterInputMainDto dto, int bagfilterMasterId, CancellationToken ct)
+        {
+            if (dto == null) throw new ArgumentNullException(nameof(dto));
+            if (dto.CapsuleInputs == null)
+                return; // nothing to process
+
+            var input = dto.CapsuleInputs;
+
+            // Map DTO -> Entity
+            var entity = new CapsuleInputs
+            {
+                EnquiryId = (int)dto.BagfilterInput.EnquiryId,
+                BagfilterMasterId = bagfilterMasterId,
+                Valve_Size = input.Valve_Size,
+                Voltage_Rating = input.Voltage_Rating,
+                Cage_Type = input.Cage_Type,
+                Cage_Length = input.Cage_Length,
+                Capsule_Height = input.Capsule_Height,
+                Tube_Sheet_Thickness = input.Tube_Sheet_Thickness,
+                Capsule_Wall_Thickness = input.Capsule_Wall_Thickness,
+                Canopy = input.Canopy,
+                Solenoid_Valve_Maintainence = input.Solenoid_Valve_Maintainence,
+                Capsule_Area = input.Capsule_Area,
+                Capsule_Weight = input.Capsule_Weight,
+                Tubesheet_Area = input.Tubesheet_Area,
+                Tubesheet_Weight = input.Tubesheet_Weight,
+
+                CreatedAt = DateTime.UtcNow
+            };
+
+            try
+            {
+                await _capsuleInputsRepository.AddAsync(entity);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Failed to persist CapsuleInputs for BagfilterMasterId {Id}", bagfilterMasterId);
+                throw;
+            }
+        }
+
+        private async Task HandleCasingInputsAsync(BagfilterInputMainDto dto, int bagfilterMasterId, CancellationToken ct)
+        {
+            if (dto == null) throw new ArgumentNullException(nameof(dto));
+            if (dto.CasingInputs == null)
+                return; // nothing to process
+
+            var input = dto.CasingInputs;
+
+            // Map DTO -> Entity
+            var entity = new CasingInputs
+            {
+                EnquiryId = (int)dto.BagfilterInput.EnquiryId,
+                BagfilterMasterId = bagfilterMasterId,
+                Casing_Wall_Thickness = input.Casing_Wall_Thickness,
+                Casing_Height = input.Casing_Height,
+                Casing_Area = input.Casing_Area,
+                Casing_Weight = input.Casing_Weight,
+
+                CreatedAt = DateTime.UtcNow
+            };
+
+            try
+            {
+                await _casingInputsRepository.AddAsync(entity);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Failed to persist CasingInputs for bagfilterMasterId {Id}", bagfilterMasterId);
+                throw;
+            }
+        }
+
+        private async Task HandleHopperInputsAsync(BagfilterInputMainDto dto, int bagfilterMasterId, CancellationToken ct)
+        {
+            if (dto == null) throw new ArgumentNullException(nameof(dto));
+            if (dto.HopperInputs == null)
+                return; // nothing to process
+
+            var input = dto.HopperInputs;
+
+            // Map DTO -> Entity
+            var entity = new HopperInputs
+            {
+                EnquiryId = (int)dto.BagfilterInput.EnquiryId,
+                BagfilterMasterId = bagfilterMasterId,
+
+                Hopper_Type = input.Hopper_Type,
+                Process_Compartments = input.Process_Compartments,
+                Tot_No_Of_Hoppers = input.Tot_No_Of_Hoppers,
+                Tot_No_Of_Trough = input.Tot_No_Of_Trough,
+                Plenum_Width = input.Plenum_Width,
+                Inlet_Height = input.Inlet_Height,
+                Hopper_Thickness = input.Hopper_Thickness,
+                Hopper_Valley_Angle = input.Hopper_Valley_Angle,
+                Access_Door_Type = input.Access_Door_Type,
+                Access_Door_Qty = input.Access_Door_Qty,
+                Rav_Maintainence_Pltform = input.Rav_Maintainence_Pltform,
+                Hopper_Access_Stool = input.Hopper_Access_Stool,
+                Is_Distance_Piece = input.Is_Distance_Piece,
+                Distance_Piece_Height = input.Distance_Piece_Height,
+                Stiffening_Factor = input.Stiffening_Factor,
+                Hopper = input.Hopper,
+                Discharge_Opening_Sqr = input.Discharge_Opening_Sqr,
+                Material_Handling = input.Material_Handling,
+                Material_Handling_Qty = input.Material_Handling_Qty,
+                Trough_Outlet_Length = input.Trough_Outlet_Length,
+                Trough_Outlet_Width = input.Trough_Outlet_Width,
+                Material_Handling_Xxx = input.Material_Handling_Xxx,
+                Hor_Diff_Length = input.Hor_Diff_Length,
+                Hor_Diff_Width = input.Hor_Diff_Width,
+                Slant_Offset_Dist = input.Slant_Offset_Dist,
+                Hopper_Height = input.Hopper_Height,
+                Hopper_Height_Mm = input.Hopper_Height_Mm,
+                Slanting_Hopper_Height = input.Slanting_Hopper_Height,
+                Hopper_Area_Length = input.Hopper_Area_Length,
+                Hopper_Area_Width = input.Hopper_Area_Width,
+                Hopper_Tot_Area = input.Hopper_Tot_Area,
+                Hopper_Weight = input.Hopper_Weight,
+
+                CreatedAt = DateTime.UtcNow
+            };
+
+            try
+            {
+                await _hopperInputsRepository.AddAsync(entity);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Failed to persist HopperInputs for bagfilterMasterId {Id}", bagfilterMasterId);
+                throw;
+            }
+        }
+
+        private async Task HandleSupportStructureAsync(BagfilterInputMainDto dto, int bagfilterMasterId, CancellationToken ct)
+        {
+            if (dto == null) throw new ArgumentNullException(nameof(dto));
+            if (dto.SupportStructure == null)
+                return; // nothing to process
+
+            var input = dto.SupportStructure;
+
+            // Map DTO -> Entity
+            var entity = new SupportStructure
+            {
+                EnquiryId = (int)dto.BagfilterInput.EnquiryId,
+                BagfilterMasterId = bagfilterMasterId,
+                Support_Struct_Type = input.Support_Struct_Type,
+                NoOfColumn = input.NoOfColumn,
+                Column_Height = input.Column_Height,
+                Ground_Clearance = input.Ground_Clearance,
+                Dist_Btw_Column_In_X = input.Dist_Btw_Column_In_X,
+                Dist_Btw_Column_In_Z = input.Dist_Btw_Column_In_Z,
+                No_Of_Bays_In_X = input.No_Of_Bays_In_X,
+                No_Of_Bays_In_Z = input.No_Of_Bays_In_Z,
+
+                CreatedAt = DateTime.UtcNow
+            };
+
+            try
+            {
+                await _supportStructureRepository.AddAsync(entity);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Failed to persist SupportStructure for BagfilterMasterId {Id}", bagfilterMasterId);
+                throw;
+            }
+        }
+
+        private async Task HandleAccessGroupAsync(BagfilterInputMainDto dto, int bagfilterMasterId, CancellationToken ct)
+        {
+            if (dto == null) throw new ArgumentNullException(nameof(dto));
+            if (dto.AccessGroup == null)
+                return; // nothing to process
+
+            var input = dto.AccessGroup;
+
+            var entity = new AccessGroup
+            {
+                EnquiryId = (int)dto.BagfilterInput.EnquiryId,
+                BagfilterMasterId = bagfilterMasterId,
+
+                Access_Type = input.Access_Type,
+                Cage_Weight_Ladder = input.Cage_Weight_Ladder,
+                Mid_Landing_Pltform = input.Mid_Landing_Pltform,
+                Platform_Weight = input.Platform_Weight,
+                Staircase_Height = input.Staircase_Height,
+                Staircase_Weight = input.Staircase_Weight,
+                Railing_Weight = input.Railing_Weight,
+                Maintainence_Pltform = input.Maintainence_Pltform,
+                Maintainence_Pltform_Weight = input.Maintainence_Pltform_Weight,
+                BlowPipe = input.BlowPipe,
+                PressureHeader = input.PressureHeader,
+                DistancePiece = input.DistancePiece,
+                Access_Stool_Size_Mm = input.Access_Stool_Size_Mm,
+                Access_Stool_Size_Kg = input.Access_Stool_Size_Kg,
+
+                CreatedAt = DateTime.UtcNow
+            };
+
+            try
+            {
+                await _accessGroupRepository.AddAsync(entity);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Failed to persist AccessGroup for BagfilterMasterId {Id}", bagfilterMasterId);
+                throw;
+            }
+        }
+
+        private async Task HandleRoofDoorAsync(BagfilterInputMainDto dto, int bagfilterMasterId, CancellationToken ct)
+        {
+            if (dto == null) throw new ArgumentNullException(nameof(dto));
+            if (dto.RoofDoor == null)
+                return; // nothing to process
+
+            var input = dto.RoofDoor;
+
+            // Map DTO -> Entity
+            var entity = new RoofDoor
+            {
+                EnquiryId = (int)dto.BagfilterInput.EnquiryId,
+                BagfilterMasterId = bagfilterMasterId,
+
+                Roof_Door_Thickness = input.Roof_Door_Thickness,
+                T2d = input.T2d,
+                T3d = input.T3d,
+                N_Doors = input.N_Doors,
+                Compartment_No = input.Compartment_No,
+                Stiffness_Factor_For_Roof_Door = input.Stiffness_Factor_For_Roof_Door,
+                Weight_Per_Door = input.Weight_Per_Door,
+                Tot_Weight_Per_Compartment = input.Tot_Weight_Per_Compartment,
+
+                CreatedAt = DateTime.UtcNow
+            };
+
+            try
+            {
+                await _roofDoorRepository.AddAsync(entity);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Failed to persist RoofDoor for BagfilterMasterId {Id}", bagfilterMasterId);
+                throw;
+            }
+        }
+
     }
 }
-    

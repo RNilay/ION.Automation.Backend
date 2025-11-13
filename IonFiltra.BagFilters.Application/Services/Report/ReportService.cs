@@ -7,9 +7,9 @@ using System.Text.Json;
 using System.Text.RegularExpressions;
 using System.Threading.Tasks;
 using IonFiltra.BagFilters.Application.DTOs.Report;
-using IonFiltra.BagFilters.Application.Heplers.Report;
+
 using IonFiltra.BagFilters.Application.Interfaces.Report;
-using IonFiltra.BagFilters.Application.Models.Report;
+
 using Microsoft.Extensions.Logging;
 using QuestPDF.Fluent;
 using QuestPDF.Infrastructure;
@@ -18,8 +18,6 @@ namespace IonFiltra.BagFilters.Application.Services.Report
 {
     public class ReportService : IReportService
     {
-
-
 
         private readonly string _templatesFolder;
         private readonly ILogger<ReportService> _logger;
@@ -69,96 +67,6 @@ namespace IonFiltra.BagFilters.Application.Services.Report
             return list;
         }
 
-        //private Task ExpandRepeatRowsAsync(ReportTemplateModelDto reportTemplate, Dictionary<string, object> inputValues)
-        //{
-        //    if (reportTemplate.Rows == null) return Task.CompletedTask;
-
-        //    foreach (var row in reportTemplate.Rows)
-        //    {
-        //        if (row.Type?.Equals("table", StringComparison.OrdinalIgnoreCase) != true)
-        //            continue;
-
-        //        var repeat = row.RepeatRow;
-        //        if (repeat == null) continue;
-
-        //        if (!inputValues.TryGetValue(repeat.SourceKey, out var sourceObj) || sourceObj == null)
-        //            continue;
-
-        //        // Normalize the source to a List<Dictionary<string, object>>
-        //        var sourceList = ConvertToListOfDicts(sourceObj);
-        //        if (sourceList == null || sourceList.Count == 0)
-        //        {
-        //            // nothing to expand
-        //            row.Rows = row.Rows; // no-op but explicit
-        //            continue;
-        //        }
-
-        //        // Validate template index
-        //        var templateIdx = Math.Clamp(repeat.TemplateRowIndex, 0, (row.Rows?.Count ?? 1) - 1);
-        //        var templateRow = row.Rows?[templateIdx] ?? new TableRow { RowData = repeat.Columns.Select(_ => "").ToList() };
-
-        //        var expandedRows = new List<TableRow>();
-        //        var sumMap = new Dictionary<string, double>(StringComparer.OrdinalIgnoreCase);
-
-        //        foreach (var item in sourceList)
-        //        {
-        //            var newRow = new TableRow
-        //            {
-        //                RowStyle = templateRow.RowStyle ?? new ReportRowStyle(),
-        //                RowData = new List<string>()
-        //            };
-
-        //            foreach (var colKey in repeat.Columns)
-        //            {
-        //                if (item.TryGetValue(colKey, out var val) && val != null)
-        //                {
-        //                    string s = val switch
-        //                    {
-        //                        double d => d.ToString("0.##"),
-        //                        float f => f.ToString("0.##"),
-        //                        decimal m => m.ToString("0.##"),
-        //                        int i => i.ToString(),
-        //                        long l => l.ToString(),
-        //                        _ => val.ToString() ?? ""
-        //                    };
-
-        //                    newRow.RowData.Add(s);
-
-        //                    if (double.TryParse(s, out var dbl))
-        //                    {
-        //                        if (!sumMap.ContainsKey(colKey)) sumMap[colKey] = 0;
-        //                        sumMap[colKey] += dbl;
-        //                    }
-        //                }
-        //                else
-        //                {
-        //                    newRow.RowData.Add("N/A");
-        //                }
-        //            }
-
-        //            expandedRows.Add(newRow);
-        //        }
-
-        //        // Splice expanded rows into row.Rows (keep before/after template rows)
-        //        var before = (row.Rows ?? new List<TableRow>()).Take(templateIdx).ToList();
-        //        var after = (row.Rows ?? new List<TableRow>()).Skip(templateIdx + 1).ToList();
-
-        //        var finalRows = new List<TableRow>();
-        //        finalRows.AddRange(before);
-        //        finalRows.AddRange(expandedRows);
-        //        finalRows.AddRange(after);
-
-        //        row.Rows = finalRows;
-
-        //        // Push sums into inputValues as "__sum:Key"
-        //        foreach (var kv in sumMap)
-        //        {
-        //            inputValues[$"__sum:{kv.Key}"] = kv.Value;
-        //        }
-        //    }
-
-        //    return Task.CompletedTask;
-        //}
 
         private ReportRowStyle CloneRowStyle(ReportRowStyle? src)
         {
@@ -181,92 +89,65 @@ namespace IonFiltra.BagFilters.Application.Services.Report
         {
             if (reportTemplate.Rows == null) return Task.CompletedTask;
 
-            foreach (var row in reportTemplate.Rows)
+            // local helpers (kept mostly as your original implementations)
+            static string FormatValue(object? val)
             {
-                if (row.Type?.Equals("table", StringComparison.OrdinalIgnoreCase) != true)
-                    continue;
-
-                var repeat = row.RepeatRow;
-                if (repeat == null) continue;
-
-                if (!inputValues.TryGetValue(repeat.SourceKey, out var sourceObj) || sourceObj == null)
-                    continue;
-
-                // Normalize the source to a List<Dictionary<string, object>>
-                var sourceList = ConvertToListOfDicts(sourceObj);
-                if (sourceList == null || sourceList.Count == 0)
+                if (val == null) return "N/A";
+                return val switch
                 {
-                    // nothing to expand
-                    row.Rows = row.Rows; // no-op but explicit
-                    continue;
+                    double d => d.ToString("0.##"),
+                    float f => f.ToString("0.##"),
+                    decimal m => m.ToString("0.##"),
+                    int i => i.ToString(),
+                    long l => l.ToString(),
+                    bool b => b ? "True" : "False",
+                    _ => val.ToString() ?? "N/A"
+                };
+            }
+
+            static string EvaluatePlaceholdersSync(string templateText, Dictionary<string, object> item)
+            {
+                if (string.IsNullOrWhiteSpace(templateText)) return templateText ?? "";
+                var text = templateText;
+                var matches = Regex.Matches(text, @"\{(.*?)\}");
+                foreach (Match m in matches)
+                {
+                    var inner = m.Groups[1].Value;
+                    if (item.TryGetValue(inner, out var val) && val != null)
+                        text = text.Replace(m.Value, FormatValue(val));
+                    else
+                        text = text.Replace(m.Value, "N/A");
                 }
+                return text;
+            }
 
-                // Validate template index
-                var templateIdx = Math.Clamp(repeat.TemplateRowIndex, 0, (row.Rows?.Count ?? 1) - 1);
-                var templateRow = row.Rows?[templateIdx] ?? new TableRow { RowData = repeat.Columns.Select(_ => "").ToList() };
+            // Deep-clone helper (simple JSON round-trip). Use your own clone if you have one.
+            T DeepClone<T>(T src)
+            {
+                var json = JsonSerializer.Serialize(src);
+                return JsonSerializer.Deserialize<T>(json)!;
+            }
 
-                var expandedRows = new List<TableRow>();
-                var sumMap = new Dictionary<string, double>(StringComparer.OrdinalIgnoreCase);
+            // Helper to expand a single table row template (no RepeatRow) using a single item dict
+            List<TableRow> ExpandTableTemplateForItem(ReportRow tableRowTemplate, Dictionary<string, object> item)
+            {
+                var outRows = new List<TableRow>();
 
-                // Helper to format a single object value to string
-                static string FormatValue(object? val)
+                // For each TableRow inside the table template
+                foreach (var tr in tableRowTemplate.Rows ?? new List<TableRow>())
                 {
-                    if (val == null) return "N/A";
-                    return val switch
+                    // If tr is a BLOCK template
+                    if (tr?.RowData != null && tr.RowData.Count > 0 && tr.RowData[0] == "__BLOCK__" && tr.BlockRows != null)
                     {
-                        double d => d.ToString("0.##"),
-                        float f => f.ToString("0.##"),
-                        decimal m => m.ToString("0.##"),
-                        int i => i.ToString(),
-                        long l => l.ToString(),
-                        bool b => b ? "True" : "False",
-                        _ => val.ToString() ?? "N/A"
-                    };
-                }
-
-                // Helper: quick placeholder replacement for fallback (simple {Key} substitution)
-                static string EvaluatePlaceholdersSync(string templateText, Dictionary<string, object> item)
-                {
-                    if (string.IsNullOrWhiteSpace(templateText)) return templateText ?? "";
-
-                    var text = templateText;
-                    var matches = Regex.Matches(text, @"\{(.*?)\}");
-                    foreach (Match m in matches)
-                    {
-                        var inner = m.Groups[1].Value;
-                        if (item.TryGetValue(inner, out var val) && val != null)
+                        // Expand block rows into TableRow entries using the single item
+                        foreach (var block in tr.BlockRows)
                         {
-                            text = text.Replace(m.Value, FormatValue(val));
-                        }
-                        else
-                        {
-                            text = text.Replace(m.Value, "N/A");
-                        }
-                    }
+                            if (block == null) continue;
 
-                    return text;
-                }
-
-                foreach (var item in sourceList)
-                {
-                    // CASE A: BLOCK expansion if templateRow is marked as "__BLOCK__" and has BlockRows
-                    if (templateRow != null
-                        && templateRow.RowData != null
-                        && templateRow.RowData.Count > 0
-                        && templateRow.RowData[0] == "__BLOCK__"
-                        && templateRow.BlockRows != null
-                        && templateRow.BlockRows.Count > 0)
-                    {
-                        foreach (var block in templateRow.BlockRows)
-                        {
-                            if (block == null)
-                                continue;
-
+                            // Header-like block
                             if (block.IsHeader)
                             {
-                                var headerStyle = CloneRowStyle(templateRow.RowStyle);
-
-                                // apply inline css from block definition (overrides cloned style)
+                                var headerStyle = CloneRowStyle(tr.RowStyle);
                                 if (!string.IsNullOrWhiteSpace(block.InlineCss))
                                     headerStyle.InlineCss = block.InlineCss;
 
@@ -277,19 +158,22 @@ namespace IonFiltra.BagFilters.Application.Services.Report
                                     ColumnSpan = Math.Max(1, block.ColSpan)
                                 };
 
-                                expandedRows.Add(headerRow);
+                                outRows.Add(headerRow);
                             }
-
                             else
                             {
+                                // normal label/value
                                 var valueStr = "N/A";
                                 if (!string.IsNullOrEmpty(block.ValueKey) && item.TryGetValue(block.ValueKey, out var v) && v != null)
                                     valueStr = FormatValue(v);
 
-                                var rowStyle = CloneRowStyle(templateRow.RowStyle);
+                                var rowStyle = CloneRowStyle(tr.RowStyle);
 
-                                // override with row-specific inline css if provided
-                                if (!string.IsNullOrWhiteSpace(block.InlineCss))
+                                if (block.InlineCss == "{#CALC}")
+                                    rowStyle.InlineCss = "background-color:#C0C0C0;";
+                                else if (block.InlineCss == "{#USER}")
+                                    rowStyle.InlineCss = "background-color:#FFFFFF;";
+                                else if (!string.IsNullOrWhiteSpace(block.InlineCss))
                                     rowStyle.InlineCss = block.InlineCss;
 
                                 var r = new TableRow
@@ -298,13 +182,12 @@ namespace IonFiltra.BagFilters.Application.Services.Report
                                     RowData = new List<string> { block.Label ?? "", valueStr }
                                 };
 
-                                expandedRows.Add(r);
+                                outRows.Add(r);
                             }
-
                         }
 
-                        // optional spacer after each record block
-                        expandedRows.Add(new TableRow
+                        // spacer after block
+                        outRows.Add(new TableRow
                         {
                             RowStyle = new ReportRowStyle(),
                             RowData = new List<string> { "", "" }
@@ -312,57 +195,252 @@ namespace IonFiltra.BagFilters.Application.Services.Report
                     }
                     else
                     {
-                        // CASE B: original behavior — treat templateRow as a single-row template and replace placeholders for each repeat column
+                        // Normal static row — replace placeholders inside each cell using the item
                         var newRow = new TableRow
                         {
-                            RowStyle = CloneRowStyle(templateRow.RowStyle),
+                            RowStyle = CloneRowStyle(tr?.RowStyle ?? new ReportRowStyle()),
                             RowData = new List<string>()
                         };
 
-
-                        foreach (var colKey in repeat.Columns)
+                        foreach (var cell in tr?.RowData ?? new List<string>())
                         {
-                            if (item.TryGetValue(colKey, out var val) && val != null)
-                            {
-                                string s = FormatValue(val);
-                                newRow.RowData.Add(s);
-
-                                if (double.TryParse(s, out var dbl))
-                                {
-                                    if (!sumMap.ContainsKey(colKey)) sumMap[colKey] = 0;
-                                    sumMap[colKey] += dbl;
-                                }
-                            }
-                            else
-                            {
-                                newRow.RowData.Add("N/A");
-                            }
+                            newRow.RowData.Add(EvaluatePlaceholdersSync(cell ?? "", item));
                         }
 
-                        expandedRows.Add(newRow);
+                        outRows.Add(newRow);
                     }
                 }
 
-                // Splice expanded rows into row.Rows (keep before/after template rows)
-                var before = (row.Rows ?? new List<TableRow>()).Take(templateIdx).ToList();
-                var after = (row.Rows ?? new List<TableRow>()).Skip(templateIdx + 1).ToList();
-
-                var finalRows = new List<TableRow>();
-                finalRows.AddRange(before);
-                finalRows.AddRange(expandedRows);
-                finalRows.AddRange(after);
-
-                row.Rows = finalRows;
-
-                // Push sums into inputValues as "__sum:Key"
-                foreach (var kv in sumMap)
-                {
-                    inputValues[$"__sum:{kv.Key}"] = kv.Value;
-                }
+                return outRows;
             }
+
+            // Main logic: build a new Rows list to replace reportTemplate.Rows at the end.
+            var newRowsList = new List<ReportRow>();
+
+            // Iterate original rows and either copy them, expand tables with RepeatRow, or expand groups.
+            foreach (var row in reportTemplate.Rows)
+            {
+                if (row == null)
+                    continue;
+
+                // ------ CASE: group row (new) ------
+                if (row.Type?.Equals("group", StringComparison.OrdinalIgnoreCase) == true && row.RepeatRow != null)
+                {
+                    // get the source list for the group
+                    if (!inputValues.TryGetValue(row.RepeatRow.SourceKey, out var srcObj) || srcObj == null)
+                        continue;
+
+                    var sourceList = ConvertToListOfDicts(srcObj);
+                    if (sourceList == null || sourceList.Count == 0)
+                        continue;
+
+                    // For each record in the source list, render the group's ChildRows (in order)
+                    foreach (var record in sourceList)
+                    {
+                        // child rows are ReportRow-like (tables typically)
+                        foreach (var child in row.ChildRows ?? new List<ReportRow>())
+                        {
+                            // clone child so we don't mutate the template
+                            var clonedChild = DeepClone(child);
+
+                            // If child is a table with its own RepeatRow (rare for group usage), you may decide how to handle.
+                            // For our group pattern, child tables are plain templates (no RepeatRow). We'll expand placeholders / blocks using the single record.
+                            if (clonedChild.Type?.Equals("table", StringComparison.OrdinalIgnoreCase) == true)
+                            {
+                                // Create a new ReportRow to hold the expanded table result
+                                var expandedTable = DeepClone(clonedChild); // clone structure
+                                expandedTable.Rows = ExpandTableTemplateForItem(clonedChild, record);
+                                newRowsList.Add(expandedTable);
+                            }
+                            else
+                            {
+                                // For non-table child types, do a simple placeholders pass on any string fields you expect (Title, Text etc.)
+                                var cloned = DeepClone(clonedChild);
+                                // Example: if child has Header/TextRows or Footer rows, you'd evaluate placeholders similarly.
+                                newRowsList.Add(cloned);
+                            }
+                        }
+
+                        // Insert optional pagebreak separator between records.
+                        // The renderer must know how to treat Type == "pagebreak". If you already support this, uncomment.
+                        var pageBreakRow = new ReportRow { Type = "pagebreak" };
+                        newRowsList.Add(pageBreakRow);
+                    }
+
+                    // Done with group — continue to next original row (we replaced the group with expanded children)
+                    continue;
+                }
+
+                // ------ CASE: normal table with RepeatRow (original behavior) ------
+                if (row.Type?.Equals("table", StringComparison.OrdinalIgnoreCase) == true && row.RepeatRow != null)
+                {
+                    var repeat = row.RepeatRow;
+
+                    if (!inputValues.TryGetValue(repeat.SourceKey, out var sourceObj) || sourceObj == null)
+                    {
+                        // no data => keep row as-is
+                        newRowsList.Add(row);
+                        continue;
+                    }
+
+                    var sourceList = ConvertToListOfDicts(sourceObj);
+                    if (sourceList == null || sourceList.Count == 0)
+                    {
+                        newRowsList.Add(row);
+                        continue;
+                    }
+
+                    // Use the existing expansion logic you had, but produce a new ReportRow with expanded row.Rows
+                    var originalRows = row.Rows ?? new List<TableRow>();
+                    var templateIdx = Math.Clamp(repeat.TemplateRowIndex, 0, Math.Max(0, originalRows.Count - 1));
+                    var templateRow = originalRows.ElementAtOrDefault(templateIdx) ?? new TableRow { RowData = repeat.Columns?.Select(_ => "").ToList() ?? new List<string>() };
+
+                    var expandedRows = new List<TableRow>();
+                    var sumMap = new Dictionary<string, double>(StringComparer.OrdinalIgnoreCase);
+
+                    // iterate each source item and expand (CASE A/CALC-BLOCK or CASE B normal)
+                    foreach (var item in sourceList)
+                    {
+                        // CASE A: BLOCK expansion
+                        if (templateRow != null
+                            && templateRow.RowData != null
+                            && templateRow.RowData.Count > 0
+                            && templateRow.RowData[0] == "__BLOCK__"
+                            && templateRow.BlockRows != null
+                            && templateRow.BlockRows.Count > 0)
+                        {
+                            foreach (var block in templateRow.BlockRows)
+                            {
+                                if (block == null) continue;
+
+                                if (block.IsHeader)
+                                {
+                                    var headerStyle = CloneRowStyle(templateRow.RowStyle);
+                                    if (!string.IsNullOrWhiteSpace(block.InlineCss))
+                                        headerStyle.InlineCss = block.InlineCss;
+
+                                    var headerRow = new TableRow
+                                    {
+                                        RowStyle = headerStyle,
+                                        RowData = new List<string> { block.Label ?? "", "" },
+                                        ColumnSpan = Math.Max(1, block.ColSpan)
+                                    };
+                                    expandedRows.Add(headerRow);
+                                }
+                                else
+                                {
+                                    var valueStr = "N/A";
+                                    if (!string.IsNullOrEmpty(block.ValueKey) && item.TryGetValue(block.ValueKey, out var v) && v != null)
+                                        valueStr = FormatValue(v);
+
+                                    var rowStyle = CloneRowStyle(templateRow.RowStyle);
+
+                                    if (block.InlineCss == "{#CALC}")
+                                        rowStyle.InlineCss = "background-color:#C0C0C0;";
+                                    else if (block.InlineCss == "{#USER}")
+                                        rowStyle.InlineCss = "background-color:#FFFFFF;";
+                                    else if (!string.IsNullOrWhiteSpace(block.InlineCss))
+                                        rowStyle.InlineCss = block.InlineCss;
+
+                                    var r = new TableRow
+                                    {
+                                        RowStyle = rowStyle,
+                                        RowData = new List<string> { block.Label ?? "", valueStr }
+                                    };
+
+                                    expandedRows.Add(r);
+                                }
+                            }
+
+                            // spacer after each expanded record
+                            expandedRows.Add(new TableRow
+                            {
+                                RowStyle = new ReportRowStyle(),
+                                RowData = new List<string> { "", "" }
+                            });
+                        }
+                        else
+                        {
+                            // CASE B: single-row template replaced column-wise
+                            var newRow = new TableRow
+                            {
+                                RowStyle = CloneRowStyle(templateRow.RowStyle),
+                                RowData = new List<string>()
+                            };
+
+                            foreach (var colKey in repeat.Columns ?? Enumerable.Empty<string>())
+                            {
+                                if (item.TryGetValue(colKey, out var val) && val != null)
+                                {
+                                    string s = FormatValue(val);
+                                    newRow.RowData.Add(s);
+
+                                    if (double.TryParse(s, out var dbl))
+                                    {
+                                        if (!sumMap.ContainsKey(colKey)) sumMap[colKey] = 0;
+                                        sumMap[colKey] += dbl;
+                                    }
+                                }
+                                else
+                                {
+                                    newRow.RowData.Add("N/A");
+                                }
+                            }
+
+                            expandedRows.Add(newRow);
+                        }
+                    } // foreach item
+
+                    // --- IMPORTANT: splice expandedRows into the original template rows, preserving headers/footers ---
+                    var before = originalRows.Take(templateIdx).ToList();
+                    var after = originalRows.Skip(templateIdx + 1).ToList();
+
+                    var finalRows = new List<TableRow>();
+                    finalRows.AddRange(before);       // keep header/static rows above template row
+                    finalRows.AddRange(expandedRows); // insert generated rows
+                    finalRows.AddRange(after);        // keep trailing rows (totals / spacers) below template row
+
+                    // Clone the row (so we don't mutate the original template) and set the spliced rows
+                    var clonedTableRow = DeepClone(row);
+                    clonedTableRow.Rows = finalRows;
+
+                    // push sums to inputValues
+                    foreach (var kv in sumMap)
+                        inputValues[$"__sum:{kv.Key}"] = kv.Value;
+
+                    newRowsList.Add(clonedTableRow);
+                    continue;
+                }
+
+                // ------ CASE: any other row (no repeat) — copy as-is ------
+                newRowsList.Add(row);
+            } // foreach original row
+
+            // Replace the template rows with newRowsList (preserving other metadata)
+            reportTemplate.Rows = newRowsList;
 
             return Task.CompletedTask;
         }
+
+
+
+
+
+        private ReportRowStyle CreateCellStyleFromToken(string? token, ReportRowStyle? baseStyle)
+        {
+            var style = CloneRowStyle(baseStyle);
+            if (string.IsNullOrWhiteSpace(token)) return style;
+
+            if (token == "{#CALC}")
+                style.InlineCss = "background-color:#FFF9E6; color:#8A4F00;"; // example
+            else if (token == "{#USER}")
+                style.InlineCss = "background-color:#E6F7FF; color:#003366;";
+            else
+                style.InlineCss = token; // assume full css provided
+
+            return style;
+        }
+
 
 
         // Helper: convert multiple possible shapes to List<Dictionary<string, object>>
@@ -580,67 +658,7 @@ namespace IonFiltra.BagFilters.Application.Services.Report
             }
         }
 
-        /// <summary>
-        /// Replaces placeholders and evaluates inline formulas.
-        /// Supports:
-        ///  - {VariableName}
-        ///  - {formula:inline: ... }  (NCalc expression)
-        ///  - {formula:Name} - not implemented here, returns "N/A" (you can add evaluator if needed)
-        /// </summary>
-        //private async Task<string> EvaluateAllEmbeddedPlaceholdersAsync(string input, Dictionary<string, object> inputValues)
-        //{
-        //    if (string.IsNullOrWhiteSpace(input))
-        //        return input ?? "";
-
-        //    var text = input;
-        //    var matches = PlaceholderRegex.Matches(text);
-
-        //    // Evaluate matches left-to-right
-        //    foreach (Match match in matches)
-        //    {
-        //        var placeholder = match.Value;
-        //        try
-        //        {
-        //            if (placeholder.StartsWith("{formula:inline:", StringComparison.OrdinalIgnoreCase))
-        //            {
-        //                // remove markers
-        //                var expr = placeholder.Substring("{formula:inline:".Length);
-        //                if (expr.EndsWith("}")) expr = expr[..^1];
-
-        //                //var result = EvaluateInlineFormula(expr, inputValues);
-        //                //text = text.Replace(placeholder, result);
-        //            }
-        //            else if (placeholder.StartsWith("{formula:", StringComparison.OrdinalIgnoreCase))
-        //            {
-        //                // non-inline formula reference: by default we don't have named formulas here
-        //                // return N/A or you can hook to your formula evaluator service
-        //                text = text.Replace(placeholder, "N/A");
-        //            }
-        //            if (placeholder.StartsWith("__sum:", StringComparison.OrdinalIgnoreCase))
-        //            {
-        //                // variableName is like "__sum:Bagfilter"
-        //                if (inputValues.TryGetValue(placeholder, out var sumVal))
-        //                    text = text.Replace(placeholder, (sumVal)?.ToString() ?? "0");
-        //                else
-        //                    text = text.Replace(placeholder, "0");
-        //            }
-        //            else
-        //            {
-        //                var variableName = placeholder.Trim('{', '}');
-        //                var variableValue = GetVariableValueAsString(variableName, inputValues);
-        //                text = text.Replace(placeholder, variableValue);
-        //            }
-        //        }
-        //        catch (Exception ex)
-        //        {
-        //            _logger?.LogWarning(ex, "Error evaluating placeholder {Placeholder} in {Input}", placeholder, input);
-        //            text = text.Replace(placeholder, "N/A");
-        //        }
-        //    }
-
-        //    return await Task.FromResult(text);
-        //}
-
+        
 
         private async Task<string> EvaluateAllEmbeddedPlaceholdersAsync(string input, Dictionary<string, object> inputValues)
         {
@@ -705,31 +723,7 @@ namespace IonFiltra.BagFilters.Application.Services.Report
 
             return await Task.FromResult(text);
         }
-
-
-        //private string EvaluateInlineFormula(string formulaExpression, Dictionary<string, object> inputValues)
-        //{
-        //    try
-        //    {
-        //        var expr = new Expression(formulaExpression, EvaluateOptions.IgnoreCase);
-
-        //        // pass parameters
-        //        foreach (var kvp in inputValues)
-        //        {
-        //            // NCalc accepts primitive types; if non-primitive, let it be (ToString fallback)
-        //            expr.Parameters[kvp.Key] = kvp.Value ?? 0;
-        //        }
-
-        //        var result = expr.Evaluate();
-        //        return result?.ToString() ?? "N/A";
-        //    }
-        //    catch (Exception ex)
-        //    {
-        //        _logger?.LogError(ex, "Inline formula evaluation failed for '{Formula}'", formulaExpression);
-        //        return "N/A";
-        //    }
-        //}
-
+        
         private string GetVariableValueAsString(string variableName, Dictionary<string, object> inputValues)
         {
             if (inputValues != null && inputValues.TryGetValue(variableName, out var value))
@@ -753,38 +747,5 @@ namespace IonFiltra.BagFilters.Application.Services.Report
             return "N/A";
         }
 
-
-
-
-
-
-
-
-
-
-        public async Task<byte[]> GeneratePdfBytesAsync(TemplateRoot header, TemplateRoot footer, List<Dictionary<string, object>> rows, byte[] companyIcon = null, ReportTemplate reportTemplate = null)
-        {
-            // 🔹 Step 2: PDF Setup
-            QuestPDF.Settings.License = LicenseType.Community;
-            var memoryStream = new MemoryStream();
-            //var document = new GenericReportDocument(header, footer, rows, companyIcon);
-            var document = new GenericReportDocument(header, footer, rows, companyIcon, reportTemplate);
-            return document.GeneratePdf();
-        }
-
-        // helper to load and render templates from file paths with provided values
-        public static async Task<(TemplateRoot header, TemplateRoot footer)> GetHeaderFooterRenderedAsync(
-            string headerFilePath,
-            string footerFilePath,
-            IDictionary<string, object> values)
-        {
-            var header = await TemplateRenderer.LoadTemplateFromFileAsync(headerFilePath);
-            var footer = await TemplateRenderer.LoadTemplateFromFileAsync(footerFilePath);
-
-            header = TemplateRenderer.RenderTemplate(header, values);
-            footer = TemplateRenderer.RenderTemplate(footer, values);
-
-            return (header, footer);
-        }
     }
 }

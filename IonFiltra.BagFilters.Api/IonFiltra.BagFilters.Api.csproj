@@ -8,10 +8,16 @@
   </PropertyGroup>
 
 	<ItemGroup>
+	  <Content Remove="Templates\process_vol_summary.json" />
 	  <Content Remove="Templates\weight_summary.json" />
 	</ItemGroup>
 
 	<ItemGroup>
+	  <None Include="Templates\process_vol_summary.json">
+	    <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+	    <ExcludeFromSingleFile>true</ExcludeFromSingleFile>
+	    <CopyToPublishDirectory>PreserveNewest</CopyToPublishDirectory>
+	  </None>
 	  <None Include="Templates\weight_summary.json">
 	    <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
 	    <ExcludeFromSingleFile>true</ExcludeFromSingleFile>

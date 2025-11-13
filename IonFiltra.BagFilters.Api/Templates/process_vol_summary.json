@@ -1,0 +1,70 @@
+{
+    "Id": 1,
+    "Order": 1,
+    "ReportName": "Process Volume Summary",
+    "Title": "Summary",
+    "Logo": "wwwroot/images/company.png",
+    "EntityDbName": "vw_EnquiryVolumeSummary",
+    "Layout": {
+        "Columns": 1,
+        "ColumnWidths": [ "100%" ],
+        "ReportWidth": "210mm"
+    },
+    "Header": {
+        "TextRows": [
+            "<div style='background-color:#F2F2F2; padding:6px; border:1px solid #000;'>",
+            "<table style='width:100%; font-size:12px;'><tr><th colspan='3' style='text-align:center'>{Title}</th></tr></table>",
+            "</div>"
+        ]
+    },
+    "Footer": {
+        "TextRows": [ "{Logo}", "Page Footer" ]
+    },
+    "Rows": [
+        {
+            "Type": "table",
+            "LayoutColumns": [ "", "", "", "", "", ""],
+            "ColumnWidths": [ 17, 13, 20, 17, 17, 16 ],
+            "Rows": [
+                {
+                    "RowData": [
+                        "Volume",
+                        "Quantity",
+                        "Weight (Kg)",
+                        "Fab Cost",
+                        "Boughtout",
+                        "Total"
+                    ],
+                    "RowStyle": {
+                        "FontSize": 12,
+                        "Bold": true,
+                        "InlineCss": "background-color:#F9C043; font-weight: bolder;"
+                    }
+                },
+                {
+                    "RowData": [
+                        "{Volume_M3h}",
+                        "{Qty}",
+                        "{Weight}",
+                        "{Fab_Cost}",
+                        "{BoughtOut}",
+                        "{Total}"
+                    ],
+                    "RowStyle": { "FontSize": 11 }
+                }
+            ],
+            "RepeatRow": {
+                "SourceKey": "list_values",
+                "TemplateRowIndex": 1,
+                "Columns": [
+                    "Volume_M3h",
+                    "Qty",
+                    "Weight",
+                    "Fab_Cost",
+                    "BoughtOut",
+                    "Total"
+                ]
+            }
+        }
+    ]
+}

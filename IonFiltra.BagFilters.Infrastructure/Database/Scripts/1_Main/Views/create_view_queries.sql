@@ -1,11 +1,33 @@
+CREATE OR REPLACE VIEW ionfiltrabagfilters.vw_WeightSummary AS
+SELECT distinct
+    ws.*, 
+    md.BagFilterName
+FROM 
+    ionfiltrabagfilters.weightsummary AS ws
+JOIN 
+    ionfiltrabagfilters.bagfiltermaster AS md 
+    ON ws.EnquiryId = md.EnquiryId and ws.BagfilterMasterId = md.BagfilterMasterId;
+
+GO
+
 CREATE OR REPLACE VIEW ionfiltrabagfilters.vw_BagfilterDetails AS
 WITH DistinctPI AS (
+    -- only distinct by Enquiry + Process_Volume_M3h (no BagfilterMasterId)
     SELECT DISTINCT
         EnquiryId,
-        BagfilterMasterId,
         Process_Volume_M3h
     FROM ionfiltrabagfilters.ProcessInfo
     WHERE Process_Volume_M3h IS NOT NULL
+),
+-- new: counts of BagfilterInput per Enquiry + Process_Volume_M3h
+VolumeCounts AS (
+    SELECT
+        EnquiryId,
+        Process_Volume_M3h,
+        COUNT(*) AS Qty
+    FROM ionfiltrabagfilters.BagfilterInput
+    WHERE Process_Volume_M3h IS NOT NULL
+    GROUP BY EnquiryId, Process_Volume_M3h
 )
 SELECT
     -- Enquiry
@@ -16,7 +38,7 @@ SELECT
     E.RequiredBagFilters                 AS Enquiry_RequiredBagFilters,
     E.ProcessVolumes                     AS Enquiry_ProcessVolumes,
 
-    -- BagfilterMaster
+    -- BagfilterMaster (we pick one BagfilterMasterId per Enquiry+Volume via PickBM)
     BM.BagfilterMasterId                 AS BagfilterMaster_BagfilterMasterId,
     BM.AssignmentId                      AS BagfilterMaster_AssignmentId,
     BM.EnquiryId                         AS BagfilterMaster_EnquiryId,
@@ -43,11 +65,13 @@ SELECT
     WS.Structure_Weight,
     WS.Weight_Total                      AS WeightSummary_Weight_Total,
 
-    -- ProcessInfo (joined for the distinct Process_Volume_M3h)
+    -- ProcessInfo (for that distinct volume)
     PI.Id                                AS ProcessInfo_Id,
     PI.EnquiryId                         AS ProcessInfo_EnquiryId,
     PI.BagfilterMasterId                 AS ProcessInfo_BagfilterMasterId,
     PI.Process_Volume_M3h,
+    -- NEW: Qty for this Enquiry + Process_Volume_M3h (counts from BagfilterInput)
+    COALESCE(VC.Qty, 0)                  AS Qty,
     PI.Location,
     PI.ProcessVolumeMin,
     PI.Process_Acrmax,
@@ -226,58 +250,136 @@ SELECT
     RD.Weight_Per_Door,
     RD.Tot_Weight_Per_Compartment         AS RoofDoor_Tot_Weight_Per_Compartment
 
-FROM ionfiltrabagfilters.BagfilterMaster BM
+FROM DistinctPI D
+-- join Enquiry so we keep Enquiry fields
 LEFT JOIN ionfiltrabagfilters.Enquiry E
-    ON BM.EnquiryId = E.Id
+    ON D.EnquiryId = E.Id
 
-/* Distinct process volumes per enquiry+bagfilter */
-LEFT JOIN DistinctPI D
-    ON D.BagfilterMasterId = BM.BagfilterMasterId
-    AND D.EnquiryId = COALESCE(BM.EnquiryId, E.Id)
+-- pick one BagfilterMasterId per Enquiry+Volume (you can change MIN to MAX or other rule)
+LEFT JOIN (
+    SELECT
+        EnquiryId,
+        Process_Volume_M3h,
+        MIN(BagfilterMasterId) AS PickBM
+    FROM ionfiltrabagfilters.ProcessInfo
+    WHERE Process_Volume_M3h IS NOT NULL
+    GROUP BY EnquiryId, Process_Volume_M3h
+) PickBM
+  ON PickBM.EnquiryId = D.EnquiryId
+ AND PickBM.Process_Volume_M3h = D.Process_Volume_M3h
 
--- now join ProcessInfo rows that match that distinct volume (this will pick the PI row(s)
--- for the specific Process_Volume_M3h so PI columns reflect that volume)
+LEFT JOIN ionfiltrabagfilters.BagfilterMaster BM
+    ON BM.BagfilterMasterId = PickBM.PickBM
+
+-- join ProcessInfo rows that match that distinct volume (if multiple PI rows share same volume and same bagfilter we will get PI rows;
+-- if you want only a single PI row per volume you can replace this with another pick-subquery)
 LEFT JOIN ionfiltrabagfilters.ProcessInfo PI
     ON PI.BagfilterMasterId = BM.BagfilterMasterId
-    AND PI.EnquiryId = COALESCE(BM.EnquiryId, E.Id)
+    AND PI.EnquiryId = D.EnquiryId
     AND PI.Process_Volume_M3h = D.Process_Volume_M3h
+
+-- join the Qty counts
+LEFT JOIN VolumeCounts VC
+    ON VC.EnquiryId = D.EnquiryId
+   AND VC.Process_Volume_M3h = D.Process_Volume_M3h
 
 LEFT JOIN ionfiltrabagfilters.WeightSummary WS
     ON WS.BagfilterMasterId = BM.BagfilterMasterId
-    AND WS.EnquiryId = COALESCE(BM.EnquiryId, E.Id)
+    AND WS.EnquiryId = D.EnquiryId
 
 LEFT JOIN ionfiltrabagfilters.CageInputs CI
     ON CI.BagfilterMasterId = BM.BagfilterMasterId
-    AND CI.EnquiryId = COALESCE(BM.EnquiryId, E.Id)
+    AND CI.EnquiryId = D.EnquiryId
 
 LEFT JOIN ionfiltrabagfilters.BagSelection BS
     ON BS.BagfilterMasterId = BM.BagfilterMasterId
-    AND BS.EnquiryId = COALESCE(BM.EnquiryId, E.Id)
+    AND BS.EnquiryId = D.EnquiryId
 
 LEFT JOIN ionfiltrabagfilters.StructureInputs SI
     ON SI.BagfilterMasterId = BM.BagfilterMasterId
-    AND SI.EnquiryId = COALESCE(BM.EnquiryId, E.Id)
+    AND SI.EnquiryId = D.EnquiryId
 
 LEFT JOIN ionfiltrabagfilters.CapsuleInputs CAPS
     ON CAPS.BagfilterMasterId = BM.BagfilterMasterId
-    AND CAPS.EnquiryId = COALESCE(BM.EnquiryId, E.Id)
+    AND CAPS.EnquiryId = D.EnquiryId
 
 LEFT JOIN ionfiltrabagfilters.CasingInputs CAS
     ON CAS.BagfilterMasterId = BM.BagfilterMasterId
-    AND CAS.EnquiryId = COALESCE(BM.EnquiryId, E.Id)
+    AND CAS.EnquiryId = D.EnquiryId
 
 LEFT JOIN ionfiltrabagfilters.HopperInputs HOP
     ON HOP.BagfilterMasterId = BM.BagfilterMasterId
-    AND HOP.EnquiryId = COALESCE(BM.EnquiryId, E.Id)
+    AND HOP.EnquiryId = D.EnquiryId
 
 LEFT JOIN ionfiltrabagfilters.SupportStructure SS
     ON SS.BagfilterMasterId = BM.BagfilterMasterId
-    AND SS.EnquiryId = COALESCE(BM.EnquiryId, E.Id)
+    AND SS.EnquiryId = D.EnquiryId
 
 LEFT JOIN ionfiltrabagfilters.AccessGroup AG
     ON AG.BagfilterMasterId = BM.BagfilterMasterId
-    AND AG.EnquiryId = COALESCE(BM.EnquiryId, E.Id)
+    AND AG.EnquiryId = D.EnquiryId
 
 LEFT JOIN ionfiltrabagfilters.RoofDoor RD
     ON RD.BagfilterMasterId = BM.BagfilterMasterId
-    AND RD.EnquiryId = COALESCE(BM.EnquiryId, E.Id);
+    AND RD.EnquiryId = D.EnquiryId;
+
+GO
+
+
+
+---- Gropu by Volumes view
+
+    CREATE OR REPLACE VIEW ionfiltrabagfilters.vw_EnquiryVolumeSummary AS
+WITH DistinctInputs AS (
+    -- all distinct rows from BagfilterInput (use the real table name)
+    SELECT
+        EnquiryId,
+        BagfilterMasterId,
+        Process_Volume_M3h
+    FROM ionfiltrabagfilters.BagfilterInput
+    WHERE Process_Volume_M3h IS NOT NULL
+),
+Volumes AS (
+    -- group by enquiry + volume across all bagfilters, count qty
+    SELECT
+        EnquiryId,
+        Process_Volume_M3h,
+        COUNT(*) AS Qty,
+        GROUP_CONCAT(DISTINCT BagfilterMasterId) AS BagfilterMasterIds -- for debugging/inspection if needed
+    FROM ionfiltrabagfilters.BagfilterInput
+    WHERE Process_Volume_M3h IS NOT NULL
+    GROUP BY EnquiryId, Process_Volume_M3h
+),
+VolumeWeights AS (
+    -- sum Weight_Total from WeightSummary but only for bagfilters that have that volume
+    SELECT
+        V.EnquiryId,
+        V.Process_Volume_M3h,
+        SUM(WS.Weight_Total) AS WeightSum
+    FROM Volumes V
+    JOIN ionfiltrabagfilters.WeightSummary WS
+      ON WS.EnquiryId = V.EnquiryId
+      AND WS.BagfilterMasterId IN (
+          -- pick bagfiltermaster ids that correspond to this enquiry+volume
+          SELECT DISTINCT BagfilterMasterId
+          FROM ionfiltrabagfilters.BagfilterInput BI
+          WHERE BI.EnquiryId = V.EnquiryId
+            AND BI.Process_Volume_M3h = V.Process_Volume_M3h
+      )
+    GROUP BY V.EnquiryId, V.Process_Volume_M3h
+)
+SELECT
+    E.Id                       AS EnquiryId,
+    E.EnquiryId                AS Enquiry_ExternalId,
+    V.Process_Volume_M3h       AS Volume_M3h,
+    V.Qty                      AS Qty,
+    COALESCE(W.WeightSum, 0)   AS Weight,
+    NULL                       AS Fab_Cost,
+    NULL                       AS BoughtOut,
+    NULL                       AS Total
+FROM Volumes V
+JOIN ionfiltrabagfilters.Enquiry E
+  ON E.Id = V.EnquiryId
+LEFT JOIN VolumeWeights W
+  ON W.EnquiryId = V.EnquiryId
+ AND W.Process_Volume_M3h = V.Process_Volume_M3h;

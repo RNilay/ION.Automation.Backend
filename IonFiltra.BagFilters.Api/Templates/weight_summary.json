@@ -1,9 +1,10 @@
 {
-    "Id": 1,
+    "Id": 3,
+    "Order": 3,
     "ReportName": "WeightSummary",
     "Title": "Weight Summary",
     "Logo": "wwwroot/images/company.png",
-    "EntityDbName": "WeightSummary",
+    "EntityDbName": "vw_WeightSummary",
     "Layout": {
         "Columns": 1,
         "ColumnWidths": [ "100%" ],
@@ -22,8 +23,8 @@
     "Rows": [
         {
             "Type": "table",
-            "LayoutColumns": ["", "", "", "", "", "", "", "", "", "" ],
-            "ColumnWidths": [10, 10, 10, 10, 10, 10, 10, 10, 10, 10 ],
+            "LayoutColumns": [ "", "", "", "", "", "", "", "", "", "" ],
+            "ColumnWidths": [ 10, 10, 10, 10, 10, 10, 10, 10, 10, 10 ],
             "Rows": [
                 {
                     "RowData": [
@@ -71,6 +72,7 @@
                     "Structure_Weight",
                     "Weight_Of_Cage_Ladder",
                     "Weight_Of_Mid_Landing_Plt",
+                    "Weight_Of_Maintainence_Pltform",
                     "Hopper_Access_Stool_Weight",
                     "Weight_Total"
                 ]

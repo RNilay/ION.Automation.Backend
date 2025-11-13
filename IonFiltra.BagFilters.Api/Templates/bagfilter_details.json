@@ -1,5 +1,6 @@
 {
-    "Id": 12,
+    "Id": 2,
+    "Order": 2,
     "ReportName": "Bagfilter Details",
     "Title": "Bagfilter Details",
     "EntityDbName": "vw_BagfilterDetails",
@@ -22,806 +23,916 @@
 
     "Rows": [
         {
-            "Type": "table",
-            "LayoutColumns": [ "", "" ],
-            "ColumnWidths": [ 70, 30 ],
-
-            "Rows": [
-                {
-                    "RowData": [ "Description", "Value" ],
-                    "RowStyle": {
-                        "FontSize": 12,
-                        "Bold": true,
-                        "InlineCss": "background-color:#F9C043; font-weight: bolder;"
-                    }
-                },
+            "Type": "group",
+            "RepeatRow": {
+                "SourceKey": "list_values",
+                "TemplateRowIndex": 0
+            },
+            "ChildRows": [
 
                 {
-                    "RowData": [ "__BLOCK__" ],
-                    "RowStyle": {},
-                    "BlockRows": [
-                        {
-                            "Label": "Process Volume (m<sup>3</sup>/hr):",
-                            "ValueKey": "Process_Volume_M3h",
-                            "InlineCss": "background-color:#EFEFEF; font-weight:bolder;"
-                        },
-                        {
-                            "Label": "Process Info",
-                            "ValueKey": null,
-                            "IsHeader": true,
-                            "InlineCss": "background-color:#92D050; font-weight:bold;",
-                            "ColSpan": 2
-                        },
-
-                        {
-                            "Label": "Process Volume (m<sup>3</sup>/hr)",
-                            "ValueKey": "Process_Volume_M3h",
-                            "InlineCss": ""
-                        },
-                        {
-                            "Label": "Location",
-                            "ValueKey": "Location",
-                            "InlineCss": ""
-                        },
-                        {
-                            "Label": "Process Volume Min (m<sup>3</sup>/min)",
-                            "ValueKey": "ProcessVolumeMin",
-                            "InlineCss": ""
-                        },
-                        {
-                            "Label": "Process Acrmax (m/min)",
-                            "ValueKey": "Process_Acrmax",
-                            "InlineCss": ""
-                        },
-                        {
-                            "Label": "Cloth Area (m<sup>2</sup>)",
-                            "ValueKey": "ClothArea",
-                            "InlineCss": ""
-                        },
-                        {
-                            "Label": "Process Dust",
-                            "ValueKey": "Process_Dust",
-                            "InlineCss": ""
-                        },
-                        {
-                            "Label": "Process Dust Load (gms/m<sup>3</sup>)",
-                            "ValueKey": "Process_Dustload_gmspm3",
-                            "InlineCss": ""
-                        },
-                        {
-                            "Label": "Process Temp (<sup>o</sup>C)",
-                            "ValueKey": "Process_Temp_C",
-                            "InlineCss": ""
-                        },
-                        {
-                            "Label": "Dew Point Temperature (<sup>o</sup>C)",
-                            "ValueKey": "Dew_Point_C",
-                            "InlineCss": ""
-                        },
-                        {
-                            "Label": "Outlet Emission Desired (mgs/m<sup>3</sup>)",
-                            "ValueKey": "Outlet_Emission_mgpm3",
-                            "InlineCss": ""
-                        },
-                        {
-                            "Label": "Process Air to Cloth Ratio (m/min)",
-                            "ValueKey": "Process_Cloth_Ratio",
-                            "InlineCss": ""
-                        },
-                        {
-                            "Label": "Specific Gravity (m/sec)",
-                            "ValueKey": "Specific_Gravity",
-                            "InlineCss": ""
-                        },
-                        {
-                            "Label": "Customer Equipment Tag No",
-                            "ValueKey": "Customer_Equipment_Tag_No",
-                            "InlineCss": ""
-                        },
-                        {
-                            "Label": "Bagfilter type of cleaning",
-                            "ValueKey": "Bagfilter_Cleaning_Type",
-                            "InlineCss": ""
-                        },
-                        {
-                            "Label": "Offline Maintenance",
-                            "ValueKey": "Offline_Maintainence",
-                            "InlineCss": ""
-                        },
-                        {
-                            "Label": "Bag Filter Capacity",
-                            "ValueKey": "Bag_Filter_Capacity_V",
-                            "InlineCss": ""
-                        },
-                        {
-                            "Label": "Bag Filter Capacity (in Sec)",
-                            "ValueKey": "Process_Vol_M3_Sec",
-                            "InlineCss": ""
-                        },
-                        {
-                            "Label": "Bag Filter Capacity (in Min)",
-                            "ValueKey": "Process_Vol_M3_Min",
-                            "InlineCss": ""
-                        },
-                        {
-                            "Label": "Bag Area",
-                            "ValueKey": "Bag_Area",
-                            "InlineCss": ""
-                        },
-                        {
-                            "Label": "Bag Bottom Area",
-                            "ValueKey": "Bag_Bottom_Area",
-                            "InlineCss": ""
-                        },
-                        {
-                            "Label": "Minimum Cloth Area Required for Filtration",
-                            "ValueKey": "Min_Cloth_Area_Req",
-                            "InlineCss": ""
-                        },
-                        {
-                            "Label": "Minimum Bags Required",
-                            "ValueKey": "Min_Bag_Req",
-                            "InlineCss": ""
-                        },
-
-                        {
-                            "Label": "Cage Inputs",
-                            "ValueKey": null,
-                            "IsHeader": true,
-                            "InlineCss": "background-color:#92D050; font-weight:bold;",
-                            "ColSpan": 2
-                        },
-                        {
-                            "Label": "Cage Wire Diameter (mm)",
-                            "ValueKey": "Cage_Wire_Dia",
-                            "InlineCss": ""
-                        },
-                        {
-                            "Label": "No Of Cage Wires",
-                            "ValueKey": "No_Of_Cage_Wires",
-                            "InlineCss": ""
-                        },
-                        {
-                            "Label": "Ring Spacing (mm)",
-                            "ValueKey": "Ring_Spacing",
-                            "InlineCss": ""
-                        },
-
-
-                        {
-                            "Label": "Bag Selection",
-                            "ValueKey": null,
-                            "IsHeader": true,
-                            "InlineCss": "background-color:#92D050; font-weight:bold;",
-                            "ColSpan": 2
-                        },
-                        {
-                            "Label": "Filter Bag Diameter (mm)",
-                            "ValueKey": "Filter_Bag_Dia",
-                            "InlineCss": ""
-                        },
-                        {
-                            "Label": "Filter Bag Length (mm)",
-                            "ValueKey": "Fil_Bag_Length",
-                            "InlineCss": ""
-                        },
-                        {
-                            "Label": "Cloth Area Per Bag (m<sup>2</sup>)",
-                            "ValueKey": "ClothAreaPerBag",
-                            "InlineCss": ""
-                        },
-                        {
-                            "Label": "No Of Bags",
-                            "ValueKey": "noOfBags",
-                            "InlineCss": ""
-                        },
-                        {
-                            "Label": "Filter Bag Recommendation",
-                            "ValueKey": "Fil_Bag_Recommendation",
-                            "InlineCss": ""
-                        },
-                        {
-                            "Label": "Bags per Row",
-                            "ValueKey": "Bag_Per_Row",
-                            "InlineCss": ""
-                        },
-                        {
-                            "Label": "Number of Rows",
-                            "ValueKey": "Number_Of_Rows",
-                            "InlineCss": ""
-                        },
-                        {
-                            "Label": "Actual Bags Required",
-                            "ValueKey": "Actual_Bag_Req",
-                            "InlineCss": ""
-                        },
-                        {
-                            "Label": "Wire Cross Sectional Area (m<sup>2</sup>)",
-                            "ValueKey": "Wire_Cross_Sec_Area",
-                            "InlineCss": ""
-                        },
-                        {
-                            "Label": "Number of Rings",
-                            "ValueKey": "No_Of_Rings",
-                            "InlineCss": ""
-                        },
-                        {
-                            "Label": "Total Wire Length (m)",
-                            "ValueKey": "Tot_Wire_Length",
-                            "InlineCss": ""
-                        },
-                        {
-                            "Label": "Cage Weight (Kg)",
-                            "ValueKey": "BagSelection_Cage_Weight",
-                            "InlineCss": ""
-                        },
-
-                        {
-                            "Label": "Structure Inputs",
-                            "ValueKey": null,
-                            "IsHeader": true,
-                            "InlineCss": "background-color:#92D050; font-weight:bold;",
-                            "ColSpan": 2
-                        },
-                        {
-                            "Label": "Gas Entry",
-                            "ValueKey": "Gas_Entry",
-                            "InlineCss": ""
-                        },
-                        {
-                            "Label": "Support Structure Type",
-                            "ValueKey": "Support_Structure_Type",
-                            "InlineCss": ""
-                        },
-                        {
-                            "Label": "Can Correction",
-                            "ValueKey": "Can_Correction",
-                            "InlineCss": ""
-                        },
-                        {
-                            "Label": "Pitch (C/C spacing between two adjacent bag filters)",
-                            "ValueKey": "Max_Bags_And_Pitch",
-                            "InlineCss": ""
-                        },
-                        {
-                            "Label": "Nominal Width (in mm)",
-                            "ValueKey": "Nominal_Width",
-                            "InlineCss": ""
-                        },
-                        {
-                            "Label": "Nominal Width (in m)",
-                            "ValueKey": "Nominal_Width_Meters",
-                            "InlineCss": ""
-                        },
-                        {
-                            "Label": "Nominal Length (in mm)",
-                            "ValueKey": "Nominal_Length",
-                            "InlineCss": ""
-                        },
-                        {
-                            "Label": "Nominal Length (in m)",
-                            "ValueKey": "Nominal_Length_Meters",
-                            "InlineCss": ""
-                        },
-                        {
-                            "Label": "Area Adjustment (can/vel)",
-                            "ValueKey": "Area_Adjust_Can_Vel",
-                            "InlineCss": ""
-                        },
-                        {
-                            "Label": "CAN Area Required",
-                            "ValueKey": "Can_Area_Req",
-                            "InlineCss": ""
-                        },
-                        {
-                            "Label": "Total Available Area",
-                            "ValueKey": "Total_Avl_Area",
-                            "InlineCss": ""
-                        },
-                        {
-                            "Label": "Length Correction",
-                            "ValueKey": "Length_Correction",
-                            "InlineCss": ""
-                        },
-                        {
-                            "Label": "Length Correction Derived (mm)",
-                            "ValueKey": "Length_Correction_Derived",
-                            "InlineCss": ""
-                        },
-                        {
-                            "Label": "Actual Length (in mm)",
-                            "ValueKey": "Actual_Length",
-                            "InlineCss": ""
-                        },
-                        {
-                            "Label": "Actual Length (in m)",
-                            "ValueKey": "Actual_Length_Meters",
-                            "InlineCss": ""
-                        },
-                        {
-                            "Label": "OL Flange Length (m)",
-                            "ValueKey": "Ol_Flange_Length",
-                            "InlineCss": ""
-                        },
-                        {
-                            "Label": "Length (mm)",
-                            "ValueKey": "Ol_Flange_Length_Mm",
-                            "InlineCss": ""
-                        },
-
-                        {
-                            "Label": "Capsule Inputs",
-                            "ValueKey": null,
-                            "IsHeader": true,
-                            "InlineCss": "background-color:#92D050; font-weight:bold;",
-                            "ColSpan": 2
-                        },
-                        {
-                            "Label": "Solenoid Operated Diaphragm Valve Size (in)",
-                            "ValueKey": "Valve_Size",
-                            "InlineCss": ""
-                        },
-                        {
-                            "Label": "Voltage Rating (V)",
-                            "ValueKey": "Voltage_Rating",
-                            "InlineCss": ""
-                        },
-                        {
-                            "Label": "Cage Type",
-                            "ValueKey": "Cage_Type",
-                            "InlineCss": ""
-                        },
-                        {
-                            "Label": "Cage Length",
-                            "ValueKey": "Cage_Length",
-                            "InlineCss": ""
-                        },
-                        {
-                            "Label": "Capsule Height (mm)",
-                            "ValueKey": "Capsule_Height",
-                            "InlineCss": ""
-                        },
-                        {
-                            "Label": "Tube Sheet Thickness (mm)",
-                            "ValueKey": "Tube_Sheet_Thickness",
-                            "InlineCss": ""
-                        },
-                        {
-                            "Label": "Capsule Wall Thickness (mm)",
-                            "ValueKey": "Capsule_Wall_Thickness",
-                            "InlineCss": ""
-                        },
-                        {
-                            "Label": "Canopy",
-                            "ValueKey": "Canopy",
-                            "InlineCss": ""
-                        },
-                        {
-                            "Label": "Solenoid Valve Maintainance",
-                            "ValueKey": "Solenoid_Valve_Maintainence",
-                            "InlineCss": ""
-                        },
-                        {
-                            "Label": "Area of Capsules (m<sup>2</sup>)",
-                            "ValueKey": "Capsule_Area",
-                            "InlineCss": ""
-                        },
-                        {
-                            "Label": "Weight of Capsule (Kg)",
-                            "ValueKey": "CapsuleInputs_Capsule_Weight",
-                            "InlineCss": ""
-                        },
-                        {
-                            "Label": "Area of Tubesheets (m<sup>2</sup>)",
-                            "ValueKey": "Tubesheet_Area",
-                            "InlineCss": ""
-                        },
-                        {
-                            "Label": "Weight of Tube Sheet (Kg)",
-                            "ValueKey": "Tubesheet_Weight",
-                            "InlineCss": ""
-                        },
-
-                        {
-                            "Label": "Casing Inputs",
-                            "ValueKey": null,
-                            "IsHeader": true,
-                            "InlineCss": "background-color:#92D050; font-weight:bold;",
-                            "ColSpan": 2
-                        },
-                        {
-                            "Label": "Casing Wall Thickness (mm)",
-                            "ValueKey": "Casing_Wall_Thickness",
-                            "InlineCss": ""
-                        },
-                        {
-                            "Label": "Casing Height (m)",
-                            "ValueKey": "Casing_Height",
-                            "InlineCss": ""
-                        },
-                        {
-                            "Label": "Casing Area (m<sup>2</sup>)",
-                            "ValueKey": "Casing_Area",
-                            "InlineCss": ""
-                        },
-                        {
-                            "Label": "Weight of Casing (Kg)",
-                            "ValueKey": "CasingInputs_Casing_Weight",
-                            "InlineCss": ""
-                        },
-
-                        {
-                            "Label": "Hopper / Trough Inputs",
-                            "ValueKey": null,
-                            "IsHeader": true,
-                            "InlineCss": "background-color:#92D050; font-weight:bold;",
-                            "ColSpan": 2
-                        },
-                        {
-                            "Label": "Hopper Type",
-                            "ValueKey": "Hopper_Type",
-                            "InlineCss": ""
-                        },
-                        {
-                            "Label": "Process Compartments",
-                            "ValueKey": "Process_Compartments",
-                            "InlineCss": ""
-                        },
-                        {
-                            "Label": "Total Number Of Hoppers",
-                            "ValueKey": "Tot_No_Of_Hoppers",
-                            "InlineCss": ""
-                        },
-                        {
-                            "Label": "Total Number Of Trough",
-                            "ValueKey": "Tot_No_Of_Trough",
-                            "InlineCss": ""
-                        },
-                        {
-                            "Label": "Plenum Width (mm)",
-                            "ValueKey": "Plenum_Width",
-                            "InlineCss": ""
-                        },
-                        {
-                            "Label": "Inlet Height (mm)",
-                            "ValueKey": "Inlet_Height",
-                            "InlineCss": ""
-                        },
-                        {
-                            "Label": "Hopper/Trough Thickness (mm)",
-                            "ValueKey": "Hopper_Thickness",
-                            "InlineCss": ""
-                        },
-                        {
-                            "Label": "Hopper/Trough Valley Angle (<sup>o</sup>)",
-                            "ValueKey": "Hopper_Valley_Angle",
-                            "InlineCss": ""
-                        },
-                        {
-                            "Label": "Access Door Type",
-                            "ValueKey": "Access_Door_Type",
-                            "InlineCss": ""
-                        },
-                        {
-                            "Label": "Access Door Quantity (Qty)",
-                            "ValueKey": "Access_Door_Qty",
-                            "InlineCss": ""
-                        },
-                        {
-                            "Label": "RAV Maintenance Platform",
-                            "ValueKey": "Rav_Maintainence_Pltform",
-                            "InlineCss": ""
-                        },
-                        {
-                            "Label": "Hopper Access Stool",
-                            "ValueKey": "Hopper_Access_Stool",
-                            "InlineCss": ""
-                        },
-                        {
-                            "Label": "Is Distance Piece?",
-                            "ValueKey": "Is_Distance_Piece",
-                            "InlineCss": ""
-                        },
-                        {
-                            "Label": "Distance Piece Height (mm)",
-                            "ValueKey": "Distance_Piece_Height",
-                            "InlineCss": ""
-                        },
-                        {
-                            "Label": "Stiffening Factor",
-                            "ValueKey": "Stiffening_Factor",
-                            "InlineCss": ""
-                        },
-                        {
-                            "Label": "Hopper (Qty)",
-                            "ValueKey": "Hopper",
-                            "InlineCss": ""
-                        },
-                        {
-                            "Label": "Discharge Opening Square in Size (mm)",
-                            "ValueKey": "Discharge_Opening_Sqr",
-                            "InlineCss": ""
-                        },
-                        {
-                            "Label": "Material Handling",
-                            "ValueKey": "Material_Handling",
-                            "InlineCss": ""
-                        },
-                        {
-                            "Label": "Material Handling Quantity (Qty)",
-                            "ValueKey": "Material_Handling_Qty",
-                            "InlineCss": ""
-                        },
-                        {
-                            "Label": "Trough Outlet Length (mm)",
-                            "ValueKey": "Trough_Outlet_Length",
-                            "InlineCss": ""
-                        },
-                        {
-                            "Label": "Trough Outlet Width (mm)",
-                            "ValueKey": "Trough_Outlet_Width",
-                            "InlineCss": ""
-                        },
-                        {
-                            "Label": "Material Handling Type",
-                            "ValueKey": "Material_Handling_Xxx",
-                            "InlineCss": ""
-                        },
-                        {
-                            "Label": "Horizontal Difference in Length (m)",
-                            "ValueKey": "Hor_Diff_Length",
-                            "InlineCss": ""
-                        },
-                        {
-                            "Label": "Horizontal Difference in Width (m)",
-                            "ValueKey": "Hor_Diff_Width",
-                            "InlineCss": ""
-                        },
-                        {
-                            "Label": "Slant Offset Distance (C) (m)",
-                            "ValueKey": "Slant_Offset_Dist",
-                            "InlineCss": ""
-                        },
-                        {
-                            "Label": "Hopper Height (in m)",
-                            "ValueKey": "Hopper_Height",
-                            "InlineCss": ""
-                        },
-                        {
-                            "Label": "Hopper Height (in mm)",
-                            "ValueKey": "Hopper_Height_Mm",
-                            "InlineCss": ""
-                        },
-                        {
-                            "Label": "Slanting Height of Hopper (H') (in m)",
-                            "ValueKey": "Slanting_Hopper_Height",
-                            "InlineCss": ""
-                        },
-                        {
-                            "Label": "Area of Length Side (m<sup>2</sup>)",
-                            "ValueKey": "Hopper_Area_Length",
-                            "InlineCss": ""
-                        },
-                        {
-                            "Label": "Area of Width Side (m<sup>2</sup>)",
-                            "ValueKey": "Hopper_Area_Width",
-                            "InlineCss": ""
-                        },
-                        {
-                            "Label": "Total Area (m<sup>2</sup>)",
-                            "ValueKey": "Hopper_Tot_Area",
-                            "InlineCss": ""
-                        },
-                        {
-                            "Label": "Weight of Hopper (Kg)",
-                            "ValueKey": "HopperInputs_Hopper_Weight",
-                            "InlineCss": ""
-                        },
-
-                        {
-                            "Label": "Support Structure Inputs",
-                            "ValueKey": null,
-                            "IsHeader": true,
-                            "InlineCss": "background-color:#92D050; font-weight:bold;",
-                            "ColSpan": 2
-                        },
-                        {
-                            "Label": "Type",
-                            "ValueKey": "Support_Struct_Type",
-                            "InlineCss": ""
-                        },
-                        {
-                            "Label": "Number of Column",
-                            "ValueKey": "NoOfColumn",
-                            "InlineCss": ""
-                        },
-                        {
-                            "Label": "Column Height (mm)",
-                            "ValueKey": "Column_Height",
-                            "InlineCss": ""
-                        },
-                        {
-                            "Label": "Clearance Below Hopper Flange (mm)",
-                            "ValueKey": "Ground_Clearance",
-                            "InlineCss": ""
-                        },
-                        {
-                            "Label": "C/C Distance Between Column in X Direction (mm)",
-                            "ValueKey": "Dist_Btw_Column_In_X",
-                            "InlineCss": ""
-                        },
-                        {
-                            "Label": "C/C Distance Between Column in Z Direction (mm)",
-                            "ValueKey": "Dist_Btw_Column_In_Z",
-                            "InlineCss": ""
-                        },
-                        {
-                            "Label": "Number of Bays in X Direction",
-                            "ValueKey": "No_Of_Bays_In_X",
-                            "InlineCss": ""
-                        },
-                        {
-                            "Label": "Number of Bays in Z Direction",
-                            "ValueKey": "No_Of_Bays_In_Z",
-                            "InlineCss": ""
-                        },
-
-                        {
-                            "Label": "Access Group Inputs",
-                            "ValueKey": null,
-                            "IsHeader": true,
-                            "InlineCss": "background-color:#92D050; font-weight:bold;",
-                            "ColSpan": 2
-                        },
-                        {
-                            "Label": "Type Of Access",
-                            "ValueKey": "Access_Type",
-                            "InlineCss": ""
-                        },
-                        {
-                            "Label": "Weight Of Cage Ladder (kg/m)",
-                            "ValueKey": "Cage_Weight_Ladder",
-                            "InlineCss": ""
-                        },
-                        {
-                            "Label": "Mid Landing Platform",
-                            "ValueKey": "Mid_Landing_Pltform",
-                            "InlineCss": ""
-                        },
-                        {
-                            "Label": "Weight Of Platform (kg)",
-                            "ValueKey": "Platform_Weight",
-                            "InlineCss": ""
-                        },
-                        {
-                            "Label": "Staircase Height (m)",
-                            "ValueKey": "Staircase_Height",
-                            "InlineCss": ""
-                        },
-                        {
-                            "Label": "Weight Of Staircase / Running m (kg/m)",
-                            "ValueKey": "Staircase_Weight",
-                            "InlineCss": ""
-                        },
-                        {
-                            "Label": "Weight Of Railing / Running m (kg/m)",
-                            "ValueKey": "AccessGroup_Railing_Weight",
-                            "InlineCss": ""
-                        },
-                        {
-                            "Label": "Maintenance Platform",
-                            "ValueKey": "Maintainence_Pltform",
-                            "InlineCss": ""
-                        },
-                        {
-                            "Label": "Weight Of Maintenance Platform (kg)",
-                            "ValueKey": "Maintainence_Pltform_Weight",
-                            "InlineCss": ""
-                        },
-                        {
-                            "Label": "Blow Pipe (Purge Pipe) (kg/m)",
-                            "ValueKey": "BlowPipe",
-                            "InlineCss": ""
-                        },
-                        {
-                            "Label": "Pressure Header (kg/m)",
-                            "ValueKey": "PressureHeader",
-                            "InlineCss": ""
-                        },
-                        {
-                            "Label": "Distance Piece (kg)",
-                            "ValueKey": "DistancePiece",
-                            "InlineCss": ""
-                        },
-                        {
-                            "Label": "Access Stool Size (mm)",
-                            "ValueKey": "Access_Stool_Size_Mm",
-                            "InlineCss": ""
-                        },
-                        {
-                            "Label": "Access Stool Size (kg)",
-                            "ValueKey": "Access_Stool_Size_Kg",
-                            "InlineCss": ""
-                        },
-
-                        {
-                            "Label": "Roof Door Inputs",
-                            "ValueKey": null,
-                            "IsHeader": true,
-                            "InlineCss": "background-color:#92D050; font-weight:bold;",
-                            "ColSpan": 2
-                        },
-                        {
-                            "Label": "Roof Door Thickness (mm)",
-                            "ValueKey": "Roof_Door_Thickness",
-                            "InlineCss": ""
-                        },
-                        {
-                            "Label": "Number of Type 2 Doors",
-                            "ValueKey": "T2d",
-                            "InlineCss": ""
-                        },
-                        {
-                            "Label": "Number of Type 3 Doors",
-                            "ValueKey": "T3d",
-                            "InlineCss": ""
-                        },
-                        {
-                            "Label": "Total Number of Doors",
-                            "ValueKey": "N_Doors",
-                            "InlineCss": ""
-                        },
-                        {
-                            "Label": "Numbers / Compartment",
-                            "ValueKey": "Compartment_No",
-                            "InlineCss": ""
-                        },
-                        {
-                            "Label": "Stiffness Factor for Roof Door",
-                            "ValueKey": "Stiffness_Factor_For_Roof_Door",
-                            "InlineCss": ""
-                        },
-                        {
-                            "Label": "Weight per Door (kg)",
-                            "ValueKey": "Weight_Per_Door",
-                            "InlineCss": ""
-                        },
-                        {
-                            "Label": "Total Weight / Compartment (kg)",
-                            "ValueKey": "RoofDoor_Tot_Weight_Per_Compartment",
-                            "InlineCss": ""
+                    "Type": "table",
+                    "LayoutColumns": [ "", "" ],
+                    "ColumnWidths": [ 70, 30 ],
+                    "Rows": [
+                        {
+                            "RowData": [ "Process Volume", "Qty" ],
+                            "RowStyle": {
+                                "FontSize": 12,
+                                "Bold": true,
+                                "InlineCss": "background-color:#008fd8; font-weight:bolder;"
+                            }
+                        },
+                        {
+                            "RowData": [ "{Process_Volume_M3h}", "{Qty} of {Enquiry_RequiredBagFilters}" ],
+                            "RowStyle": { "FontSize": 11 }
                         }
-
-
                     ]
                 },
 
                 {
-                    "RowData": [ "", "" ],
-                    "RowStyle": {}
-                }
-            ],
+                    "Type": "table",
+                    "LayoutColumns": [ "", "" ],
+                    "ColumnWidths": [ 70, 30 ],
 
-            "RepeatRow": {
-                "SourceKey": "list_values",
-                "TemplateRowIndex": 1,
-                "Columns": [
-                    "Process_Volume_M3h",
-                    "Location",
-                    "Process_Volume_Min_m3min",
-                    "Process_Acrmax_mmin",
-                    "Cloth_Area_m2",
-                    "BagFilterName",
-                    "Bag_Material",
-                    "Structure_Weight",
-                    "Tubesheet_Weight",
-                    "Weight_Of_Cage_Ladder",
-                    "Weight_Of_Mid_Landing_Plt",
-                    "Weight_Of_Maintainence_Pltform",
-                    "Hopper_Access_Stool_Weight",
-                    "Weight_Total"
-                ]
-            }
+                    "Rows": [
+                        {
+                            "RowData": [ "Description", "Value" ],
+                            "RowStyle": {
+                                "FontSize": 12,
+                                "Bold": true,
+                                "InlineCss": "background-color:#F9C043; font-weight: bolder;"
+                            }
+                        },
+
+                        {
+                            "RowData": [ "__BLOCK__" ],
+                            "RowStyle": {},
+                            "BlockRows": [
+
+                                {
+                                    "Label": "Weight Summary",
+                                    "ValueKey": null,
+                                    "IsHeader": true,
+                                    "InlineCss": "background-color:#92D050; font-weight:bold;",
+                                    "ColSpan": 2
+                                },
+                                {
+                                    "Label": "Weight of Casing (Kg)",
+                                    "ValueKey": "Casing_Weight",
+                                    "InlineCss": "{#CALC}"
+                                },
+                                {
+                                    "Label": "Weight of Capsule (Kg)",
+                                    "ValueKey": "Capsule_Weight",
+                                    "InlineCss": "{#CALC}"
+                                },
+                                {
+                                    "Label": "Roof Door: Total weight / compartment (Kg)",
+                                    "ValueKey": "Tot_Weight_Per_Compartment",
+                                    "InlineCss": "{#CALC}"
+                                },
+                                {
+                                    "Label": "Weight of Hopper (Kg)",
+                                    "ValueKey": "Hopper_Weight",
+                                    "InlineCss": "{#CALC}"
+                                },
+                                {
+                                    "Label": "Weight of Cage Ladder (Kg)",
+                                    "ValueKey": "Weight_Of_Cage_Ladder",
+                                    "InlineCss": "{#CALC}"
+                                },
+                                {
+                                    "Label": "Weight of Railing (kg/m)",
+                                    "ValueKey": "Railing_Weight",
+                                    "InlineCss": "{#CALC}"
+                                },
+                                {
+                                    "Label": "Weight of Tube Sheet (Kg)",
+                                    "ValueKey": "WeightSummary_Tubesheet_Weight",
+                                    "InlineCss": "{#CALC}"
+                                },
+                                {
+                                    "Label": "Air Header / Blow Pipe (kg/m)",
+                                    "ValueKey": "Air_Header_Blow_Pipe",
+                                    "InlineCss": "{#CALC}"
+                                },
+                                {
+                                    "Label": "Hopper Access Stool (Kg)",
+                                    "ValueKey": "Hopper_Access_Stool_Weight",
+                                    "InlineCss": "{#CALC}"
+                                },
+                                {
+                                    "Label": "Weight of Midlanding Platform (Kg)",
+                                    "ValueKey": "Weight_Of_Mid_Landing_Plt",
+                                    "InlineCss": "{#CALC}"
+                                },
+                                {
+                                    "Label": "Weight of Maintenance Platform (Kg)",
+                                    "ValueKey": "Weight_Of_Maintainence_Pltform",
+                                    "InlineCss": "{#CALC}"
+                                },
+                                {
+                                    "Label": "Weight of Cage (Kg)",
+                                    "ValueKey": "WeightSummary_Cage_Weight",
+                                    "InlineCss": "{#CALC}"
+                                },
+                                {
+                                    "Label": "Weight of Structure (Kg)",
+                                    "ValueKey": "Structure_Weight",
+                                    "InlineCss": "{#CALC}"
+                                },
+
+                                // Total row - highlight the VALUE cell only (your rendering code should wrap Value with InlineCss)
+                                {
+                                    "Label": "Total",
+                                    "ValueKey": "WeightSummary_Weight_Total",
+                                    "Bold": true,
+                                    "InlineCss": "background-color:#F1F7AC; font-weight:bolder;"
+                                },
+
+
+                                {
+                                    "Label": "Process Info",
+                                    "ValueKey": null,
+                                    "IsHeader": true,
+
+                                    "InlineCss": "background-color:#92D050; font-weight:bold;",
+                                    "ColSpan": 2
+                                },
+
+                                {
+                                    "Label": "Process Volume (m<sup>3</sup>/hr)",
+                                    "ValueKey": "Process_Volume_M3h",
+                                    "InlineCss": "{#USER}"
+                                },
+                                {
+                                    "Label": "Location",
+                                    "ValueKey": "Location",
+                                    "InlineCss": "{#USER}"
+                                },
+                                {
+                                    "Label": "Process Volume Min (m<sup>3</sup>/min)",
+                                    "ValueKey": "ProcessVolumeMin",
+                                    "InlineCss": "{#CALC}"
+                                },
+                                {
+                                    "Label": "Process Acrmax (m/min)",
+                                    "ValueKey": "Process_Acrmax",
+                                    "InlineCss": "{#CALC}"
+                                },
+                                {
+                                    "Label": "Cloth Area (m<sup>2</sup>)",
+                                    "ValueKey": "ClothArea",
+                                    "InlineCss": "{#CALC}"
+                                },
+                                {
+                                    "Label": "Process Dust",
+                                    "ValueKey": "Process_Dust",
+                                    "InlineCss": "{#USER}"
+                                },
+                                {
+                                    "Label": "Process Dust Load (gms/m<sup>3</sup>)",
+                                    "ValueKey": "Process_Dustload_gmspm3",
+                                    "InlineCss": "{#USER}"
+                                },
+                                {
+                                    "Label": "Process Temp (<sup>o</sup>C)",
+                                    "ValueKey": "Process_Temp_C",
+                                    "InlineCss": "{#USER}"
+                                },
+                                {
+                                    "Label": "Dew Point Temperature (<sup>o</sup>C)",
+                                    "ValueKey": "Dew_Point_C",
+                                    "InlineCss": "{#USER}"
+                                },
+                                {
+                                    "Label": "Outlet Emission Desired (mgs/m<sup>3</sup>)",
+                                    "ValueKey": "Outlet_Emission_mgpm3",
+                                    "InlineCss": "{#USER}"
+                                },
+                                {
+                                    "Label": "Process Air to Cloth Ratio (m/min)",
+                                    "ValueKey": "Process_Cloth_Ratio",
+                                    "InlineCss": "{#USER}"
+                                },
+                                {
+                                    "Label": "Specific Gravity (m/sec)",
+                                    "ValueKey": "Specific_Gravity",
+                                    "InlineCss": "{#USER}"
+                                },
+                                {
+                                    "Label": "Customer Equipment Tag No",
+                                    "ValueKey": "Customer_Equipment_Tag_No",
+                                    "InlineCss": "{#USER}"
+                                },
+                                {
+                                    "Label": "Bagfilter type of cleaning",
+                                    "ValueKey": "Bagfilter_Cleaning_Type",
+                                    "InlineCss": "{#USER}"
+                                },
+                                {
+                                    "Label": "Offline Maintenance",
+                                    "ValueKey": "Offline_Maintainence",
+                                    "InlineCss": "{#USER}"
+                                },
+                                {
+                                    "Label": "Bag Filter Capacity",
+                                    "ValueKey": "Bag_Filter_Capacity_V",
+                                    "InlineCss": "{#CALC}"
+                                },
+                                {
+                                    "Label": "Bag Filter Capacity (in Sec)",
+                                    "ValueKey": "Process_Vol_M3_Sec",
+                                    "InlineCss": "{#CALC}"
+                                },
+                                {
+                                    "Label": "Bag Filter Capacity (in Min)",
+                                    "ValueKey": "Process_Vol_M3_Min",
+                                    "InlineCss": "{#CALC}"
+                                },
+                                {
+                                    "Label": "Bag Area",
+                                    "ValueKey": "Bag_Area",
+                                    "InlineCss": "{#CALC}"
+                                },
+                                {
+                                    "Label": "Bag Bottom Area",
+                                    "ValueKey": "Bag_Bottom_Area",
+                                    "InlineCss": "{#CALC}"
+                                },
+                                {
+                                    "Label": "Minimum Cloth Area Required for Filtration",
+                                    "ValueKey": "Min_Cloth_Area_Req",
+                                    "InlineCss": "{#CALC}"
+                                },
+                                {
+                                    "Label": "Minimum Bags Required",
+                                    "ValueKey": "Min_Bag_Req",
+                                    "InlineCss": "{#CALC}"
+                                },
+
+                                {
+                                    "Label": "Cage Inputs",
+                                    "ValueKey": null,
+                                    "IsHeader": true,
+                                    "InlineCss": "background-color:#92D050; font-weight:bold;",
+                                    "ColSpan": 2
+                                },
+                                {
+                                    "Label": "Cage Wire Diameter (mm)",
+                                    "ValueKey": "Cage_Wire_Dia",
+                                    "InlineCss": "{#USER}"
+                                },
+                                {
+                                    "Label": "No Of Cage Wires",
+                                    "ValueKey": "No_Of_Cage_Wires",
+                                    "InlineCss": "{#USER}"
+                                },
+                                {
+                                    "Label": "Ring Spacing (mm)",
+                                    "ValueKey": "Ring_Spacing",
+                                    "InlineCss": "{#USER}"
+                                },
+
+
+                                {
+                                    "Label": "Bag Selection",
+                                    "ValueKey": null,
+                                    "IsHeader": true,
+                                    "InlineCss": "background-color:#92D050; font-weight:bold;",
+                                    "ColSpan": 2
+                                },
+                                {
+                                    "Label": "Filter Bag Diameter (mm)",
+                                    "ValueKey": "Filter_Bag_Dia",
+                                    "InlineCss": "{#USER}"
+                                },
+                                {
+                                    "Label": "Filter Bag Length (mm)",
+                                    "ValueKey": "Fil_Bag_Length",
+                                    "InlineCss": "{#USER}"
+                                },
+                                {
+                                    "Label": "Cloth Area Per Bag (m<sup>2</sup>)",
+                                    "ValueKey": "ClothAreaPerBag",
+                                    "InlineCss": "{#CALC}"
+                                },
+                                {
+                                    "Label": "No Of Bags",
+                                    "ValueKey": "noOfBags",
+                                    "InlineCss": "{#CALC}"
+                                },
+                                {
+                                    "Label": "Filter Bag Recommendation",
+                                    "ValueKey": "Fil_Bag_Recommendation",
+                                    "InlineCss": "{#USER}"
+                                },
+                                {
+                                    "Label": "Bags per Row",
+                                    "ValueKey": "Bag_Per_Row",
+                                    "InlineCss": "{#CALC}"
+                                },
+                                {
+                                    "Label": "Number of Rows",
+                                    "ValueKey": "Number_Of_Rows",
+                                    "InlineCss": "{#CALC}"
+                                },
+                                {
+                                    "Label": "Actual Bags Required",
+                                    "ValueKey": "Actual_Bag_Req",
+                                    "InlineCss": "{#CALC}"
+                                },
+                                {
+                                    "Label": "Wire Cross Sectional Area (m<sup>2</sup>)",
+                                    "ValueKey": "Wire_Cross_Sec_Area",
+                                    "InlineCss": "{#CALC}"
+                                },
+                                {
+                                    "Label": "Number of Rings",
+                                    "ValueKey": "No_Of_Rings",
+                                    "InlineCss": "{#CALC}"
+                                },
+                                {
+                                    "Label": "Total Wire Length (m)",
+                                    "ValueKey": "Tot_Wire_Length",
+                                    "InlineCss": "{#CALC}"
+                                },
+                                {
+                                    "Label": "Cage Weight (Kg)",
+                                    "ValueKey": "BagSelection_Cage_Weight",
+                                    "InlineCss": "{#CALC}"
+                                },
+
+                                {
+                                    "Label": "Structure Inputs",
+                                    "ValueKey": null,
+                                    "IsHeader": true,
+                                    "InlineCss": "background-color:#92D050; font-weight:bold;",
+                                    "ColSpan": 2
+                                },
+                                {
+                                    "Label": "Gas Entry",
+                                    "ValueKey": "Gas_Entry",
+                                    "InlineCss": "{#USER}"
+                                },
+                                {
+                                    "Label": "Support Structure Type",
+                                    "ValueKey": "Support_Structure_Type",
+                                    "InlineCss": "{#USER}"
+                                },
+                                {
+                                    "Label": "Can Correction",
+                                    "ValueKey": "Can_Correction",
+                                    "InlineCss": "{#USER}"
+                                },
+                                {
+                                    "Label": "Pitch (C/C spacing between two adjacent bag filters)",
+                                    "ValueKey": "Max_Bags_And_Pitch",
+                                    "InlineCss": "{#CALC}"
+                                },
+                                {
+                                    "Label": "Nominal Width (in mm)",
+                                    "ValueKey": "Nominal_Width",
+                                    "InlineCss": "{#CALC}"
+                                },
+                                {
+                                    "Label": "Nominal Width (in m)",
+                                    "ValueKey": "Nominal_Width_Meters",
+                                    "InlineCss": "{#CALC}"
+                                },
+                                {
+                                    "Label": "Nominal Length (in mm)",
+                                    "ValueKey": "Nominal_Length",
+                                    "InlineCss": "{#CALC}"
+                                },
+                                {
+                                    "Label": "Nominal Length (in m)",
+                                    "ValueKey": "Nominal_Length_Meters",
+                                    "InlineCss": "{#CALC}"
+                                },
+                                {
+                                    "Label": "Area Adjustment (can/vel)",
+                                    "ValueKey": "Area_Adjust_Can_Vel",
+                                    "InlineCss": "{#CALC}"
+                                },
+                                {
+                                    "Label": "CAN Area Required",
+                                    "ValueKey": "Can_Area_Req",
+                                    "InlineCss": "{#CALC}"
+                                },
+                                {
+                                    "Label": "Total Available Area",
+                                    "ValueKey": "Total_Avl_Area",
+                                    "InlineCss": "{#CALC}"
+                                },
+                                {
+                                    "Label": "Length Correction",
+                                    "ValueKey": "Length_Correction",
+                                    "InlineCss": "{#CALC}"
+                                },
+                                {
+                                    "Label": "Length Correction Derived (mm)",
+                                    "ValueKey": "Length_Correction_Derived",
+                                    "InlineCss": "{#CALC}"
+                                },
+                                {
+                                    "Label": "Actual Length (in mm)",
+                                    "ValueKey": "Actual_Length",
+                                    "InlineCss": "{#CALC}"
+                                },
+                                {
+                                    "Label": "Actual Length (in m)",
+                                    "ValueKey": "Actual_Length_Meters",
+                                    "InlineCss": "{#CALC}"
+                                },
+                                {
+                                    "Label": "OL Flange Length (m)",
+                                    "ValueKey": "Ol_Flange_Length",
+                                    "InlineCss": "{#CALC}"
+                                },
+                                {
+                                    "Label": "Length (mm)",
+                                    "ValueKey": "Ol_Flange_Length_Mm",
+                                    "InlineCss": "{#CALC}"
+                                },
+
+                                {
+                                    "Label": "Capsule Inputs",
+                                    "ValueKey": null,
+                                    "IsHeader": true,
+                                    "InlineCss": "background-color:#92D050; font-weight:bold;",
+                                    "ColSpan": 2
+                                },
+                                {
+                                    "Label": "Solenoid Operated Diaphragm Valve Size (in)",
+                                    "ValueKey": "Valve_Size",
+                                    "InlineCss": "{#USER}"
+                                },
+                                {
+                                    "Label": "Voltage Rating (V)",
+                                    "ValueKey": "Voltage_Rating",
+                                    "InlineCss": "{#USER}"
+                                },
+                                {
+                                    "Label": "Cage Type",
+                                    "ValueKey": "Cage_Type",
+                                    "InlineCss": "{#USER}"
+                                },
+                                {
+                                    "Label": "Cage Length",
+                                    "ValueKey": "Cage_Length",
+                                    "InlineCss": "{#USER}"
+                                },
+                                {
+                                    "Label": "Capsule Height (mm)",
+                                    "ValueKey": "Capsule_Height",
+                                    "InlineCss": "{#CALC}"
+                                },
+                                {
+                                    "Label": "Tube Sheet Thickness (mm)",
+                                    "ValueKey": "Tube_Sheet_Thickness",
+                                    "InlineCss": "{#USER}"
+                                },
+                                {
+                                    "Label": "Capsule Wall Thickness (mm)",
+                                    "ValueKey": "Capsule_Wall_Thickness",
+                                    "InlineCss": "{#USER}"
+                                },
+                                {
+                                    "Label": "Canopy",
+                                    "ValueKey": "Canopy",
+                                    "InlineCss": "{#USER}"
+                                },
+                                {
+                                    "Label": "Solenoid Valve Maintainance",
+                                    "ValueKey": "Solenoid_Valve_Maintainence",
+                                    "InlineCss": "{#USER}"
+                                },
+                                {
+                                    "Label": "Area of Capsules (m<sup>2</sup>)",
+                                    "ValueKey": "Capsule_Area",
+                                    "InlineCss": "{#CALC}"
+                                },
+                                {
+                                    "Label": "Weight of Capsule (Kg)",
+                                    "ValueKey": "CapsuleInputs_Capsule_Weight",
+                                    "InlineCss": "{#CALC}"
+                                },
+                                {
+                                    "Label": "Area of Tubesheets (m<sup>2</sup>)",
+                                    "ValueKey": "Tubesheet_Area",
+                                    "InlineCss": "{#CALC}"
+                                },
+                                {
+                                    "Label": "Weight of Tube Sheet (Kg)",
+                                    "ValueKey": "Tubesheet_Weight",
+                                    "InlineCss": "{#CALC}"
+                                },
+
+                                {
+                                    "Label": "Casing Inputs",
+                                    "ValueKey": null,
+                                    "IsHeader": true,
+                                    "InlineCss": "background-color:#92D050; font-weight:bold;",
+                                    "ColSpan": 2
+                                },
+                                {
+                                    "Label": "Casing Wall Thickness (mm)",
+                                    "ValueKey": "Casing_Wall_Thickness",
+                                    "InlineCss": "{#USER}"
+                                },
+                                {
+                                    "Label": "Casing Height (m)",
+                                    "ValueKey": "Casing_Height",
+                                    "InlineCss": "{#CALC}"
+                                },
+                                {
+                                    "Label": "Casing Area (m<sup>2</sup>)",
+                                    "ValueKey": "Casing_Area",
+                                    "InlineCss": "{#CALC}"
+                                },
+                                {
+                                    "Label": "Weight of Casing (Kg)",
+                                    "ValueKey": "CasingInputs_Casing_Weight",
+                                    "InlineCss": "{#CALC}"
+                                },
+
+                                {
+                                    "Label": "Hopper / Trough Inputs",
+                                    "ValueKey": null,
+                                    "IsHeader": true,
+                                    "InlineCss": "background-color:#92D050; font-weight:bold;",
+                                    "ColSpan": 2
+                                },
+                                {
+                                    "Label": "Hopper Type",
+                                    "ValueKey": "Hopper_Type",
+                                    "InlineCss": "{#USER}"
+                                },
+                                {
+                                    "Label": "Process Compartments",
+                                    "ValueKey": "Process_Compartments",
+                                    "InlineCss": "{#USER}"
+                                },
+                                {
+                                    "Label": "Total Number Of Hoppers",
+                                    "ValueKey": "Tot_No_Of_Hoppers",
+                                    "InlineCss": "{#USER}"
+                                },
+                                {
+                                    "Label": "Total Number Of Trough",
+                                    "ValueKey": "Tot_No_Of_Trough",
+                                    "InlineCss": "{#USER}"
+                                },
+                                {
+                                    "Label": "Plenum Width (mm)",
+                                    "ValueKey": "Plenum_Width",
+                                    "InlineCss": "{#USER}"
+                                },
+                                {
+                                    "Label": "Inlet Height (mm)",
+                                    "ValueKey": "Inlet_Height",
+                                    "InlineCss": "{#USER}"
+                                },
+                                {
+                                    "Label": "Hopper/Trough Thickness (mm)",
+                                    "ValueKey": "Hopper_Thickness",
+                                    "InlineCss": "{#USER}"
+                                },
+                                {
+                                    "Label": "Hopper/Trough Valley Angle (<sup>o</sup>)",
+                                    "ValueKey": "Hopper_Valley_Angle",
+                                    "InlineCss": "{#USER}"
+                                },
+                                {
+                                    "Label": "Access Door Type",
+                                    "ValueKey": "Access_Door_Type",
+                                    "InlineCss": "{#USER}"
+                                },
+                                {
+                                    "Label": "Access Door Quantity (Qty)",
+                                    "ValueKey": "Access_Door_Qty",
+                                    "InlineCss": "{#USER}"
+                                },
+                                {
+                                    "Label": "RAV Maintenance Platform",
+                                    "ValueKey": "Rav_Maintainence_Pltform",
+                                    "InlineCss": "{#USER}"
+                                },
+                                {
+                                    "Label": "Hopper Access Stool",
+                                    "ValueKey": "Hopper_Access_Stool",
+                                    "InlineCss": "{#USER}"
+                                },
+                                {
+                                    "Label": "Is Distance Piece?",
+                                    "ValueKey": "Is_Distance_Piece",
+                                    "InlineCss": "{#USER}"
+                                },
+                                {
+                                    "Label": "Distance Piece Height (mm)",
+                                    "ValueKey": "Distance_Piece_Height",
+                                    "InlineCss": "{#USER}"
+                                },
+                                {
+                                    "Label": "Stiffening Factor",
+                                    "ValueKey": "Stiffening_Factor",
+                                    "InlineCss": "{#USER}"
+                                },
+                                {
+                                    "Label": "Hopper (Qty)",
+                                    "ValueKey": "Hopper",
+                                    "InlineCss": "{#USER}"
+                                },
+                                {
+                                    "Label": "Discharge Opening Square in Size (mm)",
+                                    "ValueKey": "Discharge_Opening_Sqr",
+                                    "InlineCss": "{#USER}"
+                                },
+                                {
+                                    "Label": "Material Handling",
+                                    "ValueKey": "Material_Handling",
+                                    "InlineCss": "{#USER}"
+                                },
+                                {
+                                    "Label": "Material Handling Quantity (Qty)",
+                                    "ValueKey": "Material_Handling_Qty",
+                                    "InlineCss": "{#USER}"
+                                },
+                                {
+                                    "Label": "Trough Outlet Length (mm)",
+                                    "ValueKey": "Trough_Outlet_Length",
+                                    "InlineCss": "{#USER}"
+                                },
+                                {
+                                    "Label": "Trough Outlet Width (mm)",
+                                    "ValueKey": "Trough_Outlet_Width",
+                                    "InlineCss": "{#USER}"
+                                },
+                                {
+                                    "Label": "Material Handling Type",
+                                    "ValueKey": "Material_Handling_Xxx",
+                                    "InlineCss": "{#USER}"
+                                },
+                                {
+                                    "Label": "Horizontal Difference in Length (m)",
+                                    "ValueKey": "Hor_Diff_Length",
+                                    "InlineCss": "{#CALC}"
+                                },
+                                {
+                                    "Label": "Horizontal Difference in Width (m)",
+                                    "ValueKey": "Hor_Diff_Width",
+                                    "InlineCss": "{#CALC}"
+                                },
+                                {
+                                    "Label": "Slant Offset Distance (C) (m)",
+                                    "ValueKey": "Slant_Offset_Dist",
+                                    "InlineCss": "{#CALC}"
+                                },
+                                {
+                                    "Label": "Hopper Height (in m)",
+                                    "ValueKey": "Hopper_Height",
+                                    "InlineCss": "{#CALC}"
+                                },
+                                {
+                                    "Label": "Hopper Height (in mm)",
+                                    "ValueKey": "Hopper_Height_Mm",
+                                    "InlineCss": "{#CALC}"
+                                },
+                                {
+                                    "Label": "Slanting Height of Hopper (H') (in m)",
+                                    "ValueKey": "Slanting_Hopper_Height",
+                                    "InlineCss": "{#CALC}"
+                                },
+                                {
+                                    "Label": "Area of Length Side (m<sup>2</sup>)",
+                                    "ValueKey": "Hopper_Area_Length",
+                                    "InlineCss": "{#CALC}"
+                                },
+                                {
+                                    "Label": "Area of Width Side (m<sup>2</sup>)",
+                                    "ValueKey": "Hopper_Area_Width",
+                                    "InlineCss": "{#CALC}"
+                                },
+                                {
+                                    "Label": "Total Area (m<sup>2</sup>)",
+                                    "ValueKey": "Hopper_Tot_Area",
+                                    "InlineCss": "{#CALC}"
+                                },
+                                {
+                                    "Label": "Weight of Hopper (Kg)",
+                                    "ValueKey": "HopperInputs_Hopper_Weight",
+                                    "InlineCss": "{#CALC}"
+                                },
+
+                                {
+                                    "Label": "Support Structure Inputs",
+                                    "ValueKey": null,
+                                    "IsHeader": true,
+                                    "InlineCss": "background-color:#92D050; font-weight:bold;",
+                                    "ColSpan": 2
+                                },
+                                {
+                                    "Label": "Type",
+                                    "ValueKey": "Support_Struct_Type",
+                                    "InlineCss": "{#USER}"
+                                },
+                                {
+                                    "Label": "Number of Column",
+                                    "ValueKey": "NoOfColumn",
+                                    "InlineCss": "{#CALC}"
+                                },
+                                {
+                                    "Label": "Column Height (mm)",
+                                    "ValueKey": "Column_Height",
+                                    "InlineCss": "{#USER}"
+                                },
+                                {
+                                    "Label": "Clearance Below Hopper Flange (mm)",
+                                    "ValueKey": "Ground_Clearance",
+                                    "InlineCss": "{#USER}"
+                                },
+                                {
+                                    "Label": "C/C Distance Between Column in X Direction (mm)",
+                                    "ValueKey": "Dist_Btw_Column_In_X",
+                                    "InlineCss": "{#CALC}"
+                                },
+                                {
+                                    "Label": "C/C Distance Between Column in Z Direction (mm)",
+                                    "ValueKey": "Dist_Btw_Column_In_Z",
+                                    "InlineCss": "{#CALC}"
+                                },
+                                {
+                                    "Label": "Number of Bays in X Direction",
+                                    "ValueKey": "No_Of_Bays_In_X",
+                                    "InlineCss": "{#CALC}"
+                                },
+                                {
+                                    "Label": "Number of Bays in Z Direction",
+                                    "ValueKey": "No_Of_Bays_In_Z",
+                                    "InlineCss": "{#CALC}"
+                                },
+
+                                {
+                                    "Label": "Access Group Inputs",
+                                    "ValueKey": null,
+                                    "IsHeader": true,
+                                    "InlineCss": "background-color:#92D050; font-weight:bold;",
+                                    "ColSpan": 2
+                                },
+                                {
+                                    "Label": "Type Of Access",
+                                    "ValueKey": "Access_Type",
+                                    "InlineCss": "{#USER}"
+                                },
+                                {
+                                    "Label": "Weight Of Cage Ladder (kg/m)",
+                                    "ValueKey": "Cage_Weight_Ladder",
+                                    "InlineCss": "{#USER}"
+                                },
+                                {
+                                    "Label": "Mid Landing Platform",
+                                    "ValueKey": "Mid_Landing_Pltform",
+                                    "InlineCss": "{#USER}"
+                                },
+                                {
+                                    "Label": "Weight Of Platform (kg)",
+                                    "ValueKey": "Platform_Weight",
+                                    "InlineCss": "{#USER}"
+                                },
+                                {
+                                    "Label": "Staircase Height (m)",
+                                    "ValueKey": "Staircase_Height",
+                                    "InlineCss": "{#USER}"
+                                },
+                                {
+                                    "Label": "Weight Of Staircase / Running m (kg/m)",
+                                    "ValueKey": "Staircase_Weight",
+                                    "InlineCss": "{#USER}"
+                                },
+                                {
+                                    "Label": "Weight Of Railing / Running m (kg/m)",
+                                    "ValueKey": "AccessGroup_Railing_Weight",
+                                    "InlineCss": "{#USER}"
+                                },
+                                {
+                                    "Label": "Maintenance Platform",
+                                    "ValueKey": "Maintainence_Pltform",
+                                    "InlineCss": "{#USER}"
+                                },
+                                {
+                                    "Label": "Weight Of Maintenance Platform (kg)",
+                                    "ValueKey": "Maintainence_Pltform_Weight",
+                                    "InlineCss": "{#USER}"
+                                },
+                                {
+                                    "Label": "Blow Pipe (Purge Pipe) (kg/m)",
+                                    "ValueKey": "BlowPipe",
+                                    "InlineCss": "{#CALC}"
+                                },
+                                {
+                                    "Label": "Pressure Header (kg/m)",
+                                    "ValueKey": "PressureHeader",
+                                    "InlineCss": "{#CALC}"
+                                },
+                                {
+                                    "Label": "Distance Piece (kg)",
+                                    "ValueKey": "DistancePiece",
+                                    "InlineCss": "{#CALC}"
+                                },
+                                {
+                                    "Label": "Access Stool Size (mm)",
+                                    "ValueKey": "Access_Stool_Size_Mm",
+                                    "InlineCss": "{#USER}"
+                                },
+                                {
+                                    "Label": "Access Stool Size (kg)",
+                                    "ValueKey": "Access_Stool_Size_Kg",
+                                    "InlineCss": "{#CALC}"
+                                },
+
+                                {
+                                    "Label": "Roof Door Inputs",
+                                    "ValueKey": null,
+                                    "IsHeader": true,
+                                    "InlineCss": "background-color:#92D050; font-weight:bold;",
+                                    "ColSpan": 2
+                                },
+                                {
+                                    "Label": "Roof Door Thickness (mm)",
+                                    "ValueKey": "Roof_Door_Thickness",
+                                    "InlineCss": "{#USER}"
+                                },
+                                {
+                                    "Label": "Number of Type 2 Doors",
+                                    "ValueKey": "T2d",
+                                    "InlineCss": "{#CALC}"
+                                },
+                                {
+                                    "Label": "Number of Type 3 Doors",
+                                    "ValueKey": "T3d",
+                                    "InlineCss": "{#CALC}"
+                                },
+                                {
+                                    "Label": "Total Number of Doors",
+                                    "ValueKey": "N_Doors",
+                                    "InlineCss": "{#CALC}"
+                                },
+                                {
+                                    "Label": "Numbers / Compartment",
+                                    "ValueKey": "Compartment_No",
+                                    "InlineCss": "{#CALC}"
+                                },
+                                {
+                                    "Label": "Stiffness Factor for Roof Door",
+                                    "ValueKey": "Stiffness_Factor_For_Roof_Door",
+                                    "InlineCss": "{#CALC}"
+                                },
+                                {
+                                    "Label": "Weight per Door (kg)",
+                                    "ValueKey": "Weight_Per_Door",
+                                    "InlineCss": "{#CALC}"
+                                },
+                                {
+                                    "Label": "Total Weight / Compartment (kg)",
+                                    "ValueKey": "RoofDoor_Tot_Weight_Per_Compartment",
+                                    "InlineCss": "{#CALC}"
+                                }
+
+
+                            ]
+                        },
+
+                        {
+                            "RowData": [ "", "" ],
+                            "RowStyle": {}
+                        }
+                    ],
+
+                    "RepeatRow": {
+                        "SourceKey": "list_values",
+                        "TemplateRowIndex": 1,
+                        "Columns": [
+                            "Process_Volume_M3h",
+                            "Location",
+                            "Process_Volume_Min_m3min",
+                            "Process_Acrmax_mmin",
+                            "Cloth_Area_m2",
+                            "BagFilterName",
+                            "Bag_Material",
+                            "Structure_Weight",
+                            "Tubesheet_Weight",
+                            "Weight_Of_Cage_Ladder",
+                            "Weight_Of_Mid_Landing_Plt",
+                            "Weight_Of_Maintainence_Pltform",
+                            "Hopper_Access_Stool_Weight",
+                            "Weight_Total"
+                        ]
+                    }
+                }
+
+            ]
         }
     ]
 }

@@ -9,6 +9,7 @@ namespace IonFiltra.BagFilters.Application.DTOs.Report
     public class ReportTemplateModelDto
     {
         public int Id { get; set; }
+        public int Order { get; set; } = 0;     // <-- new
         public string ReportName { get; set; } = string.Empty;
         public string Title { get; set; } = string.Empty;
         public string Logo { get; set; } = string.Empty;
@@ -53,6 +54,12 @@ namespace IonFiltra.BagFilters.Application.DTOs.Report
         public string? Src { get; set; }  // Image source
         public string? Caption { get; set; }  // Image caption
         public RepeatRowDefinition? RepeatRow { get; set; } // NEW
+
+        // --- NEW: group support ---
+        // For group containers that repeat child ReportRow templates per record
+        // Example JSON: "ChildRows": [ { "Type":"table", ... }, { "Type":"table", ... } ]
+        public List<ReportRow>? ChildRows { get; set; }
+
     }
 
     // Define a new TableRow class for individual row styling
@@ -62,6 +69,8 @@ namespace IonFiltra.BagFilters.Application.DTOs.Report
         public ReportRowStyle RowStyle { get; set; } = new();
         // NEW (instructions for renderer): if >1, some cells should use column span.
         public int ColumnSpan { get; set; } = 1;
+        // NEW: per-cell style list (indexes align with RowData)
+        public List<ReportRowStyle>? CellStyles { get; set; } = null;
         public List<BlockRowItem>? BlockRows { get; set; } = null;
     }
 
@@ -89,6 +98,8 @@ namespace IonFiltra.BagFilters.Application.DTOs.Report
         public string SourceKey { get; set; } = "list_values";
         public int TemplateRowIndex { get; set; } = 1;
         public List<string> Columns { get; set; } = new();
+        // optional: whether to insert a page break between records
+        public bool PageBreakBetweenRecords { get; set; } = false;
     }
 
     public class BlockRowItem

@@ -3,7 +3,7 @@ using System.Text.Json;
 using System.Text.RegularExpressions;
 using IonFiltra.BagFilters.Api.Controllers.Assignment;
 using IonFiltra.BagFilters.Application.DTOs.Report;
-using IonFiltra.BagFilters.Application.Helpers;
+
 using IonFiltra.BagFilters.Application.Interfaces.GenericView;
 using IonFiltra.BagFilters.Application.Interfaces.Report;
 using IonFiltra.BagFilters.Application.Services.GenericView;
@@ -32,128 +32,8 @@ namespace IonFiltra.BagFilters.Api.Controllers.Report
             _logger = logger;
         }
 
-        //[HttpPost("generate-report/{viewName}")]
-        //public async Task<IActionResult> GeneratePdf(string viewName, [FromBody] Dictionary<string, object> parameters)
-        //{
-        //    // 1) fetch the data from your GenericView service (calls repository)
-        //    var dataRows = await _viewService.GetViewDataWithParam(viewName, parameters); // inject IViewService in controller
-
-        //    if (dataRows == null || dataRows.Count == 0)
-        //        return NotFound("No data found for the given view.");
-
-        //    // 2️⃣ Use first record to build placeholders for header/footer
-        //    var firstRow = dataRows.First();
-        //    var templateValues = new Dictionary<string, object>();
-
-        //    // Add every column from your first record as a placeholder
-        //    foreach (var kvp in firstRow)
-        //    {
-        //        // This allows you to use {{columnName}} directly in your JSON templates
-        //        templateValues[kvp.Key] = kvp.Value ?? "—";
-        //    }
-
-        //    // Optionally, add static placeholders (if needed)
-        //    templateValues["Title"] = "Ionfiltra Bagfilter Report";
-        //    templateValues["DateGenerated"] = DateTime.Now.ToString("dd MMM yyyy");
-
-        //    // Use the content root (project root) — resolves correctly in dev and deployed environments
-        //    var headerPath = Path.Combine(_env.ContentRootPath, "Templates", "header.json");
-        //    var footerPath = Path.Combine(_env.ContentRootPath, "Templates", "footer.json");
-        //    var reportPath = Path.Combine(_env.ContentRootPath, "Templates", "report_template.json");
-
-        //    if (!System.IO.File.Exists(headerPath) || !System.IO.File.Exists(footerPath))
-        //        return StatusCode(500, $"Template files not found. Checked: {headerPath} and {footerPath}");
-
-        //    var (header, footer) = await ReportService.GetHeaderFooterRenderedAsync(headerPath, footerPath, templateValues);
-
-
-        //    // 4) optionally load an icon file
-        //    byte[] companyIconBytes = null;
-        //    var iconPath = Path.Combine(Directory.GetCurrentDirectory(), "wwwroot", "images", "company.png");
-        //    if (System.IO.File.Exists(iconPath))
-        //        companyIconBytes = await System.IO.File.ReadAllBytesAsync(iconPath);
-
-        //    // 5) generate pdf bytes
-        //    var pdfBytes = await _pdfService.GeneratePdfBytesAsync(header, footer, dataRows, companyIconBytes);
-
-        //    // 6) return file result
-        //    return File(pdfBytes, "application/pdf", $"{viewName}_report.pdf");
-        //}
-
-        [HttpPost("generate-report/{viewName}")]
-        public async Task<IActionResult> GeneratePdf(string viewName, [FromBody] Dictionary<string, object> parameters)
-        {
-            // 2️⃣ Define related view names here (locally in code)
-            //    You can make this dynamic based on report type, role, etc.
-            var relatedViews = new List<string>
-            {
-                "weightSummary",
-                "bagfiltermaster"
-            };
-            Dictionary<string, object> findBy = new() { { "enquiryId", parameters.ContainsKey("id") ? parameters["id"] : null } };
-            var dataRows = await _viewService.GetViewDataWithParam(viewName, parameters);
-            if (dataRows == null || dataRows.Count == 0)
-                return NotFound("No data found for the given view.");
-
-            // 3️⃣ Fetch all related views concurrently (fast and clean)
-            var fetchTasks = relatedViews.ToDictionary(
-                v => v,
-                v => _viewService.GetViewDataWithParam(v, findBy)
-            );
-
-            await Task.WhenAll(fetchTasks.Values);
-
-            // Build template values for header/footer (from first row)
-            var templateValues = new Dictionary<string, object>();
-            foreach (var kvp in dataRows.First())
-                templateValues[kvp.Key] = kvp.Value ?? "—";
-
-            templateValues["Title"] = "Ionfiltra Bagfilter Report";
-            templateValues["DateGenerated"] = DateTime.Now.ToString("dd MMM yyyy");
-
-            // 5️⃣ Add each related view’s data into templateValues
-            foreach (var view in relatedViews)
-            {
-                var viewData = fetchTasks[view].Result ?? new List<Dictionary<string, object>>();
-
-                // full JSON (optional, useful for debugging)
-                templateValues[$"{view}Data"] = JsonSerializer.Serialize(viewData);
-
-                // add first row with prefix for placeholders ({{weightSummary_TotalWeight}})
-                if (viewData.Any())
-                {
-                    foreach (var kvp in viewData.First())
-                        templateValues[kvp.Key] = kvp.Value ?? "—";
-                }
-            }
-
-            var headerPath = Path.Combine(_env.ContentRootPath, "Templates", "header.json");
-            var footerPath = Path.Combine(_env.ContentRootPath, "Templates", "footer.json");
-            var reportPath = Path.Combine(_env.ContentRootPath, "Templates", "report_template.json");
-
-            if (!System.IO.File.Exists(headerPath) || !System.IO.File.Exists(footerPath) || !System.IO.File.Exists(reportPath))
-                return StatusCode(500, $"Template files not found. Checked: {headerPath}, {footerPath}, {reportPath}");
-
-            var (header, footer) = await ReportService.GetHeaderFooterRenderedAsync(headerPath, footerPath, templateValues);
-
-            // Load & render the report template (titles/headers/style placeholders replaced; fields normalized)
-            var reportTemplate = await ReportTemplateLoader.LoadAndRenderAsync(reportPath, templateValues);
-
-            byte[] companyIconBytes = null;
-            var iconPath = Path.Combine(Directory.GetCurrentDirectory(), "wwwroot", "images", "company.png");
-            if (System.IO.File.Exists(iconPath))
-                companyIconBytes = await System.IO.File.ReadAllBytesAsync(iconPath);
-
-            // updated service signature to accept reportTemplate
-            var pdfBytes = await _pdfService.GeneratePdfBytesAsync(header, footer, dataRows, companyIconBytes, reportTemplate);
-
-            return File(pdfBytes, "application/pdf", $"{viewName}_report.pdf");
-        }
-
-
-
-
-      
+        
+        
 
 
         [HttpPost("generate-pdf")]
@@ -163,6 +43,14 @@ namespace IonFiltra.BagFilters.Api.Controllers.Report
             {
                 // Create service (preferably inject via DI)
                 var templates = await _pdfService.GetAllTemplatesFromFolderAsync();
+                // defensive: ensure not null
+                templates ??= new List<ReportTemplateModelDto>();
+
+                // order by Order (ascending). fallback to Title if multiple have same Order
+                templates = templates
+                    .OrderBy(t => t.Order)                  // primary: explicit order
+                    .ThenBy(t => t.Title, StringComparer.OrdinalIgnoreCase) // secondary: stable deterministic
+                    .ToList();
 
                 var evaluatedTemplates = new List<EvaluatedReportTemplateDto>();
                 var dictValues = new Dictionary<string, object>
@@ -190,14 +78,16 @@ namespace IonFiltra.BagFilters.Api.Controllers.Report
                             rowValues[kvp.Key] = kvp.Value;
                     }
 
-                    rowValues["list_values"] = listData;
-
+                    var masterDataList = bagfilterMasterData?.Result.ToList() ?? new List<Dictionary<string, object>>();
                     // Merge master data
-                    if (bagfilterMasterData.Result.FirstOrDefault() is Dictionary<string, object> masterData)
+                    if (masterDataList.Count > 0)
                     {
-                        foreach (var kvp in masterData)
+                        foreach (var kvp in masterDataList[0])
                             rowValues[kvp.Key] = kvp.Value;
                     }
+
+                    // for repeating rows add list_values
+                    rowValues["list_values"] = listData;
 
                     var processed = await _pdfService.PrepareTemplateWithValuesAsync(template, rowValues, headerValues);
 
@@ -328,9 +218,10 @@ namespace IonFiltra.BagFilters.Api.Controllers.Report
                                                                 var safeText = (!string.IsNullOrWhiteSpace(headerCell) && headerCell.StartsWith("data:image"))
                                                                                 ? "[Image]"
                                                                                 : headerCell ?? "";
+                                                                var background = ExtractBackgroundColor(firstRow.RowStyle.InlineCss);
 
                                                                 header.Cell().Element(cell =>
-                                                                    cell.Background("#F9C043")
+                                                                    cell.Background(background ?? "#F9C043")
                                                                         .Border(1)
                                                                         .Padding(5)
                                                                         .AlignMiddle()
@@ -363,9 +254,11 @@ namespace IonFiltra.BagFilters.Api.Controllers.Report
                                                             {
                                                                 var rowStyle = tableRow.RowStyle; // fallback
                                                                 var bgColor = ExtractBackgroundColor(rowStyle.InlineCss);
+                                                                var textColor = ExtractTextColor(rowStyle.InlineCss);
                                                                 var isBolder = ExtractFontWeightBold(rowStyle.InlineCss);
 
-                                                                var defaultTextStyle = TextStyle.Default.FontSize(10);
+
+                                                                var defaultTextStyle = TextStyle.Default.FontSize(10).FontColor(textColor);
 
                                                                 if (rowStyle.Bold || isBolder)
                                                                     defaultTextStyle = defaultTextStyle.Bold();
@@ -410,9 +303,10 @@ namespace IonFiltra.BagFilters.Api.Controllers.Report
                                                                 {
                                                                     var rowStyle = tableRow.RowStyle; // fallback
                                                                     var bgColor = ExtractBackgroundColor(rowStyle.InlineCss);
+                                                                    var textColor = ExtractTextColor(rowStyle.InlineCss);
                                                                     var isBolder = ExtractFontWeightBold(rowStyle.InlineCss);
 
-                                                                    var defaultTextStyle = TextStyle.Default.FontSize(10);
+                                                                    var defaultTextStyle = TextStyle.Default.FontSize(10).FontColor(textColor);
 
                                                                     if (rowStyle.Bold || isBolder)
                                                                         defaultTextStyle = defaultTextStyle.Bold();
@@ -449,8 +343,8 @@ namespace IonFiltra.BagFilters.Api.Controllers.Report
                                                                         });
                                                                 });
                                                             }
-                                                        }
 
+                                                        }
 
                                                     }
                                                 });
@@ -564,13 +458,82 @@ namespace IonFiltra.BagFilters.Api.Controllers.Report
             return match.Success ? match.Groups[1].Value : Colors.White;
         }
 
+        public static string ExtractTextColor(string? inlineCss)
+        {
+            if (string.IsNullOrWhiteSpace(inlineCss))
+                return Colors.Black;
+
+            // Split into declarations, e.g. ["background-color:#92D050", " font-weight:bold", " color: red"]
+            var parts = inlineCss.Split(';', StringSplitOptions.RemoveEmptyEntries);
+
+            foreach (var part in parts)
+            {
+                var kv = part.Split(':', 2, StringSplitOptions.RemoveEmptyEntries);
+                if (kv.Length != 2) continue;
+
+                var key = kv[0].Trim().ToLowerInvariant();
+                var value = kv[1].Trim();
+
+                // only match exact "color" key (not background-color etc.)
+                if (key != "color") continue;
+
+                // normalize value (strip trailing ; if any, trim)
+                value = value.Trim().TrimEnd(';').Trim();
+
+                // If it's a hex color (with or without #), normalize to #RRGGBB
+                var hexMatch = Regex.Match(value, @"^#?([0-9A-Fa-f]{3}|[0-9A-Fa-f]{6})$");
+                if (hexMatch.Success)
+                {
+                    var hex = hexMatch.Groups[1].Value;
+                    if (hex.Length == 3)
+                    {
+                        // expand short hex e.g. "FAB" -> "FFAABB"
+                        var r = hex[0].ToString();
+                        var g = hex[1].ToString();
+                        var b = hex[2].ToString();
+                        return $"#{r}{r}{g}{g}{b}{b}";
+                    }
+                    return $"#{hex}";
+                }
+
+                // Named colors mapping - extend as needed
+                var name = value.ToLowerInvariant();
+                return name switch
+                {
+                    "red" => Colors.Red.Medium,
+                    "blue" => Colors.Blue.Medium,
+                    "green" => Colors.Green.Medium,
+                    "yellow" => Colors.Yellow.Medium,
+                    "orange" => Colors.Orange.Medium,
+                    "gray" or "grey" => Colors.Grey.Medium,
+                    "black" => Colors.Black,
+                    "white" => Colors.White,
+                    "transparent" => Colors.Transparent,
+                    _ => Colors.Black // fallback for unknown names
+                };
+            }
+
+            // no explicit color declaration found -> fallback
+            return Colors.Black;
+        }
+
+
+
         public static bool ExtractFontWeightBold(string? inlineCss)
         {
             if (string.IsNullOrWhiteSpace(inlineCss))
                 return false;
 
-            return Regex.IsMatch(inlineCss, @"font-weight\s*:\s*bolder", RegexOptions.IgnoreCase);
+            // Matches:
+            // - font-weight: bold;
+            // - font-weight: bolder;
+            // - font-weight: 600;
+            // - font-weight: 700;
+            // Ignores case and whitespace
+            var match = Regex.Match(inlineCss, @"font-weight\s*:\s*(bold(er)?|[6-9]00)", RegexOptions.IgnoreCase);
+            return match.Success;
         }
+
 
         public static List<TextPart> ParseHtmlWithSubSup(string input)
         {

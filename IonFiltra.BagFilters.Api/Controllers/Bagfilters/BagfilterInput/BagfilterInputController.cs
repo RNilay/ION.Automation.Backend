@@ -20,14 +20,14 @@ namespace IonFiltra.BagFilters.API.Controllers.Bagfilters.BagfilterInputs
             _logger = logger;
         }
 
-        [HttpGet("get-by-id/{id}")]
+        [HttpGet("get-by-master-id/{id}")]
         public async Task<IActionResult> Get(int id)
         {
             _logger.LogInformation("Get started with Id {id}", new object[] { id });
 
             try
             {
-                var result = await _service.GetByProjectId(id);
+                var result = await _service.GetByMasterId(id);
 
                 if (result == null)
                 {
@@ -60,6 +60,33 @@ namespace IonFiltra.BagFilters.API.Controllers.Bagfilters.BagfilterInputs
                 });
             }
         }
+
+        [HttpGet("get-all/{enquiryId}")]
+        public async Task<IActionResult> GetAll(int enquiryId)
+        {
+            try
+            {
+                var result = await _service.GetAllByEnquiryId(enquiryId);
+
+                return Ok(new
+                {
+                    success = true,
+                    message = "Bagfilter data fetched successfully.",
+                    data = result
+                });
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error fetching Bagfilters for enquiry {id}", enquiryId);
+                return StatusCode(500, new
+                {
+                    success = false,
+                    message = "Internal server error.",
+                    data = (object?)null
+                });
+            }
+        }
+
 
 
         [HttpPost("add")]

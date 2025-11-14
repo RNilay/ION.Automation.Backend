@@ -22,18 +22,34 @@ namespace IonFiltra.BagFilters.Infrastructure.Repositories.Bagfilters.BagfilterI
             _logger = logger;
         }
 
-        public async Task<BagfilterInput?> GetByProjectId(int bagfilterMasterId)
+        public async Task<BagfilterInput?> GetByMasterId(int masterId)
         {
             return await _transactionHelper.ExecuteAsync(async dbContext =>
             {
-                _logger.LogInformation("Fetching BagfilterInput for Id {Id}", bagfilterMasterId);
+                _logger.LogInformation("Fetching BagfilterInput for Master Id {Id}", masterId);
                 return await dbContext.BagfilterInputs
                     .AsNoTracking()
-                    .Where(x => x.BagfilterMasterId == bagfilterMasterId)
+                    .Where(x => x.BagfilterMasterId == masterId)
                     .OrderByDescending(x => x.CreatedAt)
                     .FirstOrDefaultAsync();
             });
         }
+
+        public async Task<List<BagfilterInput>> GetAllByEnquiryId(int enquiryId)
+        {
+            return await _transactionHelper.ExecuteAsync(async dbContext =>
+            {
+                _logger.LogInformation("Fetching BagfilterInputs + BagfilterMaster for Enquiry Id {Id}", enquiryId);
+
+                return await dbContext.BagfilterInputs
+                    .AsNoTracking()
+                    .Include(x => x.BagfilterMaster) // include master table
+                    .Where(x => x.EnquiryId == enquiryId)
+                    .OrderBy(x => x.BagfilterMaster.BagFilterName) // ensure order 001,002,003
+                    .ToListAsync();
+            });
+        }
+
 
         public async Task<List<BagfilterInput>> GetByIdsAsync(IEnumerable<int> bagfilterInputIds)
         {

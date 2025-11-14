@@ -12,6 +12,7 @@ namespace IonFiltra.BagFilters.Application.Mappers.Bagfilters.BagfilterInputs
             {
                 BagfilterInputId = entity.BagfilterInputId,
                 BagfilterMasterId = entity.BagfilterMasterId,
+                BagFilterName = entity.BagfilterMaster?.BagFilterName,
                 BagfilterInput = new BagfilterInputDto
                 {
                     EnquiryId = entity.EnquiryId,
@@ -89,7 +90,7 @@ namespace IonFiltra.BagFilters.Application.Mappers.Bagfilters.BagfilterInputs
                     Column_Height = entity.Column_Height,
                     Bag_Per_Row = entity.Bag_Per_Row, //calculated
                     Number_Of_Rows = entity.Number_Of_Rows, //calculated
-                    S3dModel = entity.S3dModel,
+                    //S3dModel = entity.S3dModel,
                 },
 
             };

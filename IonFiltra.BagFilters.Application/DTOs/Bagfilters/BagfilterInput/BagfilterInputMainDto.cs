@@ -17,6 +17,7 @@ namespace IonFiltra.BagFilters.Application.DTOs.Bagfilters.BagfilterInputs
     {
         public int BagfilterInputId { get; set; }
         public int BagfilterMasterId { get; set; }
+        public string? BagFilterName { get; set; }
         public BagfilterMasterDto? BagfilterMaster { get; set; }
         public BagfilterInputDto BagfilterInput { get; set; } = null!;
 

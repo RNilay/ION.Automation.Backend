@@ -113,12 +113,19 @@ namespace IonFiltra.BagFilters.Application.Services.Bagfilters.BagfilterInputs
 
         
 
-        public async Task<BagfilterInputMainDto> GetByProjectId(int id)
+        public async Task<BagfilterInputMainDto> GetByMasterId(int masterId)
         {
-            _logger.LogInformation("Fetching BagfilterInput for Id {id}", id);
-            var entity = await _repository.GetByProjectId(id);
+            _logger.LogInformation("Fetching BagfilterInput for master id {id}", masterId);
+            var entity = await _repository.GetByMasterId(masterId);
             return BagfilterInputMapper.ToMainDto(entity);
         }
+
+        public async Task<List<BagfilterInputMainDto>> GetAllByEnquiryId(int enquiryId)
+        {
+            var list = await _repository.GetAllByEnquiryId(enquiryId);
+            return list.Select(BagfilterInputMapper.ToMainDto).ToList();
+        }
+
 
         public async Task<int> AddAsync(BagfilterInputMainDto dto)
         {

@@ -4,7 +4,8 @@ namespace IonFiltra.BagFilters.Application.Interfaces
 {
     public interface IBagfilterInputService
     {
-        Task<BagfilterInputMainDto> GetByProjectId(int projectId);
+        Task<BagfilterInputMainDto> GetByMasterId(int masterId);
+        Task<List<BagfilterInputMainDto>> GetAllByEnquiryId(int enquiryId);
         Task<int> AddAsync(BagfilterInputMainDto dto);
         Task UpdateAsync(BagfilterInputMainDto dto);
 

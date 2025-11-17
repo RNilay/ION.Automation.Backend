@@ -38,6 +38,18 @@
 	</ItemGroup>
 
 	<ItemGroup>
+	  <Content Update="Templates\bagfilter_details.json">
+	    <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+	  </Content>
+	  <Content Update="wwwroot\images\bagfilter\hopper_pyramidal_1.png">
+	    <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+	  </Content>
+	  <Content Update="wwwroot\images\bagfilter\hopper_pyramidal_2.png">
+	    <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+	  </Content>
+	  <Content Update="wwwroot\images\bagfilter\hopper_trough.png">
+	    <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+	  </Content>
 	  <Content Update="wwwroot\images\company.png">
 	    <CopyToOutputDirectory>Always</CopyToOutputDirectory>
 	  </Content>

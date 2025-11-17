@@ -52,19 +52,71 @@ namespace IonFiltra.BagFilters.Api.Controllers.Report
                     .ThenBy(t => t.Title, StringComparer.OrdinalIgnoreCase) // secondary: stable deterministic
                     .ToList();
 
+                // 2) Apply Summary / Detailed logic
+                if (string.Equals(request.ReportType, "Summary", StringComparison.OrdinalIgnoreCase))
+                {
+                    templates = templates
+                        .Where(t =>
+                            !(t.Order == 2 ||
+                              string.Equals(t.ReportName, "Bag Filter Details", StringComparison.OrdinalIgnoreCase)))
+                        .ToList();
+                }
+                // Detailed => keep all templates
+
                 var evaluatedTemplates = new List<EvaluatedReportTemplateDto>();
                 var dictValues = new Dictionary<string, object>
                 {
                     { "Id", request.EnquiryId },
                 };
+
+                //// 3) Common params for data views (bagfiltermaster, vw_* etc.)
+                //Dictionary<string, object> BuildDataParams()
+                //{
+                //    var p = new Dictionary<string, object>
+                //    {
+                //        ["EnquiryId"] = request.EnquiryId
+                //    };
+
+                //    if (request.ProcessVolumeM3h.HasValue)
+                //    {
+                //        // name it exactly as your SQL/view expects
+                //        p["Process_Volume_M3h"] = request.ProcessVolumeM3h.Value;
+                //        // if your view expects process_volume_m3h instead:
+                //        // p["process_volume_m3h"] = request.ProcessVolumeM3h.Value;
+                //    }
+
+                //    return p;
+                //}
+
                 // For each template load data - you said use "enquiry" as table name for now
                 foreach (var template in templates)
                 {
                     // YOU: fetch data for this report. For now use a sample dict:
+                    /// Build parameters for this template only
+                    var dataParams = new Dictionary<string, object>
+                    {
+                        ["EnquiryId"] = request.EnquiryId
+                    };
+
+                    // 👉 Only Bagfilter Details gets the extra Process_Volume
+                    bool isBagfilterDetails =
+                        template.ReportName?.Equals("Bag Filter Details", StringComparison.OrdinalIgnoreCase) == true
+                        || template.Order == 2
+                        || template.EntityDbName?.Equals("vw_BagfilterDetails", StringComparison.OrdinalIgnoreCase) == true;
+
+                    if (isBagfilterDetails && request.ProcessVolumeM3h.HasValue)
+                    {
+                        dataParams["Process_Volume_M3h"] = request.ProcessVolumeM3h.Value;
+                    }
+
 
                     var headerDict = _viewService.GetViewDataWithParam("enquiry", dictValues);
-                    var bagfilterMasterData = _viewService.GetViewDataWithParam("bagfiltermaster", new Dictionary<string, object> { ["EnquiryId"] = request.EnquiryId });
-                    var reportInputData = await _viewService.GetViewDataWithParam(template.EntityDbName, new Dictionary<string, object> { ["EnquiryId"] = request.EnquiryId });
+                    //var bagfilterMasterData = _viewService.GetViewDataWithParam("bagfiltermaster", new Dictionary<string, object> { ["EnquiryId"] = request.EnquiryId });
+                    //var reportInputData = await _viewService.GetViewDataWithParam(template.EntityDbName, new Dictionary<string, object> { ["EnquiryId"] = request.EnquiryId });
+                    var bagfilterMasterData = _viewService.GetViewDataWithParam("bagfiltermaster", dataParams);
+                    var reportInputData = await _viewService.GetViewDataWithParam(template.EntityDbName, dataParams);
+
+
                     var headerValues = headerDict.Result.FirstOrDefault() ?? new Dictionary<string, object>();
                     //var rowInputDict = reportInputData.FirstOrDefault() ?? new Dictionary<string, object>();
                     // Defensive conversion: always end up with a List<Dictionary<string,object>>
@@ -177,9 +229,16 @@ namespace IonFiltra.BagFilters.Api.Controllers.Report
 
                                         foreach (var row in processedTemplate.Rows)
                                         {
+                                            // 1️⃣ Page break rows – used by Bagfilter Details group
+                                            if (row.Type?.Equals("pagebreak", StringComparison.OrdinalIgnoreCase) == true)
+                                            {
+                                                // This will end the current page and start a new one
+                                                col.Item().PageBreak();
+                                                continue;
+                                            }
                                             if (row.Type == "heading")
                                             {
-                                                col.Item().Text(row.Text).FontSize(16).Bold();
+                                                col.Item().Text(row.Text).FontSize(14).Bold();
                                             }
                                             else if (row.Type == "text")
                                             {
@@ -227,7 +286,28 @@ namespace IonFiltra.BagFilters.Api.Controllers.Report
                                                                         .AlignMiddle()
                                                                         .AlignCenter()
                                                                         .DefaultTextStyle(x => x.FontColor(Colors.White).SemiBold())
-                                                                        .Text(safeText)
+                                                                        //.Text(safeText)
+                                                                        .Text(text =>
+                                                                        {
+                                                                            foreach (var part in ParseHtmlWithSubSup(safeText))
+                                                                            {
+                                                                                if (part.IsLineBreak)
+                                                                                {
+                                                                                    text.Line("");
+                                                                                    continue;
+                                                                                }
+
+                                                                                var span = text.Span(part.Text);
+
+                                                                                if (part.IsSub) span.Subscript();
+                                                                                if (part.IsSup) span.Superscript();
+                                                                                if (part.IsBold) span.Bold();
+                                                                                if (part.IsItalic) span.Italic();
+
+                                                                                if (!part.IsSub && !part.IsSup)
+                                                                                    span.FontSize(10);
+                                                                            }
+                                                                        })
                                                                 );
                                                             }
                                                         });
@@ -305,11 +385,14 @@ namespace IonFiltra.BagFilters.Api.Controllers.Report
                                                                     var bgColor = ExtractBackgroundColor(rowStyle.InlineCss);
                                                                     var textColor = ExtractTextColor(rowStyle.InlineCss);
                                                                     var isBolder = ExtractFontWeightBold(rowStyle.InlineCss);
+                                                                  
 
                                                                     var defaultTextStyle = TextStyle.Default.FontSize(10).FontColor(textColor);
 
                                                                     if (rowStyle.Bold || isBolder)
                                                                         defaultTextStyle = defaultTextStyle.Bold();
+
+                                                                    
 
                                                                     cell.Background(bgColor)
                                                                         .Border(1)
@@ -425,6 +508,12 @@ namespace IonFiltra.BagFilters.Api.Controllers.Report
         public class ProjectReportRequest
         {
             public int EnquiryId { get; set; }
+
+            // "Detailed" or "Summary"
+            public string ReportType { get; set; } = "Detailed";
+
+            // Optional process volume in m³/h
+            public double? ProcessVolumeM3h { get; set; }
         }
 
         public class EvaluatedReportTemplateDto
@@ -533,6 +622,54 @@ namespace IonFiltra.BagFilters.Api.Controllers.Report
             var match = Regex.Match(inlineCss, @"font-weight\s*:\s*(bold(er)?|[6-9]00)", RegexOptions.IgnoreCase);
             return match.Success;
         }
+
+        public static (float Top, float Right, float Bottom, float Left) ExtractPadding(string? inlineCss)
+        {
+            if (string.IsNullOrWhiteSpace(inlineCss))
+                return (0, 0, 0, 0);
+
+            // Match common patterns like:
+            // padding: 5px;
+            // padding: 5px 10px;
+            // padding: 5px 10px 15px;
+            // padding: 5px 10px 15px 20px;
+            var match = Regex.Match(inlineCss, @"padding\s*:\s*([\d\.]+)px(?:\s+([\d\.]+)px)?(?:\s+([\d\.]+)px)?(?:\s+([\d\.]+)px)?", RegexOptions.IgnoreCase);
+            if (match.Success)
+            {
+                float p1 = float.TryParse(match.Groups[1].Value, out var v1) ? v1 : 0;
+                float p2 = float.TryParse(match.Groups[2].Value, out var v2) ? v2 : p1;
+                float p3 = float.TryParse(match.Groups[3].Value, out var v3) ? v3 : p1;
+                float p4 = float.TryParse(match.Groups[4].Value, out var v4) ? v4 : p2;
+
+                // CSS padding shorthand interpretation:
+                // 1 value: all sides same
+                // 2 values: top/bottom = first, left/right = second
+                // 3 values: top, left/right, bottom
+                // 4 values: top, right, bottom, left
+                switch (match.Groups.Cast<Group>().Count(g => g.Success))
+                {
+                    case 2: return (p1, p1, p1, p1);
+                    case 3: return (p1, p2, p1, p2);
+                    case 4: return (p1, p2, p3, p2);
+                    default: return (p1, p2, p3, p4);
+                }
+            }
+
+            // Match individual side paddings: padding-top / padding-bottom / padding-left / padding-right
+            float top = ExtractSidePadding(inlineCss, "top");
+            float right = ExtractSidePadding(inlineCss, "right");
+            float bottom = ExtractSidePadding(inlineCss, "bottom");
+            float left = ExtractSidePadding(inlineCss, "left");
+
+            return (top, right, bottom, left);
+        }
+
+        private static float ExtractSidePadding(string inlineCss, string side)
+        {
+            var match = Regex.Match(inlineCss, $@"padding-{side}\s*:\s*([\d\.]+)px", RegexOptions.IgnoreCase);
+            return match.Success && float.TryParse(match.Groups[1].Value, out var v) ? v : 0;
+        }
+
 
 
         public static List<TextPart> ParseHtmlWithSubSup(string input)

@@ -160,6 +160,21 @@ namespace IonFiltra.BagFilters.Application.Services.Report
 
                                 outRows.Add(headerRow);
                             }
+                            else if (block.IsSpacer)
+                            {
+                                var spacerStyle = CloneRowStyle(tr.RowStyle) ?? new ReportRowStyle();
+                                if (!string.IsNullOrWhiteSpace(block.InlineCss))
+                                    spacerStyle.InlineCss = block.InlineCss;
+
+                                outRows.Add(new TableRow
+                                {
+                                    RowStyle = spacerStyle,
+                                    RowData = new List<string> { "", "" },   // two columns => blank row
+                                    ColumnSpan = Math.Max(1, block.ColSpan)
+                                });
+
+                                continue;
+                            }
                             else
                             {
                                 // normal label/value
@@ -183,6 +198,25 @@ namespace IonFiltra.BagFilters.Application.Services.Report
                                 };
 
                                 outRows.Add(r);
+
+
+                                // ✅ Only for Bagfilter Details and only after Hopper Height row
+                                if (reportTemplate.ReportName == "Bagfilter Details" &&
+                                    string.Equals(block.ValueKey, "Hopper_Height", StringComparison.OrdinalIgnoreCase))
+                                {
+                                    // Peek Hopper_Type from the current record
+                                    string? hopperType = null;
+                                    if (item.TryGetValue("Hopper_Type", out var hopperTypeObj) && hopperTypeObj != null)
+                                        hopperType = hopperTypeObj.ToString();
+
+                                    // Build extra rows with images based on Hopper_Type
+                                    var imageRows = BuildHopperImageRows(hopperType);
+                                    if (imageRows.Count > 0)
+                                    {
+                                        outRows.AddRange(imageRows);
+                                    }
+                                }
+
                             }
                         }
 
@@ -235,8 +269,9 @@ namespace IonFiltra.BagFilters.Application.Services.Report
                         continue;
 
                     // For each record in the source list, render the group's ChildRows (in order)
-                    foreach (var record in sourceList)
+                    for (int idx = 0; idx < sourceList.Count; idx++)
                     {
+                        var record = sourceList[idx];
                         // child rows are ReportRow-like (tables typically)
                         foreach (var child in row.ChildRows ?? new List<ReportRow>())
                         {
@@ -261,10 +296,18 @@ namespace IonFiltra.BagFilters.Application.Services.Report
                             }
                         }
 
-                        // Insert optional pagebreak separator between records.
-                        // The renderer must know how to treat Type == "pagebreak". If you already support this, uncomment.
-                        var pageBreakRow = new ReportRow { Type = "pagebreak" };
-                        newRowsList.Add(pageBreakRow);
+                        // 🔹 add pagebreak only between records, not after the last one
+                        if (idx < sourceList.Count - 1)
+                        {
+                            // and **optionally** only for this specific template:
+                            // if (reportTemplate.ReportName == "Bagfilter Details")
+                            newRowsList.Add(new ReportRow { Type = "pagebreak" });
+                        }
+
+                        //// Insert optional pagebreak separator between records.
+                        //// The renderer must know how to treat Type == "pagebreak". If you already support this, uncomment.
+                        //var pageBreakRow = new ReportRow { Type = "pagebreak" };
+                        //newRowsList.Add(pageBreakRow);
                     }
 
                     // Done with group — continue to next original row (we replaced the group with expanded children)
@@ -313,6 +356,8 @@ namespace IonFiltra.BagFilters.Application.Services.Report
                             {
                                 if (block == null) continue;
 
+                                
+
                                 if (block.IsHeader)
                                 {
                                     var headerStyle = CloneRowStyle(templateRow.RowStyle);
@@ -349,6 +394,7 @@ namespace IonFiltra.BagFilters.Application.Services.Report
                                     };
 
                                     expandedRows.Add(r);
+
                                 }
                             }
 
@@ -423,6 +469,71 @@ namespace IonFiltra.BagFilters.Application.Services.Report
         }
 
 
+        // Adjust path logic as per your project structure
+        private List<TableRow> BuildHopperImageRows(string? hopperType)
+        {
+            var rows = new List<TableRow>();
+
+            if (string.IsNullOrWhiteSpace(hopperType))
+                return rows;
+
+            // Example: map hopperType -> image filenames
+            // "Hopper" -> hopper_1.png, hopper_2.png
+            // "Trough" -> trough_1.png, trough_2.png
+            var imageFiles = hopperType.Equals("Pyramid", StringComparison.OrdinalIgnoreCase)
+                ? new[] { "hopper_pyramidal_1.png", "hopper_pyramidal_2.png" }
+                : hopperType.Equals("Trough", StringComparison.OrdinalIgnoreCase)
+                    ? new[] { "hopper_trough.png" }
+                    : Array.Empty<string>();
+
+            foreach (var fileName in imageFiles)
+            {
+                var base64 = TryLoadImageAsBase64(fileName);
+                if (string.IsNullOrEmpty(base64))
+                    continue;
+
+                // 2-column table: left empty, right contains base64 image
+                rows.Add(new TableRow
+                {
+                    RowStyle = new ReportRowStyle
+                    {
+                        // If you want to control bg or padding for image row
+                        InlineCss = "background-color:#FFFFFF; padding-top:4px; padding-bottom:4px;"
+                    },
+                    RowData = new List<string>
+            {
+                "",                // Description column empty
+                base64             // Value column has data:image...
+            }
+                });
+            }
+
+            return rows;
+        }
+
+        private string? TryLoadImageAsBase64(string fileName)
+        {
+            try
+            {
+                // Example: /wwwroot/images/bagfilter/...
+                var root = Directory.GetCurrentDirectory();
+                var fullPath = Path.Combine(root, "wwwroot", "images", "bagfilter", fileName);
+
+                if (!File.Exists(fullPath))
+                    return null;
+
+                var bytes = File.ReadAllBytes(fullPath);
+                var base64 = Convert.ToBase64String(bytes);
+
+                // Let the existing renderer treat this as an image
+                return $"data:image/png;base64,{base64}";
+            }
+            catch (Exception ex)
+            {
+                _logger?.LogWarning(ex, "Failed to load hopper image {FileName}", fileName);
+                return null;
+            }
+        }
 
 
 

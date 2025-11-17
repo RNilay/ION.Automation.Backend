@@ -1,8 +1,8 @@
 {
     "Id": 2,
     "Order": 2,
-    "ReportName": "Bagfilter Details",
-    "Title": "Bagfilter Details",
+    "ReportName": "Bag Filter Details",
+    "Title": "Bag Filter Details",
     "EntityDbName": "vw_BagfilterDetails",
     "Logo": "wwwroot/images/company.png",
     "Layout": {
@@ -36,7 +36,7 @@
                     "ColumnWidths": [ 70, 30 ],
                     "Rows": [
                         {
-                            "RowData": [ "Process Volume", "Qty" ],
+                            "RowData": [ "Process Volume (m<sup>3</sup>/hr)", "Qty (Nos.)" ],
                             "RowStyle": {
                                 "FontSize": 12,
                                 "Bold": true,
@@ -45,9 +45,20 @@
                         },
                         {
                             "RowData": [ "{Process_Volume_M3h}", "{Qty} of {Enquiry_RequiredBagFilters}" ],
-                            "RowStyle": { "FontSize": 11 }
+                            "RowStyle": {
+                                "FontSize": 11,
+                                "InlineCss": "font-weight: bold"
+                            }
                         }
                     ]
+                },
+                {
+                    "Type": "heading",
+                    "Text": "Sample Calculations",
+                    "Style": {
+                        "Bold": true,
+                        "InlineCss": "font-weight:bolder;"
+                    }
                 },
 
                 {
@@ -150,6 +161,15 @@
                                     "Bold": true,
                                     "InlineCss": "background-color:#F1F7AC; font-weight:bolder;"
                                 },
+                                //leave a blank row after each section
+                                {
+                                    "Label": "-",
+                                    "ValueKey": null,
+                                    "IsHeader": true,
+                                    "InlineCss": "background-color:#FFFFFF; color: #FFFFFF; padding:8px 12px 4px 10px;",
+                                    "ColSpan": 2
+                                },
+
 
 
                                 {
@@ -227,7 +247,7 @@
                                     "InlineCss": "{#USER}"
                                 },
                                 {
-                                    "Label": "Bagfilter type of cleaning",
+                                    "Label": "Bag Filter type of cleaning",
                                     "ValueKey": "Bagfilter_Cleaning_Type",
                                     "InlineCss": "{#USER}"
                                 },
@@ -271,6 +291,14 @@
                                     "ValueKey": "Min_Bag_Req",
                                     "InlineCss": "{#CALC}"
                                 },
+                                //leave a blank row after each section
+                                {
+                                    "Label": "-",
+                                    "ValueKey": null,
+                                    "IsHeader": true,
+                                    "InlineCss": "background-color:#FFFFFF; color: #FFFFFF;",
+                                    "ColSpan": 2
+                                },
 
                                 {
                                     "Label": "Cage Inputs",
@@ -293,6 +321,14 @@
                                     "Label": "Ring Spacing (mm)",
                                     "ValueKey": "Ring_Spacing",
                                     "InlineCss": "{#USER}"
+                                },
+                                //leave a blank row after each section
+                                {
+                                    "Label": "-",
+                                    "ValueKey": null,
+                                    "IsHeader": true,
+                                    "InlineCss": "background-color:#FFFFFF; color: #FFFFFF;",
+                                    "ColSpan": 2
                                 },
 
 
@@ -362,6 +398,14 @@
                                     "Label": "Cage Weight (Kg)",
                                     "ValueKey": "BagSelection_Cage_Weight",
                                     "InlineCss": "{#CALC}"
+                                },
+                                //leave a blank row after each section
+                                {
+                                    "Label": "-",
+                                    "ValueKey": null,
+                                    "IsHeader": true,
+                                    "InlineCss": "background-color:#FFFFFF; color: #FFFFFF;",
+                                    "ColSpan": 2
                                 },
 
                                 {
@@ -456,6 +500,14 @@
                                     "ValueKey": "Ol_Flange_Length_Mm",
                                     "InlineCss": "{#CALC}"
                                 },
+                                //leave a blank row after each section
+                                {
+                                    "Label": "-",
+                                    "ValueKey": null,
+                                    "IsHeader": true,
+                                    "InlineCss": "background-color:#FFFFFF; color: #FFFFFF;",
+                                    "ColSpan": 2
+                                },
 
                                 {
                                     "Label": "Capsule Inputs",
@@ -529,6 +581,14 @@
                                     "ValueKey": "Tubesheet_Weight",
                                     "InlineCss": "{#CALC}"
                                 },
+                                //leave a blank row after each section
+                                {
+                                    "Label": "-",
+                                    "ValueKey": null,
+                                    "IsHeader": true,
+                                    "InlineCss": "background-color:#FFFFFF; color: #FFFFFF;",
+                                    "ColSpan": 2
+                                },
 
                                 {
                                     "Label": "Casing Inputs",
@@ -556,6 +616,14 @@
                                     "Label": "Weight of Casing (Kg)",
                                     "ValueKey": "CasingInputs_Casing_Weight",
                                     "InlineCss": "{#CALC}"
+                                },
+                                //leave a blank row after each section
+                                {
+                                    "Label": "-",
+                                    "ValueKey": null,
+                                    "IsHeader": true,
+                                    "InlineCss": "background-color:#FFFFFF; color: #FFFFFF;",
+                                    "ColSpan": 2
                                 },
 
                                 {
@@ -725,6 +793,14 @@
                                     "ValueKey": "HopperInputs_Hopper_Weight",
                                     "InlineCss": "{#CALC}"
                                 },
+                                //leave a blank row after each section
+                                {
+                                    "Label": "-",
+                                    "ValueKey": null,
+                                    "IsHeader": true,
+                                    "InlineCss": "background-color:#FFFFFF; color: #FFFFFF;",
+                                    "ColSpan": 2
+                                },
 
                                 {
                                     "Label": "Support Structure Inputs",
@@ -772,6 +848,14 @@
                                     "Label": "Number of Bays in Z Direction",
                                     "ValueKey": "No_Of_Bays_In_Z",
                                     "InlineCss": "{#CALC}"
+                                },
+                                //leave a blank row after each section
+                                {
+                                    "Label": "-",
+                                    "ValueKey": null,
+                                    "IsHeader": true,
+                                    "InlineCss": "background-color:#FFFFFF; color: #FFFFFF;",
+                                    "ColSpan": 2
                                 },
 
                                 {
@@ -850,6 +934,14 @@
                                     "Label": "Access Stool Size (kg)",
                                     "ValueKey": "Access_Stool_Size_Kg",
                                     "InlineCss": "{#CALC}"
+                                },
+                                //leave a blank row after each section
+                                {
+                                    "Label": "-",
+                                    "ValueKey": null,
+                                    "IsHeader": true,
+                                    "InlineCss": "background-color:#FFFFFF; color: #FFFFFF;",
+                                    "ColSpan": 2
                                 },
 
                                 {

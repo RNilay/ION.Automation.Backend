@@ -107,6 +107,7 @@ namespace IonFiltra.BagFilters.Application.DTOs.Report
         public string Label { get; set; } = "";
         public string? ValueKey { get; set; } = null; // null => header row (no value cell)
         public bool IsHeader { get; set; } = false;
+        public bool IsSpacer { get; set; } = false;
         public bool IsFooter { get; set; } = false;
         public string? InlineCss { get; set; } = null;
         public int ColSpan { get; set; } = 1; // if 2 => span both columns

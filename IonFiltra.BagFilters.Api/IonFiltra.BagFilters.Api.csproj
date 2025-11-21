@@ -41,6 +41,9 @@
 	  <Content Update="Templates\bagfilter_details.json">
 	    <CopyToOutputDirectory>Always</CopyToOutputDirectory>
 	  </Content>
+	  <Content Update="Templates\painting_cost.json">
+	    <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+	  </Content>
 	  <Content Update="wwwroot\images\bagfilter\hopper_pyramidal_1.png">
 	    <CopyToOutputDirectory>Always</CopyToOutputDirectory>
 	  </Content>

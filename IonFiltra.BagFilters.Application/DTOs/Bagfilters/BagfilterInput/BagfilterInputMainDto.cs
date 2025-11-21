@@ -5,11 +5,14 @@ using IonFiltra.BagFilters.Application.DTOs.Bagfilters.Sections.Cage_Inputs;
 using IonFiltra.BagFilters.Application.DTOs.Bagfilters.Sections.Capsule_Inputs;
 using IonFiltra.BagFilters.Application.DTOs.Bagfilters.Sections.Casing_Inputs;
 using IonFiltra.BagFilters.Application.DTOs.Bagfilters.Sections.Hopper_Trough;
+using IonFiltra.BagFilters.Application.DTOs.Bagfilters.Sections.Painting;
 using IonFiltra.BagFilters.Application.DTOs.Bagfilters.Sections.Process_Info;
 using IonFiltra.BagFilters.Application.DTOs.Bagfilters.Sections.Roof_Door;
 using IonFiltra.BagFilters.Application.DTOs.Bagfilters.Sections.Structure_Inputs;
 using IonFiltra.BagFilters.Application.DTOs.Bagfilters.Sections.Support_Structure;
 using IonFiltra.BagFilters.Application.DTOs.Bagfilters.Sections.Weight_Summary;
+using IonFiltra.BagFilters.Application.DTOs.BOM.Bill_Of_Material;
+using IonFiltra.BagFilters.Application.DTOs.BOM.Painting_Cost;
 
 namespace IonFiltra.BagFilters.Application.DTOs.Bagfilters.BagfilterInputs
 {
@@ -32,6 +35,12 @@ namespace IonFiltra.BagFilters.Application.DTOs.Bagfilters.BagfilterInputs
         public SupportStructureDto? SupportStructure { get; set; }
         public AccessGroupDto? AccessGroup { get; set; }
         public RoofDoorDto? RoofDoor { get; set; }
+        public PaintingAreaDto? PaintingArea { get; set; }
+
+        public List<BillOfMaterialDto> BillOfMaterial { get; set; }
+        = new List<BillOfMaterialDto>();
+
+        public PaintingCostDto? PaintingCost { get; set; }
 
     }
 }

@@ -4,6 +4,7 @@ namespace IonFiltra.BagFilters.Application.DTOs.Bagfilters.Sections.Weight_Summa
     {
         public int Id { get; set; }
         public int EnquiryId { get; set; }
+        public int BagfilterMasterId { get; set; }
         public WeightSummaryDto WeightSummary { get; set; }
 
     }

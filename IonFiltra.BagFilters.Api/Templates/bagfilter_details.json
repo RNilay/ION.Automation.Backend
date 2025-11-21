@@ -1022,7 +1022,171 @@
                             "Weight_Total"
                         ]
                     }
+                },
+                // Area Calculations - Painting Table
+                {
+                    "Type": "table",
+                    "LayoutColumns": [ "", "", "" ],
+                    "ColumnWidths": [ 50, 25, 25 ],
+                    "Rows": [
+                        {
+                            "RowData": [ "Area Calculations - Painting", "", "" ],
+                            "RowStyle": {
+                                "FontSize": 12,
+                                "Bold": true,
+                                "InlineCss": "background-color:#4B2BA6; color:#FFFFFF; font-weight:bolder;"
+                            },
+                            "ColumnSpan": 3
+                        },
+                        {
+                            "RowData": [ "ITEM", "QTY (mm²)", "QTY (m²)" ],
+                            "RowStyle": {
+                                "FontSize": 11,
+                                "Bold": true,
+                                "InlineCss": "background-color:#6D28D9; color:#FFFFFF; font-weight:bolder;"
+                            }
+                        },
+
+                        {
+                            "RowData": [ "A) Inside Area", "", "" ],
+                            "RowStyle": {
+                                "FontSize": 11,
+                                "Bold": true,
+                                "InlineCss": "background-color:#F3F4F6; font-weight:bold;"
+                            },
+                            "ColumnSpan": 3
+                        },
+                        {
+                            "RowData": [
+                                "Casing Area",
+                                "{Inside_Area_Casing_Area_Mm2}",
+                                "{Inside_Area_Casing_Area_M2}"
+                            ],
+                            "RowStyle": { "FontSize": 10 }
+                        },
+                        {
+                            "RowData": [
+                                "Hopper Area",
+                                "{Inside_Area_Hopper_Area_Mm2}",
+                                "{Inside_Area_Hopper_Area_M2}"
+                            ],
+                            "RowStyle": { "FontSize": 10 }
+                        },
+                        {
+                            "RowData": [
+                                "Air Header",
+                                "{Inside_Area_Air_Header_Mm2}",
+                                "{Inside_Area_Air_Header_M2}"
+                            ],
+                            "RowStyle": { "FontSize": 10 }
+                        },
+                        {
+                            "RowData": [
+                                "Purge Pipe",
+                                "{Inside_Area_Purge_Pipe_Mm2}",
+                                "{Inside_Area_Purge_Pipe_M2}"
+                            ],
+                            "RowStyle": { "FontSize": 10 }
+                        },
+                        {
+                            "RowData": [
+                                "Roof Door",
+                                "{Inside_Area_Roof_Door_Mm2}",
+                                "{Inside_Area_Roof_Door_M2}"
+                            ],
+                            "RowStyle": { "FontSize": 10 }
+                        },
+                        {
+                            "RowData": [
+                                "Tube Sheet",
+                                "{Inside_Area_Tube_Sheet_Mm2}",
+                                "{Inside_Area_Tube_Sheet_M2}"
+                            ],
+                            "RowStyle": { "FontSize": 10 }
+                        },
+                        {
+                            "RowData": [
+                                "Total Inside Area",
+                                "",
+                                "{Inside_Area_Total_M2}"
+                            ],
+                            "RowStyle": {
+                                "FontSize": 10,
+                                "Bold": true
+                            }
+                        },
+
+                        {
+                            "RowData": [ "B) Outside Area", "", "" ],
+                            "RowStyle": {
+                                "FontSize": 11,
+                                "Bold": true,
+                                "InlineCss": "background-color:#F3F4F6; font-weight:bold;"
+                            },
+                            "ColumnSpan": 3
+                        },
+                        {
+                            "RowData": [
+                                "Casing Area",
+                                "{Outside_Area_Casing_Area_Mm2}",
+                                "{Outside_Area_Casing_Area_M2}"
+                            ],
+                            "RowStyle": { "FontSize": 10 }
+                        },
+                        {
+                            "RowData": [
+                                "Hopper Area",
+                                "{Outside_Area_Hopper_Area_Mm2}",
+                                "{Outside_Area_Hopper_Area_M2}"
+                            ],
+                            "RowStyle": { "FontSize": 10 }
+                        },
+                        {
+                            "RowData": [
+                                "Air Header",
+                                "{Outside_Area_Air_Header_Mm2}",
+                                "{Outside_Area_Air_Header_M2}"
+                            ],
+                            "RowStyle": { "FontSize": 10 }
+                        },
+                        {
+                            "RowData": [
+                                "Purge Pipe",
+                                "{Outside_Area_Purge_Pipe_Mm2}",
+                                "{Outside_Area_Purge_Pipe_M2}"
+                            ],
+                            "RowStyle": { "FontSize": 10 }
+                        },
+                        {
+                            "RowData": [
+                                "Roof Door",
+                                "{Outside_Area_Roof_Door_Mm2}",
+                                "{Outside_Area_Roof_Door_M2}"
+                            ],
+                            "RowStyle": { "FontSize": 10 }
+                        },
+                        {
+                            "RowData": [
+                                "Tube Sheet",
+                                "{Outside_Area_Tube_Sheet_Mm2}",
+                                "{Outside_Area_Tube_Sheet_M2}"
+                            ],
+                            "RowStyle": { "FontSize": 10 }
+                        },
+                        {
+                            "RowData": [
+                                "Total Outside Area",
+                                "",
+                                "{Outside_Area_Total_M2}"
+                            ],
+                            "RowStyle": {
+                                "FontSize": 10,
+                                "Bold": true
+                            }
+                        }
+                    ]
                 }
+
 
             ]
         }

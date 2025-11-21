@@ -402,6 +402,76 @@ CREATE TABLE
         FOREIGN KEY (EnquiryId) REFERENCES ionfiltrabagfilters.Enquiry(Id) ON DELETE CASCADE,
         FOREIGN KEY (BagfilterMasterId) REFERENCES ionfiltrabagfilters.bagfiltermaster(BagfilterMasterId) ON DELETE CASCADE
     );
+
+   CREATE TABLE
+   ionfiltrabagfilters.PaintingArea (
+     Id INT AUTO_INCREMENT PRIMARY KEY,
+     EnquiryId INT NOT NULL,
+     BagfilterMasterId INT NOT NULL,
+     Inside_Area_Casing_Area_Mm2 DECIMAL(10, 2),
+     Inside_Area_Casing_Area_M2 DECIMAL(10, 2),
+     Inside_Area_Hopper_Area_Mm2 DECIMAL(10, 2),
+     Inside_Area_Hopper_Area_M2 DECIMAL(10, 2),
+     Inside_Area_Air_Header_Mm2 DECIMAL(10, 2),
+     Inside_Area_Air_Header_M2 DECIMAL(10, 2),
+     Inside_Area_Purge_Pipe_Mm2 DECIMAL(10, 2),
+     Inside_Area_Purge_Pipe_M2 DECIMAL(10, 2),
+     Inside_Area_Roof_Door_Mm2 DECIMAL(10, 2),
+     Inside_Area_Roof_Door_M2 DECIMAL(10, 2),
+     Inside_Area_Tube_Sheet_Mm2 DECIMAL(10, 2),
+     Inside_Area_Tube_Sheet_M2 DECIMAL(10, 2),
+     Inside_Area_Total_M2 DECIMAL(10, 2),
+     Outside_Area_Casing_Area_Mm2 DECIMAL(10, 2),
+     Outside_Area_Casing_Area_M2 DECIMAL(10, 2),
+     Outside_Area_Hopper_Area_Mm2 DECIMAL(10, 2),
+     Outside_Area_Hopper_Area_M2 DECIMAL(10, 2),
+     Outside_Area_Air_Header_Mm2 DECIMAL(10, 2),
+     Outside_Area_Air_Header_M2 DECIMAL(10, 2),
+     Outside_Area_Purge_Pipe_Mm2 DECIMAL(10, 2),
+     Outside_Area_Purge_Pipe_M2 DECIMAL(10, 2),
+     Outside_Area_Roof_Door_Mm2 DECIMAL(10, 2),
+     Outside_Area_Roof_Door_M2 DECIMAL(10, 2),
+     Outside_Area_Tube_Sheet_Mm2 DECIMAL(10, 2),
+     Outside_Area_Tube_Sheet_M2 DECIMAL(10, 2),
+     Outside_Area_Total_M2 DECIMAL(10, 2),
+     CreatedAt DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+     UpdatedAt DATETIME NULL ON UPDATE CURRENT_TIMESTAMP,
+     FOREIGN KEY (EnquiryId) REFERENCES ionfiltrabagfilters.Enquiry (Id) ON DELETE CASCADE,
+     FOREIGN KEY (BagfilterMasterId) REFERENCES ionfiltrabagfilters.bagfiltermaster(BagfilterMasterId) ON DELETE CASCADE
+ );
+
+ ---Bill of Material
+ CREATE TABLE ionfiltrabagfilters.BillOfMaterial (
+    Id               INT AUTO_INCREMENT PRIMARY KEY,
+    EnquiryId INT NOT NULL,   -- FK to Enquiry row
+    BagfilterMasterId INT NOT NULL, -- FK to BagfilterMaster row
+    Item             VARCHAR(150) NOT NULL,
+    Material         VARCHAR(50)  NULL,
+    Weight           DECIMAL(18,2) NULL,
+    Units            VARCHAR(20)  NULL,
+    Rate             DECIMAL(18,2) NULL,
+    Cost             DECIMAL(18,2) NULL,
+    SortOrder        INT NULL,   -- to keep the same order as UI
+    CreatedAt        DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    UpdatedAt        DATETIME NULL ON UPDATE CURRENT_TIMESTAMP,
+    FOREIGN KEY (EnquiryId) REFERENCES ionfiltrabagfilters.Enquiry(Id) ON DELETE CASCADE,
+    FOREIGN KEY (BagfilterMasterId) REFERENCES ionfiltrabagfilters.bagfiltermaster(BagfilterMasterId) ON DELETE CASCADE
+    
+);
+
+CREATE TABLE
+    ionfiltrabagfilters.PaintingCost (
+        Id INT AUTO_INCREMENT PRIMARY KEY,
+        EnquiryId INT NOT NULL,
+        BagfilterMasterId INT NOT NULL, -- FK to BagfilterMaster row
+        PaintingTableJson JSON,
+        CreatedAt DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+        UpdatedAt DATETIME NULL ON UPDATE CURRENT_TIMESTAMP,
+        FOREIGN KEY (EnquiryId) REFERENCES ionfiltrabagfilters.Enquiry (Id) ON DELETE CASCADE,
+        FOREIGN KEY (BagfilterMasterId) REFERENCES ionfiltrabagfilters.bagfiltermaster(BagfilterMasterId) ON DELETE CASCADE
+    );
+
+
 --- Master Table for Database of Without Canpoy Bagfilters
 
 CREATE TABLE
@@ -438,3 +508,28 @@ CREATE TABLE
     `CreatedAt` DATETIME NULL DEFAULT CURRENT_TIMESTAMP,
     `UpdatedAt` DATETIME NULL ON UPDATE CURRENT_TIMESTAMP,
   );
+
+
+  -----Bill Of Material Rates table
+
+  CREATE TABLE ionfiltrabagfilters.BillOfMaterialRates (
+    Id INT AUTO_INCREMENT PRIMARY KEY,
+    ItemKey VARCHAR(50) NOT NULL,
+    Rate DECIMAL(10,2) NOT NULL,
+    Unit VARCHAR(20) NULL,
+    CreatedAt DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    UpdatedAt DATETIME NULL ON UPDATE CURRENT_TIMESTAMP
+);
+
+CREATE TABLE ionfiltrabagfilters.PaintingCostConfig (
+    Id INT AUTO_INCREMENT PRIMARY KEY,
+    Code VARCHAR(50) NOT NULL UNIQUE,      -- e.g. 'inside_primer'
+    Section VARCHAR(50) NOT NULL,          -- 'Material Cost Inside' / 'Material Cost Outside' / ''
+    Item VARCHAR(100) NOT NULL,            -- 'Primer Cost', 'Intermediate Paint', etc.
+    InrPerLtr DECIMAL(10,2) NULL,
+    SqmPerLtr DECIMAL(10,2) NULL,
+    Coats DECIMAL(10,2) NULL,
+    LabourRate DECIMAL(10,2) NULL,
+    CreatedAt DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    UpdatedAt DATETIME NULL ON UPDATE CURRENT_TIMESTAMP
+);

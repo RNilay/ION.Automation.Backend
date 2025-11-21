@@ -84,26 +84,27 @@ namespace IonFiltra.BagFilters.Application.Services.Report
             };
         }
 
+        static string FormatValue(object? val)
+        {
+            if (val == null) return "N/A";
+            return val switch
+            {
+                double d => d.ToString("0.##"),
+                float f => f.ToString("0.##"),
+                decimal m => m.ToString("0.##"),
+                int i => i.ToString(),
+                long l => l.ToString(),
+                bool b => b ? "True" : "False",
+                _ => val.ToString() ?? "N/A"
+            };
+        }
 
         private Task ExpandRepeatRowsAsync(ReportTemplateModelDto reportTemplate, Dictionary<string, object> inputValues)
         {
             if (reportTemplate.Rows == null) return Task.CompletedTask;
 
             // local helpers (kept mostly as your original implementations)
-            static string FormatValue(object? val)
-            {
-                if (val == null) return "N/A";
-                return val switch
-                {
-                    double d => d.ToString("0.##"),
-                    float f => f.ToString("0.##"),
-                    decimal m => m.ToString("0.##"),
-                    int i => i.ToString(),
-                    long l => l.ToString(),
-                    bool b => b ? "True" : "False",
-                    _ => val.ToString() ?? "N/A"
-                };
-            }
+           
 
             static string EvaluatePlaceholdersSync(string templateText, Dictionary<string, object> item)
             {
@@ -257,8 +258,66 @@ namespace IonFiltra.BagFilters.Application.Services.Report
                 if (row == null)
                     continue;
 
+                //// ------ CASE: group row (new) ------
+                //if (row.Type?.Equals("group", StringComparison.OrdinalIgnoreCase) == true && row.RepeatRow != null)
+                //{
+                //    // get the source list for the group
+                //    if (!inputValues.TryGetValue(row.RepeatRow.SourceKey, out var srcObj) || srcObj == null)
+                //        continue;
+
+                //    var sourceList = ConvertToListOfDicts(srcObj);
+                //    if (sourceList == null || sourceList.Count == 0)
+                //        continue;
+
+                //    // For each record in the source list, render the group's ChildRows (in order)
+                //    for (int idx = 0; idx < sourceList.Count; idx++)
+                //    {
+                //        var record = sourceList[idx];
+                //        // child rows are ReportRow-like (tables typically)
+                //        foreach (var child in row.ChildRows ?? new List<ReportRow>())
+                //        {
+                //            // clone child so we don't mutate the template
+                //            var clonedChild = DeepClone(child);
+
+                //            // If child is a table with its own RepeatRow (rare for group usage), you may decide how to handle.
+                //            // For our group pattern, child tables are plain templates (no RepeatRow). We'll expand placeholders / blocks using the single record.
+                //            if (clonedChild.Type?.Equals("table", StringComparison.OrdinalIgnoreCase) == true)
+                //            {
+                //                // Create a new ReportRow to hold the expanded table result
+                //                var expandedTable = DeepClone(clonedChild); // clone structure
+                //                expandedTable.Rows = ExpandTableTemplateForItem(clonedChild, record);
+                //                newRowsList.Add(expandedTable);
+                //            }
+                //            else
+                //            {
+                //                // For non-table child types, do a simple placeholders pass on any string fields you expect (Title, Text etc.)
+                //                var cloned = DeepClone(clonedChild);
+                //                // Example: if child has Header/TextRows or Footer rows, you'd evaluate placeholders similarly.
+                //                newRowsList.Add(cloned);
+                //            }
+                //        }
+
+                //        // 🔹 add pagebreak only between records, not after the last one
+                //        if (idx < sourceList.Count - 1)
+                //        {
+                //            // and **optionally** only for this specific template:
+                //            // if (reportTemplate.ReportName == "Bagfilter Details")
+                //            newRowsList.Add(new ReportRow { Type = "pagebreak" });
+                //        }
+
+                //        //// Insert optional pagebreak separator between records.
+                //        //// The renderer must know how to treat Type == "pagebreak". If you already support this, uncomment.
+                //        //var pageBreakRow = new ReportRow { Type = "pagebreak" };
+                //        //newRowsList.Add(pageBreakRow);
+                //    }
+
+                //    // Done with group — continue to next original row (we replaced the group with expanded children)
+                //    continue;
+                //}
+
                 // ------ CASE: group row (new) ------
-                if (row.Type?.Equals("group", StringComparison.OrdinalIgnoreCase) == true && row.RepeatRow != null)
+                if (row.Type?.Equals("group", StringComparison.OrdinalIgnoreCase) == true
+                    && row.RepeatRow != null)
                 {
                     // get the source list for the group
                     if (!inputValues.TryGetValue(row.RepeatRow.SourceKey, out var srcObj) || srcObj == null)
@@ -268,51 +327,95 @@ namespace IonFiltra.BagFilters.Application.Services.Report
                     if (sourceList == null || sourceList.Count == 0)
                         continue;
 
+                    bool isBagfilterDetails =
+                        reportTemplate.ReportName?.Equals("Bag Filter Details", StringComparison.OrdinalIgnoreCase) == true;
+
+                    bool isBillOfMaterial =
+                        reportTemplate.ReportName?.Equals("Bill Of Material", StringComparison.OrdinalIgnoreCase) == true;
+
                     // For each record in the source list, render the group's ChildRows (in order)
                     for (int idx = 0; idx < sourceList.Count; idx++)
                     {
                         var record = sourceList[idx];
-                        // child rows are ReportRow-like (tables typically)
+
                         foreach (var child in row.ChildRows ?? new List<ReportRow>())
                         {
-                            // clone child so we don't mutate the template
                             var clonedChild = DeepClone(child);
 
-                            // If child is a table with its own RepeatRow (rare for group usage), you may decide how to handle.
-                            // For our group pattern, child tables are plain templates (no RepeatRow). We'll expand placeholders / blocks using the single record.
+                            // 1) TABLE child rows
                             if (clonedChild.Type?.Equals("table", StringComparison.OrdinalIgnoreCase) == true)
                             {
-                                // Create a new ReportRow to hold the expanded table result
-                                var expandedTable = DeepClone(clonedChild); // clone structure
-                                expandedTable.Rows = ExpandTableTemplateForItem(clonedChild, record);
-                                newRowsList.Add(expandedTable);
+                                // --- 1a) Bag Filter Details: big __BLOCK__ table should IGNORE its RepeatRow ---
+                                bool isBagfilterBlockTable =
+                                    isBagfilterDetails &&
+                                    (clonedChild.RepeatRow == null ||
+                                     string.Equals(clonedChild.RepeatRow.SourceKey, "list_values", StringComparison.OrdinalIgnoreCase));
+
+                                if (clonedChild.RepeatRow == null || isBagfilterBlockTable)
+                                {
+                                    // Old behaviour: expand using single record + __BLOCK__
+                                    var expandedTable = DeepClone(clonedChild);
+                                    expandedTable.Rows = ExpandTableTemplateForItem(clonedChild, record);
+                                    newRowsList.Add(expandedTable);
+                                }
+                                // --- 1b) Bill Of Material: nested RepeatRow using record["BomRows"] ---
+                                else if (isBillOfMaterial
+                                         && clonedChild.RepeatRow != null
+                                         && string.Equals(clonedChild.RepeatRow.SourceKey, "BomRows",
+                                                          StringComparison.OrdinalIgnoreCase))
+                                {
+                                    var nestedRepeat = clonedChild.RepeatRow;
+
+                                    if (record.TryGetValue(nestedRepeat.SourceKey, out var nestedObj) && nestedObj != null)
+                                    {
+                                        var nestedList = ConvertToListOfDicts(nestedObj);
+                                        var expandedRows = ExpandNestedRepeatTable(clonedChild, nestedRepeat, nestedList);
+
+                                        var expandedTable = DeepClone(clonedChild);
+                                        expandedTable.Rows = expandedRows;
+                                        // IMPORTANT: we don't want this inner RepeatRow to run again later
+                                        expandedTable.RepeatRow = null;
+
+                                        newRowsList.Add(expandedTable);
+                                    }
+                                    else
+                                    {
+                                        // Fallback: just treat it as a static table with placeholders
+                                        var expandedTable = DeepClone(clonedChild);
+                                        expandedTable.Rows = ExpandTableTemplateForItem(clonedChild, record);
+                                        expandedTable.RepeatRow = null;
+                                        newRowsList.Add(expandedTable);
+                                    }
+                                }
+                                // --- 1c) Any other future group tables: simple placeholder expansion ---
+                                else
+                                {
+                                    var expandedTable = DeepClone(clonedChild);
+                                    expandedTable.Rows = ExpandTableTemplateForItem(clonedChild, record);
+                                    expandedTable.RepeatRow = null;
+                                    newRowsList.Add(expandedTable);
+                                }
                             }
+                            // 2) Non-table child rows (heading, text, etc.)
                             else
                             {
-                                // For non-table child types, do a simple placeholders pass on any string fields you expect (Title, Text etc.)
                                 var cloned = DeepClone(clonedChild);
-                                // Example: if child has Header/TextRows or Footer rows, you'd evaluate placeholders similarly.
                                 newRowsList.Add(cloned);
                             }
                         }
 
-                        // 🔹 add pagebreak only between records, not after the last one
+                        // Page break between group records, not after the last one
                         if (idx < sourceList.Count - 1)
                         {
-                            // and **optionally** only for this specific template:
-                            // if (reportTemplate.ReportName == "Bagfilter Details")
                             newRowsList.Add(new ReportRow { Type = "pagebreak" });
                         }
-
-                        //// Insert optional pagebreak separator between records.
-                        //// The renderer must know how to treat Type == "pagebreak". If you already support this, uncomment.
-                        //var pageBreakRow = new ReportRow { Type = "pagebreak" };
-                        //newRowsList.Add(pageBreakRow);
                     }
 
-                    // Done with group — continue to next original row (we replaced the group with expanded children)
+                    // group handled, go to next original row
                     continue;
                 }
+
+
 
                 // ------ CASE: normal table with RepeatRow (original behavior) ------
                 if (row.Type?.Equals("table", StringComparison.OrdinalIgnoreCase) == true && row.RepeatRow != null)
@@ -535,6 +638,70 @@ namespace IonFiltra.BagFilters.Application.Services.Report
             }
         }
 
+        // Expand a table that has RepeatRow, but where the source list
+        // comes from a *nested* collection (e.g. record["BomRows"])
+        List<TableRow> ExpandNestedRepeatTable(
+            ReportRow tableRow,
+            RepeatRowDefinition repeat,
+            List<Dictionary<string, object>> sourceList)
+        {
+            var originalRows = tableRow.Rows ?? new List<TableRow>();
+            var templateIdx = Math.Clamp(repeat.TemplateRowIndex, 0, Math.Max(0, originalRows.Count - 1));
+
+            var templateRow = originalRows.ElementAtOrDefault(templateIdx)
+                             ?? new TableRow
+                             {
+                                 RowData = repeat.Columns?.Select(_ => "").ToList()
+                                           ?? new List<string>()
+                             };
+
+            var expandedRows = new List<TableRow>();
+            var sumMap = new Dictionary<string, double>(StringComparer.OrdinalIgnoreCase);
+
+            foreach (var item in sourceList)
+            {
+                // You can support __BLOCK__ here if ever needed for nested tables.
+                // Bill Of Material doesn't use __BLOCK__, so we only do the
+                // simple column-wise expansion.
+                var newRow = new TableRow
+                {
+                    RowStyle = CloneRowStyle(templateRow.RowStyle),
+                    RowData = new List<string>()
+                };
+
+                foreach (var colKey in repeat.Columns ?? Enumerable.Empty<string>())
+                {
+                    if (item.TryGetValue(colKey, out var val) && val != null)
+                    {
+                        string s = FormatValue(val);
+                        newRow.RowData.Add(s);
+
+                        if (double.TryParse(s, out var dbl))
+                        {
+                            if (!sumMap.ContainsKey(colKey)) sumMap[colKey] = 0;
+                            sumMap[colKey] += dbl;
+                        }
+                    }
+                    else
+                    {
+                        newRow.RowData.Add("N/A");
+                    }
+                }
+
+                expandedRows.Add(newRow);
+            }
+
+            // splice into original: keep header rows before, footer rows after
+            var before = originalRows.Take(templateIdx).ToList();
+            var after = originalRows.Skip(templateIdx + 1).ToList();
+
+            var finalRows = new List<TableRow>();
+            finalRows.AddRange(before);
+            finalRows.AddRange(expandedRows);
+            finalRows.AddRange(after);
+
+            return finalRows;
+        }
 
 
         private ReportRowStyle CreateCellStyleFromToken(string? token, ReportRowStyle? baseStyle)

@@ -15,11 +15,16 @@ using IonFiltra.BagFilters.Core.Entities.Bagfilters.Sections.Cage_Inputs;
 using IonFiltra.BagFilters.Core.Entities.Bagfilters.Sections.Capsule_Inputs;
 using IonFiltra.BagFilters.Core.Entities.Bagfilters.Sections.Casing_Inputs;
 using IonFiltra.BagFilters.Core.Entities.Bagfilters.Sections.Hopper_Trough;
+using IonFiltra.BagFilters.Core.Entities.Bagfilters.Sections.Painting;
 using IonFiltra.BagFilters.Core.Entities.Bagfilters.Sections.Process_Info;
 using IonFiltra.BagFilters.Core.Entities.Bagfilters.Sections.Roof_Door;
 using IonFiltra.BagFilters.Core.Entities.Bagfilters.Sections.Structure_Inputs;
 using IonFiltra.BagFilters.Core.Entities.Bagfilters.Sections.Support_Structure;
 using IonFiltra.BagFilters.Core.Entities.Bagfilters.Sections.Weight_Summary;
+using IonFiltra.BagFilters.Core.Entities.BOM.Bill_Of_Material;
+using IonFiltra.BagFilters.Core.Entities.BOM.Painting_Cost;
+using IonFiltra.BagFilters.Core.Entities.BOM.PaintingRates;
+using IonFiltra.BagFilters.Core.Entities.BOM.Rates;
 using IonFiltra.BagFilters.Core.Entities.EnquiryEntity;
 using IonFiltra.BagFilters.Core.Entities.SkyCivEntities;
 using Microsoft.EntityFrameworkCore;
@@ -57,11 +62,20 @@ namespace IonFiltra.BagFilters.Infrastructure.Data
         public DbSet<SupportStructure> SupportStructures { get; set; }
         public DbSet<AccessGroup> AccessGroups { get; set; }
         public DbSet<RoofDoor> RoofDoors { get; set; }
+        public DbSet<PaintingArea> PaintingAreas { get; set; }
+
+        //Bill Of Material Table
+        public DbSet<BillOfMaterial> BillOfMaterials { get; set; }
+        public DbSet<PaintingCost> PaintingCosts { get; set; }
 
 
         // Database from ion filtra for bag filters
         public DbSet<IFI_Bagfilter_Database_Without_Canopy> IFI_Bagfilter_Database_Without_Canopys { get; set; }
-     
+
+        //BOM Rates
+        public DbSet<BillOfMaterialRates> BillOfMaterialRatess { get; set; }
+
+        public DbSet<PaintingCostConfig> PaintingCostConfigs { get; set; }
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
@@ -174,10 +188,45 @@ namespace IonFiltra.BagFilters.Infrastructure.Data
                 entity.Property(u => u.EnquiryId).IsRequired();
             });
 
+            modelBuilder.Entity<PaintingArea>(entity =>
+            {
+                entity.ToTable("PaintingArea", GlobalConstants.IONFILTRA_SCHEMA);
+                entity.HasKey(u => u.Id);
+                entity.Property(u => u.EnquiryId).IsRequired();
+            });
+
+            // Bill of Material
+            modelBuilder.Entity<BillOfMaterial>(entity =>
+            {
+                entity.ToTable("BillOfMaterial", GlobalConstants.IONFILTRA_SCHEMA);
+                entity.HasKey(u => u.Id);
+                entity.Property(u => u.EnquiryId).IsRequired();
+            });
+
+            modelBuilder.Entity<PaintingCost>(entity =>
+            {
+                entity.ToTable("PaintingCost", GlobalConstants.IONFILTRA_SCHEMA);
+                entity.HasKey(u => u.Id);
+                entity.Property(u => u.EnquiryId).IsRequired();
+            });
+
             // Ion filtra database for bagfilters
             modelBuilder.Entity<IFI_Bagfilter_Database_Without_Canopy>(entity =>
             {
                 entity.ToTable("IFI_Bagfilter_Database_Without_Canopy", GlobalConstants.IONFILTRA_SCHEMA);
+                entity.HasKey(u => u.Id);
+            });
+
+            // BOM Rates
+            modelBuilder.Entity<BillOfMaterialRates>(entity =>
+            {
+                entity.ToTable("BillOfMaterialRates", GlobalConstants.IONFILTRA_SCHEMA);
+                entity.HasKey(u => u.Id);
+            });
+
+            modelBuilder.Entity<PaintingCostConfig>(entity =>
+            {
+                entity.ToTable("PaintingCostConfig", GlobalConstants.IONFILTRA_SCHEMA);
                 entity.HasKey(u => u.Id);
             });
         }

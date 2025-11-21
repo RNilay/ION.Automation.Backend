@@ -14,11 +14,16 @@ using IonFiltra.BagFilters.Application.Services.Bagfilters.Sections.Cage_Inputs;
 using IonFiltra.BagFilters.Application.Services.Bagfilters.Sections.Capsule_Inputs;
 using IonFiltra.BagFilters.Application.Services.Bagfilters.Sections.Casing_Inputs;
 using IonFiltra.BagFilters.Application.Services.Bagfilters.Sections.Hopper_Trough;
+using IonFiltra.BagFilters.Application.Services.Bagfilters.Sections.Painting;
 using IonFiltra.BagFilters.Application.Services.Bagfilters.Sections.Process_Info;
 using IonFiltra.BagFilters.Application.Services.Bagfilters.Sections.Roof_Door;
 using IonFiltra.BagFilters.Application.Services.Bagfilters.Sections.Structure_Inputs;
 using IonFiltra.BagFilters.Application.Services.Bagfilters.Sections.Support_Structure;
 using IonFiltra.BagFilters.Application.Services.Bagfilters.Sections.Weight_Summary;
+using IonFiltra.BagFilters.Application.Services.BOM.Bill_Of_Material;
+using IonFiltra.BagFilters.Application.Services.BOM.Painting_Cost;
+using IonFiltra.BagFilters.Application.Services.BOM.PaintingRates;
+using IonFiltra.BagFilters.Application.Services.BOM.Rates;
 using IonFiltra.BagFilters.Application.Services.EnquiryService;
 using IonFiltra.BagFilters.Application.Services.GenericView;
 using IonFiltra.BagFilters.Application.Services.Report;
@@ -35,11 +40,16 @@ using IonFiltra.BagFilters.Core.Interfaces.Repositories.Bagfilters.Sections.Cage
 using IonFiltra.BagFilters.Core.Interfaces.Repositories.Bagfilters.Sections.Capsule_Inputs;
 using IonFiltra.BagFilters.Core.Interfaces.Repositories.Bagfilters.Sections.Casing_Inputs;
 using IonFiltra.BagFilters.Core.Interfaces.Repositories.Bagfilters.Sections.Hopper_Trough;
+using IonFiltra.BagFilters.Core.Interfaces.Repositories.Bagfilters.Sections.Painting;
 using IonFiltra.BagFilters.Core.Interfaces.Repositories.Bagfilters.Sections.Process_Info;
 using IonFiltra.BagFilters.Core.Interfaces.Repositories.Bagfilters.Sections.Roof_Door;
 using IonFiltra.BagFilters.Core.Interfaces.Repositories.Bagfilters.Sections.Structure_Inputs;
 using IonFiltra.BagFilters.Core.Interfaces.Repositories.Bagfilters.Sections.Support_Structure;
 using IonFiltra.BagFilters.Core.Interfaces.Repositories.Bagfilters.Sections.Weight_Summary;
+using IonFiltra.BagFilters.Core.Interfaces.Repositories.BOM.Bill_Of_Material;
+using IonFiltra.BagFilters.Core.Interfaces.Repositories.BOM.Painting_Cost;
+using IonFiltra.BagFilters.Core.Interfaces.Repositories.BOM.PaintingRates;
+using IonFiltra.BagFilters.Core.Interfaces.Repositories.BOM.Rates;
 using IonFiltra.BagFilters.Core.Interfaces.SkyCiv;
 using IonFiltra.BagFilters.Infrastructure.Data;
 using IonFiltra.BagFilters.Infrastructure.EnquiryRepo;
@@ -53,11 +63,16 @@ using IonFiltra.BagFilters.Infrastructure.Repositories.Bagfilters.Sections.Cage_
 using IonFiltra.BagFilters.Infrastructure.Repositories.Bagfilters.Sections.Capsule_Inputs;
 using IonFiltra.BagFilters.Infrastructure.Repositories.Bagfilters.Sections.Casing_Inputs;
 using IonFiltra.BagFilters.Infrastructure.Repositories.Bagfilters.Sections.Hopper_Trough;
+using IonFiltra.BagFilters.Infrastructure.Repositories.Bagfilters.Sections.Painting;
 using IonFiltra.BagFilters.Infrastructure.Repositories.Bagfilters.Sections.Process_Info;
 using IonFiltra.BagFilters.Infrastructure.Repositories.Bagfilters.Sections.Roof_Door;
 using IonFiltra.BagFilters.Infrastructure.Repositories.Bagfilters.Sections.Structure_Inputs;
 using IonFiltra.BagFilters.Infrastructure.Repositories.Bagfilters.Sections.Support_Structure;
 using IonFiltra.BagFilters.Infrastructure.Repositories.Bagfilters.Sections.Weight_Summary;
+using IonFiltra.BagFilters.Infrastructure.Repositories.BOM.Bill_Of_Material;
+using IonFiltra.BagFilters.Infrastructure.Repositories.BOM.Painting_Cost;
+using IonFiltra.BagFilters.Infrastructure.Repositories.BOM.PaintingRates;
+using IonFiltra.BagFilters.Infrastructure.Repositories.BOM.Rates;
 using IonFiltra.BagFilters.Infrastructure.Repositories.GenericView;
 using IonFiltra.BagFilters.Infrastructure.Repositories.SkyCiv;
 using Microsoft.EntityFrameworkCore;
@@ -129,6 +144,16 @@ namespace IonFiltra.BagFilters.Infrastructure
             services.AddScoped<IRoofDoorService, RoofDoorService>();
             services.AddScoped<IRoofDoorRepository, RoofDoorRepository>();
 
+            services.AddScoped<IPaintingAreaService, PaintingAreaService>();
+            services.AddScoped<IPaintingAreaRepository, PaintingAreaRepository>();
+
+            //Bill of Material
+            services.AddScoped<IBillOfMaterialService, BillOfMaterialService>();
+            services.AddScoped<IBillOfMaterialRepository, BillOfMaterialRepository>();
+
+            services.AddScoped<IPaintingCostService, PaintingCostService>();
+            services.AddScoped<IPaintingCostRepository, PaintingCostRepository>();
+
             // SkyCiv Services
             // In Program.cs or DependencyInjection
             services.AddScoped<ISkyCivAnalysisService, SkyCivAnalysisService>();
@@ -144,6 +169,13 @@ namespace IonFiltra.BagFilters.Infrastructure
 
             //Report Services
             services.AddScoped<IReportService, ReportService>();
+
+            //BOM Rates
+            services.AddScoped<IBillOfMaterialRatesService, BillOfMaterialRatesService>();
+            services.AddScoped<IBillOfMaterialRatesRepository, BillOfMaterialRatesRepository>();
+
+            services.AddScoped<IPaintingCostConfigService, PaintingCostConfigService>();
+            services.AddScoped<IPaintingCostConfigRepository, PaintingCostConfigRepository>();
 
             return services;
         }

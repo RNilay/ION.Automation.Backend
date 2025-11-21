@@ -1,4 +1,4 @@
-using System.Globalization;
+﻿using System.Globalization;
 using IonFiltra.BagFilters.Application.DTOs.Bagfilters.BagfilterInputs;
 using IonFiltra.BagFilters.Application.DTOs.SkyCiv;
 using IonFiltra.BagFilters.Application.Interfaces;
@@ -12,11 +12,14 @@ using IonFiltra.BagFilters.Core.Entities.Bagfilters.Sections.Cage_Inputs;
 using IonFiltra.BagFilters.Core.Entities.Bagfilters.Sections.Capsule_Inputs;
 using IonFiltra.BagFilters.Core.Entities.Bagfilters.Sections.Casing_Inputs;
 using IonFiltra.BagFilters.Core.Entities.Bagfilters.Sections.Hopper_Trough;
+using IonFiltra.BagFilters.Core.Entities.Bagfilters.Sections.Painting;
 using IonFiltra.BagFilters.Core.Entities.Bagfilters.Sections.Process_Info;
 using IonFiltra.BagFilters.Core.Entities.Bagfilters.Sections.Roof_Door;
 using IonFiltra.BagFilters.Core.Entities.Bagfilters.Sections.Structure_Inputs;
 using IonFiltra.BagFilters.Core.Entities.Bagfilters.Sections.Support_Structure;
 using IonFiltra.BagFilters.Core.Entities.Bagfilters.Sections.Weight_Summary;
+using IonFiltra.BagFilters.Core.Entities.BOM.Bill_Of_Material;
+using IonFiltra.BagFilters.Core.Entities.BOM.Painting_Cost;
 using IonFiltra.BagFilters.Core.Entities.EnquiryEntity;
 using IonFiltra.BagFilters.Core.Interfaces.Repositories.Bagfilters.BagfilterInputs;
 using IonFiltra.BagFilters.Core.Interfaces.Repositories.Bagfilters.Sections.Access_Group;
@@ -25,11 +28,14 @@ using IonFiltra.BagFilters.Core.Interfaces.Repositories.Bagfilters.Sections.Cage
 using IonFiltra.BagFilters.Core.Interfaces.Repositories.Bagfilters.Sections.Capsule_Inputs;
 using IonFiltra.BagFilters.Core.Interfaces.Repositories.Bagfilters.Sections.Casing_Inputs;
 using IonFiltra.BagFilters.Core.Interfaces.Repositories.Bagfilters.Sections.Hopper_Trough;
+using IonFiltra.BagFilters.Core.Interfaces.Repositories.Bagfilters.Sections.Painting;
 using IonFiltra.BagFilters.Core.Interfaces.Repositories.Bagfilters.Sections.Process_Info;
 using IonFiltra.BagFilters.Core.Interfaces.Repositories.Bagfilters.Sections.Roof_Door;
 using IonFiltra.BagFilters.Core.Interfaces.Repositories.Bagfilters.Sections.Structure_Inputs;
 using IonFiltra.BagFilters.Core.Interfaces.Repositories.Bagfilters.Sections.Support_Structure;
 using IonFiltra.BagFilters.Core.Interfaces.Repositories.Bagfilters.Sections.Weight_Summary;
+using IonFiltra.BagFilters.Core.Interfaces.Repositories.BOM.Bill_Of_Material;
+using IonFiltra.BagFilters.Core.Interfaces.Repositories.BOM.Painting_Cost;
 using IonFiltra.BagFilters.Core.Interfaces.SkyCiv;
 using Microsoft.Extensions.Logging;
 using Newtonsoft.Json;
@@ -54,6 +60,10 @@ namespace IonFiltra.BagFilters.Application.Services.Bagfilters.BagfilterInputs
         private readonly ISupportStructureRepository _supportStructureRepository;
         private readonly IAccessGroupRepository _accessGroupRepository;
         private readonly IRoofDoorRepository _roofDoorRepository;
+        private readonly IPaintingAreaRepository _paintingAreaRepository;
+
+        private readonly IBillOfMaterialRepository _billOfMaterialRepository;
+        private readonly IPaintingCostRepository _paintingCostRepository;
         // new: registry of handlers keyed by DTO property name (case-insensitive)
         private readonly Dictionary<string, Func<BagfilterInputMainDto, int, CancellationToken, Task>> _childHandlers;
 
@@ -73,7 +83,10 @@ namespace IonFiltra.BagFilters.Application.Services.Bagfilters.BagfilterInputs
             IHopperInputsRepository hopperInputsRepository,
             ISupportStructureRepository supportStructureRepository,
             IAccessGroupRepository accessGroupRepository,
-            IRoofDoorRepository roofDoorRepository
+            IRoofDoorRepository roofDoorRepository,
+            IPaintingAreaRepository paintingAreaRepository,
+            IBillOfMaterialRepository billOfMaterialRepository,
+            IPaintingCostRepository paintingCostRepository
         )
         {
             _repository = repository;
@@ -91,6 +104,9 @@ namespace IonFiltra.BagFilters.Application.Services.Bagfilters.BagfilterInputs
             _supportStructureRepository = supportStructureRepository ?? throw new ArgumentNullException(nameof(supportStructureRepository));
             _accessGroupRepository = accessGroupRepository ?? throw new ArgumentNullException(nameof(accessGroupRepository));
             _roofDoorRepository = roofDoorRepository ?? throw new ArgumentNullException(nameof(roofDoorRepository));
+            _paintingAreaRepository = paintingAreaRepository ?? throw new ArgumentNullException(nameof(paintingAreaRepository));
+            _billOfMaterialRepository = billOfMaterialRepository ?? throw new ArgumentNullException(nameof(billOfMaterialRepository));
+            _paintingCostRepository = paintingCostRepository ?? throw new ArgumentNullException(nameof(paintingCostRepository));
 
             // initialize handler registry
             _childHandlers = new Dictionary<string, Func<BagfilterInputMainDto, int, CancellationToken, Task>>(StringComparer.OrdinalIgnoreCase)
@@ -107,6 +123,9 @@ namespace IonFiltra.BagFilters.Application.Services.Bagfilters.BagfilterInputs
                 ["supportStructure"] = HandleSupportStructureAsync,
                 ["accessGroup"] = HandleAccessGroupAsync,
                 ["roofDoor"] = HandleRoofDoorAsync,
+                ["paintingArea"] = HandlePaintingAreaAsync,
+                ["billOfMaterial"] = HandleBillOfMaterialAsync,
+                ["paintingCost"] = HandlePaintingCostAsync,
             };
 
         }
@@ -240,7 +259,7 @@ namespace IonFiltra.BagFilters.Application.Services.Bagfilters.BagfilterInputs
                 var repInput = pairs[representativePairIndex].Input;
                 var incomingEnquiryId = dtoHasEnquiryId(pairs[representativePairIndex]);
 
-                // Placeholder for group � ensures we return every group even if unmatched
+                // Placeholder for group — ensures we return every group even if unmatched
                 var placeholder = new BagfilterMatchDto
                 {
                     GroupId = groupIdByKey[groupKey],
@@ -381,7 +400,7 @@ namespace IonFiltra.BagFilters.Application.Services.Bagfilters.BagfilterInputs
             // If nothing to run, skip
             if (unmatchedPairIndices.Any())
             {
-                // limiter to avoid flooding SkyCiv � adjust concurrency as needed
+                // limiter to avoid flooding SkyCiv — adjust concurrency as needed
                 var maxConcurrency = 2; // or 1 if you want strictly sequential
                 using var sem = new SemaphoreSlim(maxConcurrency);
                 var tasks = new List<Task>();
@@ -1031,6 +1050,129 @@ namespace IonFiltra.BagFilters.Application.Services.Bagfilters.BagfilterInputs
                 throw;
             }
         }
+         private async Task HandlePaintingAreaAsync(BagfilterInputMainDto dto, int bagfilterMasterId, CancellationToken ct)
+        {
+            if (dto == null) throw new ArgumentNullException(nameof(dto));
+            if (dto.PaintingArea == null)
+                return; // nothing to process
+
+            var input = dto.PaintingArea;
+
+            // Map DTO -> Entity
+            var entity = new PaintingArea
+            {
+                EnquiryId = (int)dto.BagfilterInput.EnquiryId,
+                BagfilterMasterId = bagfilterMasterId,
+
+                Inside_Area_Casing_Area_Mm2 = input.Inside_Area_Casing_Area_Mm2,
+                Inside_Area_Casing_Area_M2 = input.Inside_Area_Casing_Area_M2,
+                Inside_Area_Hopper_Area_Mm2 = input.Inside_Area_Hopper_Area_Mm2,
+                Inside_Area_Hopper_Area_M2 = input.Inside_Area_Hopper_Area_M2,
+                Inside_Area_Air_Header_Mm2 = input.Inside_Area_Air_Header_Mm2,
+                Inside_Area_Air_Header_M2 = input.Inside_Area_Air_Header_M2,
+                Inside_Area_Purge_Pipe_Mm2 = input.Inside_Area_Purge_Pipe_Mm2,
+                Inside_Area_Purge_Pipe_M2 = input.Inside_Area_Purge_Pipe_M2,
+                Inside_Area_Roof_Door_Mm2 = input.Inside_Area_Roof_Door_Mm2,
+                Inside_Area_Roof_Door_M2 = input.Inside_Area_Roof_Door_M2,
+                Inside_Area_Tube_Sheet_Mm2 = input.Inside_Area_Tube_Sheet_Mm2,
+                Inside_Area_Tube_Sheet_M2 = input.Inside_Area_Tube_Sheet_M2,
+                Inside_Area_Total_M2 = input.Inside_Area_Total_M2,
+                Outside_Area_Casing_Area_Mm2 = input.Outside_Area_Casing_Area_Mm2,
+                Outside_Area_Casing_Area_M2 = input.Outside_Area_Casing_Area_M2,
+                Outside_Area_Hopper_Area_Mm2 = input.Outside_Area_Hopper_Area_Mm2,
+                Outside_Area_Hopper_Area_M2 = input.Outside_Area_Hopper_Area_M2,
+                Outside_Area_Air_Header_Mm2 = input.Outside_Area_Air_Header_Mm2,
+                Outside_Area_Air_Header_M2 = input.Outside_Area_Air_Header_M2,
+                Outside_Area_Purge_Pipe_Mm2 = input.Outside_Area_Purge_Pipe_Mm2,
+                Outside_Area_Purge_Pipe_M2 = input.Outside_Area_Purge_Pipe_M2,
+                Outside_Area_Roof_Door_Mm2 = input.Outside_Area_Roof_Door_Mm2,
+                Outside_Area_Roof_Door_M2 = input.Outside_Area_Roof_Door_M2,
+                Outside_Area_Tube_Sheet_Mm2 = input.Outside_Area_Tube_Sheet_Mm2,
+                Outside_Area_Tube_Sheet_M2 = input.Outside_Area_Tube_Sheet_M2,
+                Outside_Area_Total_M2 = input.Outside_Area_Total_M2,
+
+                CreatedAt = DateTime.UtcNow
+            };
+
+            try
+            {
+                await _paintingAreaRepository.AddAsync(entity);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Failed to persist PaintingArea for BagfilterMasterId {Id}", bagfilterMasterId);
+                throw;
+            }
+        }
+
+        private async Task HandleBillOfMaterialAsync(BagfilterInputMainDto dto, int bagfilterMasterId, CancellationToken ct)
+        {
+            if (dto == null) throw new ArgumentNullException(nameof(dto));
+            if (dto.BillOfMaterial == null || !dto.BillOfMaterial.Any())
+                return;
+
+            var enquiryId = (int)dto.BagfilterInput.EnquiryId;
+
+            // Convert all DTO → Entities in one shot
+            var entities = dto.BillOfMaterial.Select(line => new BillOfMaterial
+            {
+                EnquiryId = enquiryId,
+                BagfilterMasterId = bagfilterMasterId,
+
+                Item = line.Item,
+                Material = line.Material,
+                Weight = line.Weight,
+                Units = line.Units,
+                Rate = line.Rate,
+                Cost = line.Cost,
+
+                CreatedAt = DateTime.UtcNow
+            }).ToList();
+
+            try
+            {
+                await _billOfMaterialRepository.AddRangeAsync(entities);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex,
+                    "Failed to persist BillOfMaterial (Batch) for BagfilterMasterId {BfMasterId}",
+                    bagfilterMasterId);
+                throw;
+            }
+        }
+
+
+        private async Task HandlePaintingCostAsync(BagfilterInputMainDto dto, int bagfilterMasterId, CancellationToken ct)
+        {
+            if (dto == null) throw new ArgumentNullException(nameof(dto));
+            if (dto.PaintingCost == null)
+                return; // nothing to process
+
+            var input = dto.PaintingCost;
+
+            // Map DTO -> Entity
+            var entity = new PaintingCost
+            {
+                EnquiryId = (int)dto.BagfilterInput.EnquiryId,
+                BagfilterMasterId = bagfilterMasterId,
+
+                PaintingTableJson = input.PaintingTableJson,
+
+                CreatedAt = DateTime.UtcNow
+            };
+
+            try
+            {
+                await _paintingCostRepository.AddAsync(entity);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Failed to persist Painting Cost for BagfilterMasterId {Id}", bagfilterMasterId);
+                throw;
+            }
+        }
+
 
     }
 }

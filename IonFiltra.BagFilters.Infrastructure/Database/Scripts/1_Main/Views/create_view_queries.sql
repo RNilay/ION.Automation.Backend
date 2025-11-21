@@ -248,7 +248,38 @@ SELECT
     RD.Compartment_No,
     RD.Stiffness_Factor_For_Roof_Door,
     RD.Weight_Per_Door,
-    RD.Tot_Weight_Per_Compartment         AS RoofDoor_Tot_Weight_Per_Compartment
+    RD.Tot_Weight_Per_Compartment         AS RoofDoor_Tot_Weight_Per_Compartment,
+    
+    -- PaintingArea
+    PA.Id                                 AS PaintingArea_Id,
+    PA.EnquiryId                          AS PaintingArea_EnquiryId,
+    PA.BagfilterMasterId                  AS PaintingArea_BagfilterMasterId,
+    PA.Inside_Area_Casing_Area_Mm2,
+	PA.Inside_Area_Casing_Area_M2,
+	PA.Inside_Area_Hopper_Area_Mm2,
+	PA.Inside_Area_Hopper_Area_M2,
+	PA.Inside_Area_Air_Header_Mm2,
+	PA.Inside_Area_Air_Header_M2,
+	PA.Inside_Area_Purge_Pipe_Mm2,
+	PA.Inside_Area_Purge_Pipe_M2,
+	PA.Inside_Area_Roof_Door_Mm2,
+	PA.Inside_Area_Roof_Door_M2,
+	PA.Inside_Area_Tube_Sheet_Mm2,
+	PA.Inside_Area_Tube_Sheet_M2,
+	PA.Inside_Area_Total_M2,
+	PA.Outside_Area_Casing_Area_Mm2,
+	PA.Outside_Area_Casing_Area_M2,
+	PA.Outside_Area_Hopper_Area_Mm2,
+	PA.Outside_Area_Hopper_Area_M2,
+	PA.Outside_Area_Air_Header_Mm2,
+	PA.Outside_Area_Air_Header_M2,
+	PA.Outside_Area_Purge_Pipe_Mm2,
+	PA.Outside_Area_Purge_Pipe_M2,
+	PA.Outside_Area_Roof_Door_Mm2,
+	PA.Outside_Area_Roof_Door_M2,
+	PA.Outside_Area_Tube_Sheet_Mm2,
+	PA.Outside_Area_Tube_Sheet_M2,
+	PA.Outside_Area_Total_M2
 
 FROM DistinctPI D
 -- join Enquiry so we keep Enquiry fields
@@ -321,8 +352,11 @@ LEFT JOIN ionfiltrabagfilters.AccessGroup AG
 
 LEFT JOIN ionfiltrabagfilters.RoofDoor RD
     ON RD.BagfilterMasterId = BM.BagfilterMasterId
-    AND RD.EnquiryId = D.EnquiryId;
-
+    AND RD.EnquiryId = D.EnquiryId
+    
+LEFT JOIN ionfiltrabagfilters.paintingArea PA
+    ON PA.BagfilterMasterId = BM.BagfilterMasterId
+    AND PA.EnquiryId = D.EnquiryId;
 GO
 
 
@@ -383,3 +417,38 @@ JOIN ionfiltrabagfilters.Enquiry E
 LEFT JOIN VolumeWeights W
   ON W.EnquiryId = V.EnquiryId
  AND W.Process_Volume_M3h = V.Process_Volume_M3h;
+
+ --- Bill Of Material Details View
+
+ CREATE OR REPLACE VIEW ionfiltrabagfilters.vw_BillOfMaterialDetails AS
+SELECT
+    e.Id                      AS EnquiryId,
+    bm.BagfilterMasterId      AS BagfilterMasterId,
+    pi.Process_Volume_M3h     AS Process_Volume_M3h,
+    e.RequiredBagFilters      AS Enquiry_RequiredBagFilters,
+
+    -- "Qty" = running number of bagfilters for this enquiry
+    ROW_NUMBER() OVER (
+        PARTITION BY e.Id
+        ORDER BY pi.Process_Volume_M3h, bm.BagfilterMasterId
+    )                         AS Qty,
+
+    -- Bill of Material line
+    bom.Item,
+    bom.Material,
+    bom.Weight,
+    bom.Units,
+    bom.Rate,
+    bom.Cost,
+    bom.SortOrder
+
+FROM ionfiltrabagfilters.ProcessInfo       pi
+JOIN ionfiltrabagfilters.BagfilterMaster  bm
+      ON bm.BagfilterMasterId = pi.BagfilterMasterId
+     AND bm.EnquiryId          = pi.EnquiryId
+JOIN ionfiltrabagfilters.Enquiry          e
+      ON e.Id                  = pi.EnquiryId
+JOIN ionfiltrabagfilters.BillOfMaterial   bom
+      ON bom.EnquiryId         = e.Id
+     AND bom.BagfilterMasterId = bm.BagfilterMasterId
+WHERE pi.Process_Volume_M3h IS NOT NULL;

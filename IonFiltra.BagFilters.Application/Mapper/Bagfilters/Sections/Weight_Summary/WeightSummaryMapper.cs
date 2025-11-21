@@ -12,6 +12,7 @@ namespace IonFiltra.BagFilters.Application.Mappers.Bagfilters.Sections.Weight_Su
             {
                 Id = entity.Id,
                 EnquiryId = entity.EnquiryId,
+                BagfilterMasterId = entity.BagfilterMasterId,
                 WeightSummary = new WeightSummaryDto
                 {
                     Casing_Weight = entity.Casing_Weight,
@@ -40,6 +41,7 @@ namespace IonFiltra.BagFilters.Application.Mappers.Bagfilters.Sections.Weight_Su
             {
                 Id = dto.Id,
                 EnquiryId = dto.EnquiryId,
+                BagfilterMasterId = dto.BagfilterMasterId,
                 Casing_Weight = dto.WeightSummary.Casing_Weight,
                 Capsule_Weight = dto.WeightSummary.Capsule_Weight,
                 Tot_Weight_Per_Compartment = dto.WeightSummary.Tot_Weight_Per_Compartment,

@@ -139,7 +139,51 @@ namespace IonFiltra.BagFilters.Api.Controllers.Report
                     }
 
                     // for repeating rows add list_values
-                    rowValues["list_values"] = listData;
+                    //rowValues["list_values"] = listData;
+
+                    // SPECIAL HANDLING ONLY FOR BILL OF MATERIAL TEMPLATE
+                    if (string.Equals(template.EntityDbName, "vw_BillOfMaterialDetails",
+                                      StringComparison.OrdinalIgnoreCase) || string.Equals(template.Title, "Bill Of Material", StringComparison.OrdinalIgnoreCase))
+                    {
+                        // group BOM rows by BagfilterMasterId (and/or Process_Volume_M3h)
+                        var bomGroups = listData
+                            .GroupBy(d => d["Process_Volume_M3h"])
+                            .Select(g =>
+                            {
+                                var first = g.First();
+
+                                var groupDict = new Dictionary<string, object>();
+
+                                // carry over keys we need on header table
+                                if (first.TryGetValue("EnquiryId", out var enq)) groupDict["EnquiryId"] = enq;
+                                if (first.TryGetValue("BagfilterMasterId", out var bm)) groupDict["BagfilterMasterId"] = bm;
+                                if (first.TryGetValue("Process_Volume_M3h", out var pv)) groupDict["Process_Volume_M3h"] = pv;
+                                if (first.TryGetValue("Qty", out var qty)) groupDict["Qty"] = qty;
+                                if (first.TryGetValue("Enquiry_RequiredBagFilters", out var rb))
+                                    groupDict["Enquiry_RequiredBagFilters"] = rb;
+                                if (first.TryGetValue("Item", out var item)) groupDict["Item"] = item;
+                                if (first.TryGetValue("Material", out var material)) groupDict["Material"] = material;
+                                if (first.TryGetValue("Weight", out var weight)) groupDict["Weight"] = weight;
+                                if (first.TryGetValue("Units", out var units)) groupDict["Units"] = units;
+                                if (first.TryGetValue("Rate", out var rate)) groupDict["Rate"] = rate;
+                                if (first.TryGetValue("Cost", out var cost)) groupDict["Cost"] = cost;
+
+                                // put ALL rows for this group into BomRows
+                                groupDict["BomRows"] = g.ToList();
+
+                                return groupDict;
+                            })
+                            .ToList();
+
+                        // this is what the group in the template will iterate
+                        rowValues["bom_groups"] = bomGroups;
+                    }
+                    else
+                    {
+                        // normal templates still use list_values
+                        rowValues["list_values"] = listData;
+                    }
+
 
                     var processed = await _pdfService.PrepareTemplateWithValuesAsync(template, rowValues, headerValues);
 

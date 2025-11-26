@@ -333,6 +333,10 @@ namespace IonFiltra.BagFilters.Application.Services.Report
                     bool isBillOfMaterial =
                         reportTemplate.ReportName?.Equals("Bill Of Material", StringComparison.OrdinalIgnoreCase) == true;
 
+                    bool isPaintingCost =
+                        reportTemplate.ReportName?.Equals("Painting Cost", StringComparison.OrdinalIgnoreCase) == true;
+
+
                     // For each record in the source list, render the group's ChildRows (in order)
                     for (int idx = 0; idx < sourceList.Count; idx++)
                     {
@@ -386,8 +390,106 @@ namespace IonFiltra.BagFilters.Application.Services.Report
                                         expandedTable.RepeatRow = null;
                                         newRowsList.Add(expandedTable);
                                     }
+                                }// --- 1c) Painting Cost: nested RepeatRow using record["PaintingRows"] ---
+                                else if (isPaintingCost
+                                         && clonedChild.RepeatRow != null
+                                         && string.Equals(clonedChild.RepeatRow.SourceKey, "PaintingRows",
+                                                          StringComparison.OrdinalIgnoreCase))
+                                {
+                                    var nestedRepeat = clonedChild.RepeatRow;
+
+                                    if (record.TryGetValue(nestedRepeat.SourceKey, out var nestedObj) && nestedObj != null)
+                                    {
+                                        var nestedList = ConvertToListOfDicts(nestedObj);
+
+                                        var originalRows = clonedChild.Rows ?? new List<TableRow>();
+                                        var templateIdx = Math.Clamp(nestedRepeat.TemplateRowIndex, 0,
+                                                                     Math.Max(0, originalRows.Count - 1));
+
+                                        var templateRow = originalRows.ElementAtOrDefault(templateIdx)
+                                                         ?? new TableRow
+                                                         {
+                                                             RowData = nestedRepeat.Columns?.Select(_ => "").ToList()
+                                                                       ?? new List<string>()
+                                                         };
+
+                                        var expandedRows = new List<TableRow>();
+                                        var sumMap = new Dictionary<string, double>(StringComparer.OrdinalIgnoreCase);
+
+                                        foreach (var item in nestedList)
+                                        {
+                                            var newRow = new TableRow
+                                            {
+                                                RowData = new List<string>()
+                                            };
+
+                                            foreach (var colKey in nestedRepeat.Columns ?? Enumerable.Empty<string>())
+                                            {
+                                                if (item.TryGetValue(colKey, out var val) && val != null)
+                                                {
+                                                    string s = FormatValue(val);
+                                                    newRow.RowData.Add(s);
+
+                                                    if (double.TryParse(s, out var dbl))
+                                                    {
+                                                        if (!sumMap.ContainsKey(colKey)) sumMap[colKey] = 0;
+                                                        sumMap[colKey] += dbl;
+                                                    }
+                                                }
+                                                else
+                                                {
+                                                    // Painting Cost: show "-" instead of "N/A"
+                                                    newRow.RowData.Add("-");
+                                                }
+                                            }
+
+                                            // apply Painting Cost row styling (material / subtotal / footer)
+                                            var rowStyle = CloneRowStyle(templateRow.RowStyle) ?? new ReportRowStyle();
+                                            var rowType = item.TryGetValue("rowType", out var rtObj)
+                                                ? rtObj?.ToString()
+                                                : null;
+
+                                            if (string.Equals(rowType, "material", StringComparison.OrdinalIgnoreCase))
+                                            {
+                                                rowStyle.InlineCss = "background-color:#c7fad6;";
+                                            }
+                                            else if (string.Equals(rowType, "subtotal", StringComparison.OrdinalIgnoreCase) ||
+                                                     string.Equals(rowType, "footer", StringComparison.OrdinalIgnoreCase))
+                                            {
+                                                rowStyle.InlineCss = "background-color:#f7d8e9;font-weight:bold;";
+                                            }
+
+                                            newRow.RowStyle = rowStyle;
+
+                                            expandedRows.Add(newRow);
+                                        }
+
+                                        // splice expanded rows between header/footer
+                                        var before = originalRows.Take(templateIdx).ToList();
+                                        var after = originalRows.Skip(templateIdx + 1).ToList();
+
+                                        var finalRows = new List<TableRow>();
+                                        finalRows.AddRange(before);
+                                        finalRows.AddRange(expandedRows);
+                                        finalRows.AddRange(after);
+
+                                        var expandedTable = DeepClone(clonedChild);
+                                        expandedTable.Rows = finalRows;
+                                        expandedTable.RepeatRow = null;
+
+                                        newRowsList.Add(expandedTable);
+                                    }
+                                    else
+                                    {
+                                        // fallback if PaintingRows missing
+                                        var expandedTable = DeepClone(clonedChild);
+                                        expandedTable.Rows = ExpandTableTemplateForItem(clonedChild, record);
+                                        expandedTable.RepeatRow = null;
+                                        newRowsList.Add(expandedTable);
+                                    }
                                 }
-                                // --- 1c) Any other future group tables: simple placeholder expansion ---
+                                // --- 1d) Any other future group tables: simple placeholder expansion ---
+
                                 else
                                 {
                                     var expandedTable = DeepClone(clonedChild);
@@ -511,9 +613,40 @@ namespace IonFiltra.BagFilters.Application.Services.Report
                         else
                         {
                             // CASE B: single-row template replaced column-wise
+                            //var newRow = new TableRow
+                            //{
+                            //    RowStyle = CloneRowStyle(templateRow.RowStyle),
+                            //    RowData = new List<string>()
+                            //};
+
+                            //foreach (var colKey in repeat.Columns ?? Enumerable.Empty<string>())
+                            //{
+                            //    if (item.TryGetValue(colKey, out var val) && val != null)
+                            //    {
+                            //        string s = FormatValue(val);
+                            //        newRow.RowData.Add(s);
+
+                            //        if (double.TryParse(s, out var dbl))
+                            //        {
+                            //            if (!sumMap.ContainsKey(colKey)) sumMap[colKey] = 0;
+                            //            sumMap[colKey] += dbl;
+                            //        }
+                            //    }
+                            //    else
+                            //    {
+                            //        newRow.RowData.Add("N/A");
+                            //    }
+                            //}
+
+                            //expandedRows.Add(newRow);
+
+                            // CASE B: single-row template replaced column-wise
+                            var isPaintingCost =
+                                reportTemplate.ReportName?.Equals("Painting Cost",
+                                    StringComparison.OrdinalIgnoreCase) == true;
+
                             var newRow = new TableRow
                             {
-                                RowStyle = CloneRowStyle(templateRow.RowStyle),
                                 RowData = new List<string>()
                             };
 
@@ -524,6 +657,7 @@ namespace IonFiltra.BagFilters.Application.Services.Report
                                     string s = FormatValue(val);
                                     newRow.RowData.Add(s);
 
+                                    // keep the generic summation as-is
                                     if (double.TryParse(s, out var dbl))
                                     {
                                         if (!sumMap.ContainsKey(colKey)) sumMap[colKey] = 0;
@@ -532,11 +666,43 @@ namespace IonFiltra.BagFilters.Application.Services.Report
                                 }
                                 else
                                 {
-                                    newRow.RowData.Add("N/A");
+                                    // For Painting Cost we want "-" instead of "N/A"
+                                    var fallback = isPaintingCost ? "-" : "N/A";
+                                    newRow.RowData.Add(fallback);
                                 }
                             }
 
+                            // --- row-level styling (only Painting Cost) ---
+                            if (isPaintingCost)
+                            {
+                                var rowStyle = CloneRowStyle(templateRow.RowStyle) ?? new ReportRowStyle();
+
+                                var rowType = item.TryGetValue("rowType", out var rtObj)
+                                    ? rtObj?.ToString()
+                                    : null;
+
+                                // Material rows -> light green background
+                                if (string.Equals(rowType, "material", StringComparison.OrdinalIgnoreCase))
+                                {
+                                    rowStyle.InlineCss = "background-color:#c7fad6;"; // like your UI
+                                }
+                                // Subtotal + footer rows -> pink and bold
+                                else if (string.Equals(rowType, "subtotal", StringComparison.OrdinalIgnoreCase) ||
+                                         string.Equals(rowType, "footer", StringComparison.OrdinalIgnoreCase))
+                                {
+                                    rowStyle.InlineCss = "background-color:#f7d8e9;font-weight:bold;";
+                                }
+
+                                newRow.RowStyle = rowStyle;
+                            }
+                            else
+                            {
+                                // All other reports behave exactly as before
+                                newRow.RowStyle = CloneRowStyle(templateRow.RowStyle);
+                            }
+
                             expandedRows.Add(newRow);
+
                         }
                     } // foreach item
 

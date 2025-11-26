@@ -421,19 +421,49 @@ LEFT JOIN VolumeWeights W
  --- Bill Of Material Details View
 
  CREATE OR REPLACE VIEW ionfiltrabagfilters.vw_BillOfMaterialDetails AS
+WITH PiBm AS (
+    SELECT
+        e.Id                 AS EnquiryId,
+        bm.BagfilterMasterId AS BagfilterMasterId,
+        pi.Process_Volume_M3h,
+        e.RequiredBagFilters AS Enquiry_RequiredBagFilters,
+
+        -- choose a single BagfilterMaster per (Enquiry, Process_Volume_M3h)
+        ROW_NUMBER() OVER (
+            PARTITION BY e.Id, pi.Process_Volume_M3h
+            ORDER BY bm.BagfilterMasterId
+        ) AS RnPerVolume
+    FROM ionfiltrabagfilters.ProcessInfo      pi
+    JOIN ionfiltrabagfilters.BagfilterMaster bm
+          ON bm.BagfilterMasterId = pi.BagfilterMasterId
+         AND bm.EnquiryId          = pi.EnquiryId
+    JOIN ionfiltrabagfilters.Enquiry         e
+          ON e.Id                  = pi.EnquiryId
+    WHERE pi.Process_Volume_M3h IS NOT NULL
+),
+DistinctVolumes AS (
+    SELECT
+        EnquiryId,
+        BagfilterMasterId,
+        Process_Volume_M3h,
+        Enquiry_RequiredBagFilters,
+
+        -- Qty = running number of *distinct* process volumes for this enquiry
+        ROW_NUMBER() OVER (
+            PARTITION BY EnquiryId
+            ORDER BY Process_Volume_M3h, BagfilterMasterId
+        ) AS Qty
+    FROM PiBm
+    WHERE RnPerVolume = 1  -- keep only one BagfilterMaster per volume
+)
 SELECT
-    e.Id                      AS EnquiryId,
-    bm.BagfilterMasterId      AS BagfilterMasterId,
-    pi.Process_Volume_M3h     AS Process_Volume_M3h,
-    e.RequiredBagFilters      AS Enquiry_RequiredBagFilters,
+    dv.EnquiryId,
+    dv.BagfilterMasterId,
+    dv.Process_Volume_M3h,
+    dv.Enquiry_RequiredBagFilters,
+    dv.Qty,
 
-    -- "Qty" = running number of bagfilters for this enquiry
-    ROW_NUMBER() OVER (
-        PARTITION BY e.Id
-        ORDER BY pi.Process_Volume_M3h, bm.BagfilterMasterId
-    )                         AS Qty,
-
-    -- Bill of Material line
+    -- Bill of Material line (only for the chosen BagfilterMasterId)
     bom.Item,
     bom.Material,
     bom.Weight,
@@ -441,14 +471,69 @@ SELECT
     bom.Rate,
     bom.Cost,
     bom.SortOrder
+FROM DistinctVolumes dv
+JOIN ionfiltrabagfilters.BillOfMaterial bom
+      ON bom.EnquiryId         = dv.EnquiryId
+     AND bom.BagfilterMasterId = dv.BagfilterMasterId
+ORDER BY
+    dv.EnquiryId,
+    dv.Process_Volume_M3h,
+    dv.BagfilterMasterId,
+    bom.SortOrder;
 
-FROM ionfiltrabagfilters.ProcessInfo       pi
-JOIN ionfiltrabagfilters.BagfilterMaster  bm
-      ON bm.BagfilterMasterId = pi.BagfilterMasterId
-     AND bm.EnquiryId          = pi.EnquiryId
-JOIN ionfiltrabagfilters.Enquiry          e
-      ON e.Id                  = pi.EnquiryId
-JOIN ionfiltrabagfilters.BillOfMaterial   bom
-      ON bom.EnquiryId         = e.Id
-     AND bom.BagfilterMasterId = bm.BagfilterMasterId
-WHERE pi.Process_Volume_M3h IS NOT NULL;
+
+
+    ------Painting COst view
+
+    CREATE OR REPLACE VIEW ionfiltrabagfilters.vw_PaintingCostDetails AS
+WITH PiBm AS (
+    SELECT
+        e.Id                 AS EnquiryId,
+        bm.BagfilterMasterId AS BagfilterMasterId,
+        pi.Process_Volume_M3h,
+        e.RequiredBagFilters AS Enquiry_RequiredBagFilters,
+
+        -- choose a single BagfilterMaster per (Enquiry, Process_Volume_M3h)
+        ROW_NUMBER() OVER (
+            PARTITION BY e.Id, pi.Process_Volume_M3h
+            ORDER BY bm.BagfilterMasterId
+        ) AS RnPerVolume
+    FROM ionfiltrabagfilters.ProcessInfo      pi
+    JOIN ionfiltrabagfilters.BagfilterMaster bm
+          ON bm.BagfilterMasterId = pi.BagfilterMasterId
+         AND bm.EnquiryId          = pi.EnquiryId
+    JOIN ionfiltrabagfilters.Enquiry         e
+          ON e.Id                  = pi.EnquiryId
+    WHERE pi.Process_Volume_M3h IS NOT NULL
+),
+DistinctVolumes AS (
+    SELECT
+        EnquiryId,
+        BagfilterMasterId,
+        Process_Volume_M3h,
+        Enquiry_RequiredBagFilters,
+
+        -- running number of DISTINCT process volumes for this enquiry
+        ROW_NUMBER() OVER (
+            PARTITION BY EnquiryId
+            ORDER BY Process_Volume_M3h, BagfilterMasterId
+        ) AS Qty
+    FROM PiBm
+    WHERE RnPerVolume = 1      -- keep only one BagfilterMaster per volume
+)
+SELECT
+    dv.EnquiryId,
+    dv.BagfilterMasterId,
+    dv.Process_Volume_M3h,
+    dv.Enquiry_RequiredBagFilters,
+    dv.Qty,
+    pc.Id               AS PaintingCostId,
+    pc.PaintingTableJson
+FROM DistinctVolumes dv
+JOIN ionfiltrabagfilters.PaintingCost pc
+      ON pc.EnquiryId         = dv.EnquiryId
+     AND pc.BagfilterMasterId = dv.BagfilterMasterId
+ORDER BY
+    dv.EnquiryId,
+    dv.Process_Volume_M3h,
+    dv.BagfilterMasterId;

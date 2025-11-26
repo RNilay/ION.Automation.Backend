@@ -3,85 +3,132 @@
     "Order": 4,
     "ReportName": "Painting Cost",
     "Title": "Painting Cost",
-    "EntityDbName": "paintingcost",
+    "EntityDbName": "vw_PaintingCostDetails",
+    "Logo": "wwwroot/images/company.png",
+    "Layout": {
+        "Columns": 1,
+        "ColumnWidths": [ "100%" ],
+        "ReportWidth": "210mm"
+    },
+    "Header": {
+        "TextRows": [
+            "<div style='background-color:#F2F2F2; padding:6px; border:1px solid #000;'>",
+            "<table style='width:100%; font-size:12px;'><tr><th style='text-align:left'>{Title}</th><th style='text-align:right'>{Date}</th></tr></table>",
+            "</div>"
+        ]
+    },
+    "Footer": {
+        "TextRows": [ "{Logo}", "Page Footer" ]
+    },
+
     "Rows": [
         {
-            "Type": "table",
-            "LayoutColumns": [
-                "",
-                "Item",
-                "INR/Ltr",
-                "Sq.M per Ltr for 20 Micron Thk.",
-                "No. of coats",
-                "Material Cost per Sq.M",
-                "Total Material Cost per Sq. M",
-                "Labour Charges INR/kg",
-                "Labour Unit",
-                "Total Cost (Material+Labour) INR"
-            ],
-            "ColumnWidths": [ 1, 3, 2, 3, 2, 2, 3, 3, 2, 3 ],
+            "Type": "group",
             "RepeatRow": {
-                "SourceKey": "list_values",
-                "TemplateRowIndex": 1,
-                "Columns": {
-                    "item": "item",
-                    "inrPerLtr": "INR/Ltr",
-                    "sqmPerLtr": "Sq.M per Ltr for 20 Micron Thk.",
-                    "coats": "No. of coats",
-                    "materialCostPerSqm": "Material Cost per Sq.M",
-                    "totalMaterialCostPerSqm": "Total Material Cost per Sq. M",
-                    "labourRate": "Labour Charges INR/kg",
-                    "labourUnit": "Labour Unit",
-                    "totalCost": "Total Cost (Material+Labour) INR"
-                }
+                "SourceKey": "painting_groups",
+                "TemplateRowIndex": 0
             },
-            "Rows": [
+            "ChildRows": [
                 {
-                    "RowData": [ "__BLOCK__" ],
-                    "BlockRows": [
+                    "Type": "table",
+                    "LayoutColumns": [ "", "" ],
+                    "ColumnWidths": [ 70, 30 ],
+                    "Rows": [
                         {
-                            "Label": "Material Cost Inside",
-                            "IsHeader": true,
-                            "ColSpan": 10,
-                            "InlineCss": "background-color:#ecc1dd;font-weight:bold"
+                            "RowData": [
+                                "Process Volume (m<sup>3</sup>/hr)",
+                                "Qty (Nos.)"
+                            ],
+                            "RowStyle": {
+                                "FontSize": 12,
+                                "Bold": true,
+                                "InlineCss": "background-color:#008fd8; font-weight:bolder; color:#ffffff;"
+                            }
                         },
                         {
-                            "ValueKey": "inside_primer",
-                            "InlineCss": "background-color:#c7fad6"
-                        },
-                        {
-                            "ValueKey": "inside_total",
-                            "InlineCss": "font-weight:bold;background-color:#f7d8e9"
-                        },
-
-                        {
-                            "Label": "Material Cost Outside",
-                            "IsHeader": true,
-                            "ColSpan": 10,
-                            "InlineCss": "background-color:#ecc1dd;font-weight:bold"
-                        },
-                        {
-                            "ValueKey": "outside_primer",
-                            "InlineCss": "background-color:#c7fad6"
-                        },
-                        {
-                            "ValueKey": "outside_intermediate",
-                            "InlineCss": "background-color:#c7fad6"
-                        },
-                        {
-                            "ValueKey": "outside_finish",
-                            "InlineCss": "background-color:#c7fad6"
-                        },
-                        {
-                            "ValueKey": "outside_total",
-                            "InlineCss": "font-weight:bold;background-color:#f7d8e9"
-                        },
-
-                        {
-                            "ValueKey": "total_labour",
-                            "InlineCss": "font-weight:bold;background-color:#f7d8e9"
+                            "RowData": [
+                                "{Process_Volume_M3h}",
+                                "{Qty} of {Enquiry_RequiredBagFilters}"
+                            ],
+                            "RowStyle": {
+                                "FontSize": 11,
+                                "InlineCss": "font-weight:bold;"
+                            }
                         }
                     ]
+                },
+
+                {
+                    "Type": "table",
+                    "LayoutColumns": [
+                        "",
+                        "Item",
+                        "INR/Ltr",
+                        "Sq.M per Ltr for 20 Micron Thk.",
+                        "No. of coats",
+                        "Material Cost per Sq.M",
+                        "Total Material Cost per Sq. M",
+                        "Labour Charges INR/kg",
+                        "Labour Unit",
+                        "Total Cost (Material+Labour) INR"
+                    ],
+                    "ColumnWidths": [ 4, 3, 2, 2, 2, 2, 2, 2, 2, 4 ],
+
+                    "Rows": [
+                        {
+                            "RowData": [
+                                "",
+                                "Item",
+                                "INR/Ltr",
+                                "Sq.M per Ltr for 20 Micron Thk.",
+                                "No. of coats",
+                                "Material Cost per Sq.M",
+                                "Total Material Cost per Sq. M",
+                                "Labour Charges INR/kg",
+                                "Labour Unit",
+                                "Total Cost (Material+Labour) INR"
+                            ],
+                            "RowStyle": {
+                                "FontSize": 11,
+                                "Bold": true,
+                                "InlineCss": "background-color:#7392E8; font-weight:bolder; color:#ffffff;"
+                            }
+                        },
+                        {
+                            "RowData": [
+                                "",
+                                "",
+                                "",
+                                "",
+                                "",
+                                "",
+                                "",
+                                "",
+                                "",
+                                ""
+                            ],
+                            "RowStyle": {
+                                "FontSize": 10
+                            }
+                        }
+                    ],
+
+                    "RepeatRow": {
+                        "SourceKey": "PaintingRows",
+                        "TemplateRowIndex": 1,
+                        "Columns": [
+                            "section",
+                            "item",
+                            "inrPerLtr",
+                            "sqmPerLtr",
+                            "coats",
+                            "materialCostPerSqm",
+                            "totalMaterialCostPerSqm",
+                            "labourRate",
+                            "labourUnit",
+                            "totalCost"
+                        ]
+                    }
                 }
             ]
         }

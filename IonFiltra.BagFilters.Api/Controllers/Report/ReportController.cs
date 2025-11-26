@@ -111,14 +111,13 @@ namespace IonFiltra.BagFilters.Api.Controllers.Report
 
 
                     var headerDict = _viewService.GetViewDataWithParam("enquiry", dictValues);
-                    //var bagfilterMasterData = _viewService.GetViewDataWithParam("bagfiltermaster", new Dictionary<string, object> { ["EnquiryId"] = request.EnquiryId });
-                    //var reportInputData = await _viewService.GetViewDataWithParam(template.EntityDbName, new Dictionary<string, object> { ["EnquiryId"] = request.EnquiryId });
+                   
                     var bagfilterMasterData = _viewService.GetViewDataWithParam("bagfiltermaster", dataParams);
                     var reportInputData = await _viewService.GetViewDataWithParam(template.EntityDbName, dataParams);
 
 
                     var headerValues = headerDict.Result.FirstOrDefault() ?? new Dictionary<string, object>();
-                    //var rowInputDict = reportInputData.FirstOrDefault() ?? new Dictionary<string, object>();
+                    
                     // Defensive conversion: always end up with a List<Dictionary<string,object>>
                     var listData = reportInputData?.ToList() ?? new List<Dictionary<string, object>>();
 
@@ -177,6 +176,53 @@ namespace IonFiltra.BagFilters.Api.Controllers.Report
 
                         // this is what the group in the template will iterate
                         rowValues["bom_groups"] = bomGroups;
+                    }
+                    else if (string.Equals(template.EntityDbName, "vw_PaintingCostDetails",
+                                      StringComparison.OrdinalIgnoreCase) || string.Equals(template.Title, "Painting Cost", StringComparison.OrdinalIgnoreCase))
+                    {
+                        //var paintingJson = listData[0]["PaintingTableJson"]?.ToString();
+                        //if (!string.IsNullOrWhiteSpace(paintingJson))
+                        //{
+                        //    var list = JsonSerializer.Deserialize<List<Dictionary<string, object>>>(paintingJson);
+                        //    if (list != null)
+                        //    {
+                        //        rowValues["list_values"] = list; // matches SourceKey in painting_cost.json
+                        //    }
+                        //}
+
+                        var paintingGroups = new List<Dictionary<string, object>>();
+
+                        foreach (var rec in listData)
+                        {
+                            var group = new Dictionary<string, object>();
+
+                            // header fields for the small Process Volume table
+                            if (rec.TryGetValue("EnquiryId", out var enq)) group["EnquiryId"] = enq;
+                            if (rec.TryGetValue("BagfilterMasterId", out var bm)) group["BagfilterMasterId"] = bm;
+                            if (rec.TryGetValue("Process_Volume_M3h", out var pv)) group["Process_Volume_M3h"] = pv;
+                            if (rec.TryGetValue("Qty", out var qty)) group["Qty"] = qty;
+                            if (rec.TryGetValue("Enquiry_RequiredBagFilters", out var rb)) group["Enquiry_RequiredBagFilters"] = rb;
+
+                            // parse PaintingTableJson for this volume
+                            var paintingJson = rec.TryGetValue("PaintingTableJson", out var ptj)
+                                ? ptj?.ToString()
+                                : null;
+
+                            List<Dictionary<string, object>> paintingRows = new();
+
+                            if (!string.IsNullOrWhiteSpace(paintingJson))
+                            {
+                                var list = JsonSerializer.Deserialize<List<Dictionary<string, object>>>(paintingJson);
+                                if (list != null)
+                                    paintingRows = list;
+                            }
+
+                            group["PaintingRows"] = paintingRows;
+
+                            paintingGroups.Add(group);
+                        }
+
+                        rowValues["painting_groups"] = paintingGroups;
                     }
                     else
                     {

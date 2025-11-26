@@ -6,6 +6,7 @@ using System.Threading.Tasks;
 using System.Xml;
 using IonFiltra.BagFilters.Core.Common;
 using IonFiltra.BagFilters.Core.Entities.Assignment;
+using IonFiltra.BagFilters.Core.Entities.BagfilterDatabase.WithCanopy;
 using IonFiltra.BagFilters.Core.Entities.BagfilterDatabase.WithoutCanopy;
 using IonFiltra.BagFilters.Core.Entities.Bagfilters.BagfilterInputs;
 using IonFiltra.BagFilters.Core.Entities.Bagfilters.BagfilterMasterEntity;
@@ -71,6 +72,7 @@ namespace IonFiltra.BagFilters.Infrastructure.Data
 
         // Database from ion filtra for bag filters
         public DbSet<IFI_Bagfilter_Database_Without_Canopy> IFI_Bagfilter_Database_Without_Canopys { get; set; }
+        public DbSet<IFI_Bagfilter_Database_With_Canopy> IFI_Bagfilter_Database_With_Canopys { get; set; }
 
         //BOM Rates
         public DbSet<BillOfMaterialRates> BillOfMaterialRatess { get; set; }
@@ -214,6 +216,12 @@ namespace IonFiltra.BagFilters.Infrastructure.Data
             modelBuilder.Entity<IFI_Bagfilter_Database_Without_Canopy>(entity =>
             {
                 entity.ToTable("IFI_Bagfilter_Database_Without_Canopy", GlobalConstants.IONFILTRA_SCHEMA);
+                entity.HasKey(u => u.Id);
+            });
+
+            modelBuilder.Entity<IFI_Bagfilter_Database_With_Canopy>(entity =>
+            {
+                entity.ToTable("IFI_Bagfilter_Database_With_Canopy", GlobalConstants.IONFILTRA_SCHEMA);
                 entity.HasKey(u => u.Id);
             });
 

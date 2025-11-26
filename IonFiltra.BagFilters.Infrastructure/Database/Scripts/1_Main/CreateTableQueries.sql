@@ -509,6 +509,48 @@ CREATE TABLE
     `UpdatedAt` DATETIME NULL ON UPDATE CURRENT_TIMESTAMP,
   );
 
+  CREATE TABLE
+    ionfiltrabagfilters.IFI_Bagfilter_Database_With_Canopy (
+        Id INT AUTO_INCREMENT PRIMARY KEY,
+        Process_Volume_m3hr DECIMAL(10, 2),
+        Hopper_type TEXT,
+        Number_of_columns DECIMAL(10, 2),
+        Number_of_bays_in_X_direction DECIMAL(10, 2),
+        Number_of_bays_in_Y_direction DECIMAL(10, 2),
+        Foot_Print_Column_CC_Header_Side_mm_x DECIMAL(10, 2),
+        Foot_Print_Column_CC_Other_Side_mm_y DECIMAL(10, 2),
+        Ht_of_Supp_Structure_mm_Hopper_Bottom DECIMAL(10, 2),
+        Ht_of_Supp_Structure_mm_Column DECIMAL(10, 2),
+        Ht_of_Supp_Structure_mm_Tube_Sheet DECIMAL(10, 2),
+        Ht_of_Supp_Structure_mm_Capsule_Top DECIMAL(10, 2),
+        Ht_of_Supp_Structure_mm_Shed_Height DECIMAL(10, 2),
+        Member_Sizes_Column TEXT,
+        Member_Sizes_Beam TEXT,
+        Member_Sizes_Bracing_Ties TEXT,
+        Member_Sizes_RAV TEXT,
+        Member_Sizes_Staging_Beam TEXT,
+        Member_Sizes_Grid_Beam TEXT,
+        Member_Sizes_mm_Shed_Column_Rafter TEXT,
+        Member_Sizes_mm_Shed_Girt_and_Purlin_along_X_axis TEXT,
+        Member_Sizes_mm_Shed_Girt_Purlin_and_Ridge_along_Y_axis TEXT,
+        Member_Sizes_mm_Shed_Shed_Bracings TEXT,
+        Member_Sizes_mm_Shed_Roof_Truss TEXT,
+        Bolts_No_of_Bolt DECIMAL(10, 2),
+        Bolts_Dia_of_Bolt DECIMAL(10, 2),
+        Bolts_Grade_of_Bolt DECIMAL(10, 2),
+        Bolts_Sleeve_Size_mm TEXT,
+        Bolts_Embedded_Length_mm DECIMAL(10, 2),
+        Bolt_CC_Distance_Confirguration_RCC TEXT,
+        Bolt_CC_Distance_Confirguration_Steel TEXT,
+        Base_Plate_Dimension_RCC TEXT,
+        Base_Plate_Dimension_Steel TEXT,
+        Weight_of_Base_Plate_kg DECIMAL(10, 2),
+        Total_Weight_of_Structure_kg DECIMAL(10, 2),
+        Weight_of_Plates_kg DECIMAL(10, 2),
+        CreatedAt DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+        UpdatedAt DATETIME NULL ON UPDATE CURRENT_TIMESTAMP,
+    );
+
 
   -----Bill Of Material Rates table
 

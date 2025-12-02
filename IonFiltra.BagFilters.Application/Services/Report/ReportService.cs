@@ -854,6 +854,17 @@ namespace IonFiltra.BagFilters.Application.Services.Report
                     }
                 }
 
+               
+                if (item.TryGetValue("Item", out var itemVal) &&
+                    itemVal?.ToString()?.Trim().Equals("Total", StringComparison.OrdinalIgnoreCase) == true)
+                {
+                    // Make the row bold + highlight background if needed
+                    newRow.RowStyle ??= new ReportRowStyle();
+                    newRow.RowStyle.InlineCss = "font-weight:bold; background-color:#E8EBF5;";
+                }
+              
+
+
                 expandedRows.Add(newRow);
             }
 

@@ -351,21 +351,38 @@ namespace IonFiltra.BagFilters.Application.Services.Bagfilters.BagfilterInputs
             // Build a dictionary for quick lookup
             var masterMap = inputs.ToDictionary(x => x.BagfilterInputId, x => x.BagfilterMasterId);
 
-            // 7)
-            // AFTER you have createdInputIds, invoke handlers for each dto:
+           
+            // 7) Build child tasks
             var childTasks = new List<Task>();
+
             for (int i = 0; i < dtos.Count; i++)
             {
                 var dto = dtos[i];
-                var createdInputId = createdInputIds.ElementAtOrDefault(i); // safe access
+                var createdInputId = createdInputIds.ElementAtOrDefault(i);
                 var masterId = masterMap.TryGetValue(createdInputId, out var mid) ? mid : 0;
+
                 foreach (var handlerKv in _childHandlers)
                 {
-                    // handler function itself checks dto.* == null and returns early if not present
-                    // so we can call it safely; you can also check dto props before calling to save calls
-                    childTasks.Add(handlerKv.Value(dto, masterId, ct));
+                    var task = handlerKv.Value(dto, masterId, ct);
+                    if (task != null)
+                        childTasks.Add(task);
                 }
             }
+
+            // 8) WAIT for all child tasks BEFORE returning
+            if (childTasks.Count > 0)
+            {
+                try
+                {
+                    await Task.WhenAll(childTasks);
+                }
+                catch (Exception ex)
+                {
+                    _logger.LogError(ex, "Child handler failure.");
+                    throw; // Required to avoid partial writes
+                }
+            }
+
 
 
 
@@ -398,82 +415,233 @@ namespace IonFiltra.BagFilters.Application.Services.Bagfilters.BagfilterInputs
             }
 
             // If nothing to run, skip
+            //if (unmatchedPairIndices.Any())
+            //{
+            //    // limiter to avoid flooding SkyCiv — adjust concurrency as needed
+            //    var maxConcurrency = 2; // or 1 if you want strictly sequential
+            //    using var sem = new SemaphoreSlim(maxConcurrency);
+            //    var tasks = new List<Task>();
+
+            //    foreach (var pairIndex in unmatchedPairIndices)
+            //    {
+            //        await sem.WaitAsync(); // respect cancellation
+            //        tasks.Add(Task.Run(async () =>
+            //        {
+            //            try
+            //            {
+            //                // get model to send
+            //                var inputEntity = pairs[pairIndex].Input;
+            //                // assume the DTO or entity stored s3dModel as JObject (if not, adapt to convert string->JObject)
+            //                var s3dModel = inputEntity.S3dModel != null
+            //                    ? JObject.Parse(inputEntity.S3dModel) // if stored as string
+            //                    : null;
+
+            //                if (s3dModel == null)
+            //                {
+            //                    _logger?.LogWarning("No S3D model present for pairIndex {idx}", pairIndex);
+            //                    return;
+            //                }
+
+            //                // Call analysis service
+            //                AnalysisResponseDto analysisResponse;
+            //                try
+            //                {
+            //                    analysisResponse = await _skyCivService.RunAnalysisAsync(s3dModel, ct);
+            //                }
+            //                catch (Exception ex)
+            //                {
+            //                    _logger?.LogError(ex, "SkyCiv analysis failed for pairIndex {idx}", pairIndex);
+            //                    return;
+            //                }
+
+            //                if (analysisResponse != null && analysisResponse.Status == "Succeeded")
+            //                {
+            //                    // Persist model data and session id to the DB row that was created earlier
+            //                    var createdId = createdInputIds[pairIndex]; // createdInputIds indexes map to pairs
+            //                    var modelJson = analysisResponse.ModelData?.ToString(Formatting.None) ?? string.Empty;
+            //                    var sessionId = analysisResponse.SessionId;
+
+            //                    // Call repository to update the row (you need to implement this)
+            //                    await _repository.UpdateS3dModelAsync(createdId, modelJson, sessionId);
+
+            //                    // Optionally update the groupMatchMap or matchesList for return DTOs
+            //                    var groupKey = pairGroupKeys[pairIndex];
+            //                    if (groupMatchMap.TryGetValue(groupKey, out var gm2))
+            //                    {
+            //                        // annotate placeholder to indicate analysis was run
+            //                        gm2.IsMatched = false; // still unmatched, but tried analysis
+
+            //                    }
+            //                }
+            //                else
+            //                {
+            //                    _logger?.LogWarning("Analysis didn't succeed for pairIndex {idx}. Status: {status}", pairIndex, analysisResponse?.Status);
+            //                }
+            //            }
+            //            finally
+            //            {
+            //                sem.Release();
+            //            }
+            //        }));
+            //    }
+
+            //    // Wait for all tasks to complete
+            //    await Task.WhenAll(tasks);
+            //}
+
             if (unmatchedPairIndices.Any())
             {
-                // limiter to avoid flooding SkyCiv — adjust concurrency as needed
-                var maxConcurrency = 2; // or 1 if you want strictly sequential
+                const int maxConcurrency = 2;
                 using var sem = new SemaphoreSlim(maxConcurrency);
                 var tasks = new List<Task>();
 
-                foreach (var pairIndex in unmatchedPairIndices)
+                foreach (var originalPairIndex in unmatchedPairIndices)
                 {
-                    await sem.WaitAsync(); // respect cancellation
-                    tasks.Add(Task.Run(async () =>
-                    {
-                        try
-                        {
-                            // get model to send
-                            var inputEntity = pairs[pairIndex].Input;
-                            // assume the DTO or entity stored s3dModel as JObject (if not, adapt to convert string->JObject)
-                            var s3dModel = inputEntity.S3dModel != null
-                                ? JObject.Parse(inputEntity.S3dModel) // if stored as string
-                                : null;
+                    // create a local copy to avoid closed-over loop variable bugs
+                    var pairIndex = originalPairIndex;
 
-                            if (s3dModel == null)
-                            {
-                                _logger?.LogWarning("No S3D model present for pairIndex {idx}", pairIndex);
-                                return;
-                            }
-
-                            // Call analysis service
-                            AnalysisResponseDto analysisResponse;
-                            try
-                            {
-                                analysisResponse = await _skyCivService.RunAnalysisAsync(s3dModel, ct);
-                            }
-                            catch (Exception ex)
-                            {
-                                _logger?.LogError(ex, "SkyCiv analysis failed for pairIndex {idx}", pairIndex);
-                                return;
-                            }
-
-                            if (analysisResponse != null && analysisResponse.Status == "Succeeded")
-                            {
-                                // Persist model data and session id to the DB row that was created earlier
-                                var createdId = createdInputIds[pairIndex]; // createdInputIds indexes map to pairs
-                                var modelJson = analysisResponse.ModelData?.ToString(Formatting.None) ?? string.Empty;
-                                var sessionId = analysisResponse.SessionId;
-
-                                // Call repository to update the row (you need to implement this)
-                                await _repository.UpdateS3dModelAsync(createdId, modelJson, sessionId);
-
-                                // Optionally update the groupMatchMap or matchesList for return DTOs
-                                var groupKey = pairGroupKeys[pairIndex];
-                                if (groupMatchMap.TryGetValue(groupKey, out var gm2))
-                                {
-                                    // annotate placeholder to indicate analysis was run
-                                    gm2.IsMatched = false; // still unmatched, but tried analysis
-
-                                }
-                            }
-                            else
-                            {
-                                _logger?.LogWarning("Analysis didn't succeed for pairIndex {idx}. Status: {status}", pairIndex, analysisResponse?.Status);
-                            }
-                        }
-                        finally
-                        {
-                            sem.Release();
-                        }
-                    }));
+                    // start the processing task directly (no Task.Run)
+                    tasks.Add(ProcessPairAsync(pairIndex, pairs, pairGroupKeys, createdInputIds, groupMatchMap, sem, ct));
                 }
 
-                // Wait for all tasks to complete
-                await Task.WhenAll(tasks);
+                try
+                {
+                    await Task.WhenAll(tasks).ConfigureAwait(false);
+                }
+                catch (Exception ex)
+                {
+                    _logger?.LogError(ex, "One or more SkyCiv analysis tasks failed.");
+                    throw; // or aggregate and return a partial result as your policy dictates
+                }
             }
+
+            
+
 
             return result;
         }
+
+
+        private async Task ProcessPairAsync(
+                int pairIndex,
+                List<(BagfilterMaster Master, BagfilterInput Input)> pairs,
+                List<string> pairGroupKeys,
+                IList<int> createdInputIds,
+                Dictionary<string, BagfilterMatchDto> groupMatchMap,
+                SemaphoreSlim sem,
+                CancellationToken ct)
+        {
+            await sem.WaitAsync(ct).ConfigureAwait(false);
+            try
+            {
+                // validate pairIndex bounds
+                if (pairIndex < 0 || pairIndex >= pairs.Count)
+                {
+                    _logger?.LogWarning("Invalid pairIndex {pairIndex}. Skipping.", pairIndex);
+                    return;
+                }
+
+                var inputEntity = pairs[pairIndex].Input;
+                if (inputEntity == null)
+                {
+                    _logger?.LogWarning("No Input entity for pairIndex {pairIndex}. Skipping.", pairIndex);
+                    return;
+                }
+
+                // safely parse the stored S3D model (not throwing on invalid JSON)
+                JObject s3dModel = null;
+                if (!string.IsNullOrWhiteSpace(inputEntity.S3dModel))
+                {
+                    try
+                    {
+                        s3dModel = JObject.Parse(inputEntity.S3dModel);
+                    }
+                    catch (Exception parseEx)
+                    {
+                        _logger?.LogWarning(parseEx, "Failed to parse S3D model for pairIndex {pairIndex}. Skipping analysis.", pairIndex);
+                        return;
+                    }
+                }
+
+                if (s3dModel == null)
+                {
+                    _logger?.LogInformation("No S3D model present for pairIndex {pairIndex}.", pairIndex);
+                    return;
+                }
+
+                // call SkyCiv with a simple retry/backoff (3 attempts). Replace with Polly if you have it.
+                AnalysisResponseDto analysisResponse = null;
+                var attempts = 0;
+                var maxAttempts = 3;
+                var delayMs = 500;
+                while (attempts < maxAttempts)
+                {
+                    ct.ThrowIfCancellationRequested();
+                    attempts++;
+                    try
+                    {
+                        analysisResponse = await _skyCivService.RunAnalysisAsync(s3dModel, ct).ConfigureAwait(false);
+                        break; // success
+                    }
+                    catch (OperationCanceledException) { throw; }
+                    catch (Exception ex) when (attempts < maxAttempts)
+                    {
+                        _logger?.LogWarning(ex, "SkyCiv attempt {attempt} failed for pairIndex {pairIndex}, retrying after {delay}ms", attempts, pairIndex, delayMs);
+                        await Task.Delay(delayMs, ct).ConfigureAwait(false);
+                        delayMs *= 2;
+                    }
+                    catch (Exception ex)
+                    {
+                        _logger?.LogError(ex, "SkyCiv analysis failed for pairIndex {pairIndex} on final attempt", pairIndex);
+                        return;
+                    }
+                }
+
+                if (analysisResponse == null || !string.Equals(analysisResponse.Status, "Succeeded", StringComparison.OrdinalIgnoreCase))
+                {
+                    _logger?.LogWarning("Analysis didn't succeed for pairIndex {pairIndex}. Status: {status}", pairIndex, analysisResponse?.Status);
+                    return;
+                }
+
+                // safely obtain createdId (ElementAtOrDefault to avoid exceptions)
+                var createdId = (pairIndex >= 0 && pairIndex < createdInputIds.Count) ? createdInputIds[pairIndex] : 0;
+                if (createdId <= 0)
+                {
+                    _logger?.LogWarning("No created record id for pairIndex {pairIndex}. Skipping DB update.", pairIndex);
+                    return;
+                }
+
+                var modelJson = analysisResponse.ModelData?.ToString(Formatting.None) ?? string.Empty;
+                var sessionId = analysisResponse.SessionId;
+
+                // Update repository with cancellation token (make repository support ct)
+                try
+                {
+                    await _repository.UpdateS3dModelAsync(createdId, modelJson, sessionId).ConfigureAwait(false);
+                }
+                catch (OperationCanceledException) { throw; }
+                catch (Exception ex)
+                {
+                    _logger?.LogError(ex, "Failed to persist SkyCiv model for createdId {createdId} (pairIndex {pairIndex})", createdId, pairIndex);
+                    // decide: rethrow to fail whole batch, or swallow and continue. Here we log and return.
+                    return;
+                }
+
+                // annotate groupMatchMap if present (safe lookup)
+                var groupKey = (pairIndex >= 0 && pairIndex < pairGroupKeys.Count) ? pairGroupKeys[pairIndex] : null;
+                if (!string.IsNullOrEmpty(groupKey) && groupMatchMap.TryGetValue(groupKey, out var gm2))
+                {
+                    // mark that analysis was attempted; do not flip IsMatched to true unless intended
+                    gm2.AnalysisAttempted = true; // add a property or similar to signal analysis ran
+                }
+            }
+            finally
+            {
+                sem.Release();
+            }
+        }
+
+
 
         //Helpers
         private BagfilterInput MapBagfilterInputDtoToEntity(BagfilterInputDto dto)
@@ -491,23 +659,26 @@ namespace IonFiltra.BagFilters.Application.Services.Bagfilters.BagfilterInputs
                 Dew_Point_C = dto.Dew_Point_C,
                 Outlet_Emission_Mgpm3 = dto.Outlet_Emission_Mgpm3,
                 Process_Cloth_Ratio = dto.Process_Cloth_Ratio,
-                Specific_Gravity = dto.Specific_Gravity,
+                Can_Correction = dto.Can_Correction,
                 Customer_Equipment_Tag_No = dto.Customer_Equipment_Tag_No,
                 Bagfilter_Cleaning_Type = dto.Bagfilter_Cleaning_Type,
                 Offline_Maintainence = dto.Offline_Maintainence,
+                Cage_Type = dto.Cage_Type,
+                Cage_Sub_Type = dto.Cage_Sub_Type,
                 Cage_Wire_Dia = dto.Cage_Wire_Dia,
                 No_Of_Cage_Wires = dto.No_Of_Cage_Wires,
                 Ring_Spacing = dto.Ring_Spacing,
+                Cage_Diameter = dto.Cage_Diameter,
+                Cage_Length = dto.Cage_Length,
+                Cage_Configuration = dto.Cage_Configuration,
                 Filter_Bag_Dia = dto.Filter_Bag_Dia,
                 Fil_Bag_Length = dto.Fil_Bag_Length,
                 Fil_Bag_Recommendation = dto.Fil_Bag_Recommendation,
                 Gas_Entry = dto.Gas_Entry,
                 Support_Structure_Type = dto.Support_Structure_Type,
-                Can_Correction = dto.Can_Correction,
+                
                 Valve_Size = dto.Valve_Size,
                 Voltage_Rating = dto.Voltage_Rating,
-                Cage_Type = dto.Cage_Type,
-                Cage_Length = dto.Cage_Length,
                 Capsule_Height = dto.Capsule_Height,
                 Tube_Sheet_Thickness = dto.Tube_Sheet_Thickness,
                 Capsule_Wall_Thickness = dto.Capsule_Wall_Thickness,
@@ -531,6 +702,7 @@ namespace IonFiltra.BagFilters.Application.Services.Bagfilters.BagfilterInputs
                 Stiffening_Factor = dto.Stiffening_Factor,
                 Hopper = dto.Hopper,
                 Discharge_Opening_Sqr = dto.Discharge_Opening_Sqr,
+                Rav_Height = dto.Rav_Height, //new
                 Material_Handling = dto.Material_Handling,
                 Material_Handling_Qty = dto.Material_Handling_Qty,
                 Trough_Outlet_Length = dto.Trough_Outlet_Length,
@@ -539,6 +711,7 @@ namespace IonFiltra.BagFilters.Application.Services.Bagfilters.BagfilterInputs
                 Support_Struct_Type = dto.Support_Struct_Type,
                 No_Of_Column = dto.No_Of_Column,
                 Ground_Clearance = dto.Ground_Clearance,
+                Slide_Gate_Height = dto.Slide_Gate_Height, //new
                 Access_Type = dto.Access_Type,
                 Cage_Weight_Ladder = dto.Cage_Weight_Ladder,
                 Mid_Landing_Pltform = dto.Mid_Landing_Pltform,
@@ -662,7 +835,7 @@ namespace IonFiltra.BagFilters.Application.Services.Bagfilters.BagfilterInputs
                 Dew_Point_C = input.Dew_Point_C,
                 Outlet_Emission_mgpm3 = input.Outlet_Emission_mgpm3,
                 Process_Cloth_Ratio = input.Process_Cloth_Ratio,
-                Specific_Gravity = input.Specific_Gravity,
+                Can_Correction = input.Can_Correction,
                 Customer_Equipment_Tag_No = input.Customer_Equipment_Tag_No,
                 Bagfilter_Cleaning_Type = input.Bagfilter_Cleaning_Type,
                 Offline_Maintainence = input.Offline_Maintainence,
@@ -700,10 +873,14 @@ namespace IonFiltra.BagFilters.Application.Services.Bagfilters.BagfilterInputs
             {
                 EnquiryId = (int)dto.BagfilterInput.EnquiryId,
                 BagfilterMasterId = bagfilterMasterId,
+                Cage_Type = input.Cage_Type,
+                Cage_Sub_Type = input.Cage_Sub_Type,
                 Cage_Wire_Dia = input.Cage_Wire_Dia,
                 No_Of_Cage_Wires = input.No_Of_Cage_Wires,
                 Ring_Spacing = input.Ring_Spacing,
-
+                Cage_Diameter = input.Cage_Diameter,
+                Cage_Length = input.Cage_Length,
+                Cage_Configuration = input.Cage_Configuration,
                 CreatedAt = DateTime.UtcNow
             };
 
@@ -772,7 +949,7 @@ namespace IonFiltra.BagFilters.Application.Services.Bagfilters.BagfilterInputs
                 BagfilterMasterId = bagfilterMasterId,
                 Gas_Entry = input.Gas_Entry,
                 Support_Structure_Type = input.Support_Structure_Type,
-                Can_Correction = input.Can_Correction,
+                
                 Nominal_Width = input.Nominal_Width,
                 Max_Bags_And_Pitch = input.Max_Bags_And_Pitch,
                 Nominal_Width_Meters = input.Nominal_Width_Meters,
@@ -817,8 +994,6 @@ namespace IonFiltra.BagFilters.Application.Services.Bagfilters.BagfilterInputs
                 BagfilterMasterId = bagfilterMasterId,
                 Valve_Size = input.Valve_Size,
                 Voltage_Rating = input.Voltage_Rating,
-                Cage_Type = input.Cage_Type,
-                Cage_Length = input.Cage_Length,
                 Capsule_Height = input.Capsule_Height,
                 Tube_Sheet_Thickness = input.Tube_Sheet_Thickness,
                 Capsule_Wall_Thickness = input.Capsule_Wall_Thickness,
@@ -906,6 +1081,7 @@ namespace IonFiltra.BagFilters.Application.Services.Bagfilters.BagfilterInputs
                 Stiffening_Factor = input.Stiffening_Factor,
                 Hopper = input.Hopper,
                 Discharge_Opening_Sqr = input.Discharge_Opening_Sqr,
+                Rav_Height = input.Rav_Height,
                 Material_Handling = input.Material_Handling,
                 Material_Handling_Qty = input.Material_Handling_Qty,
                 Trough_Outlet_Length = input.Trough_Outlet_Length,
@@ -953,6 +1129,7 @@ namespace IonFiltra.BagFilters.Application.Services.Bagfilters.BagfilterInputs
                 NoOfColumn = input.NoOfColumn,
                 Column_Height = input.Column_Height,
                 Ground_Clearance = input.Ground_Clearance,
+                Slide_Gate_Height = input.Slide_Gate_Height,
                 Dist_Btw_Column_In_X = input.Dist_Btw_Column_In_X,
                 Dist_Btw_Column_In_Z = input.Dist_Btw_Column_In_Z,
                 No_Of_Bays_In_X = input.No_Of_Bays_In_X,

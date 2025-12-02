@@ -19,6 +19,7 @@ namespace IonFiltra.BagFilters.Application.DTOs.Bagfilters.Sections.Hopper_Troug
         public decimal? Stiffening_Factor { get; set; }
         public decimal? Hopper { get; set; }
         public decimal? Discharge_Opening_Sqr { get; set; }
+        public decimal? Rav_Height { get; set; }
         public string? Material_Handling { get; set; }
         public decimal? Material_Handling_Qty { get; set; }
         public decimal? Trough_Outlet_Length { get; set; }

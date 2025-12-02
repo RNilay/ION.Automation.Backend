@@ -17,7 +17,7 @@ namespace IonFiltra.BagFilters.Application.Mappers.Bagfilters.Sections.Structure
                 {
                     Gas_Entry = entity.Gas_Entry,
                     Support_Structure_Type = entity.Support_Structure_Type,
-                    Can_Correction = entity.Can_Correction,
+                   
                     Nominal_Width = entity.Nominal_Width,
                     Max_Bags_And_Pitch = entity.Max_Bags_And_Pitch,
                     Nominal_Width_Meters = entity.Nominal_Width_Meters,
@@ -47,7 +47,7 @@ namespace IonFiltra.BagFilters.Application.Mappers.Bagfilters.Sections.Structure
                 BagfilterMasterId = dto.BagfilterMasterId,
                 Gas_Entry = dto.StructureInputs.Gas_Entry,
                 Support_Structure_Type = dto.StructureInputs.Support_Structure_Type,
-                Can_Correction = dto.StructureInputs.Can_Correction,
+               
                 Nominal_Width = dto.StructureInputs.Nominal_Width,
                 Max_Bags_And_Pitch = dto.StructureInputs.Max_Bags_And_Pitch,
                 Nominal_Width_Meters = dto.StructureInputs.Nominal_Width_Meters,

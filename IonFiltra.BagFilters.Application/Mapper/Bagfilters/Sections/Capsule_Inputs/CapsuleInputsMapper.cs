@@ -17,8 +17,7 @@ namespace IonFiltra.BagFilters.Application.Mappers.Bagfilters.Sections.Capsule_I
                 {
                     Valve_Size = entity.Valve_Size,
                     Voltage_Rating = entity.Voltage_Rating,
-                    Cage_Type = entity.Cage_Type,
-                    Cage_Length = entity.Cage_Length,
+                  
                     Capsule_Height = entity.Capsule_Height,
                     Tube_Sheet_Thickness = entity.Tube_Sheet_Thickness,
                     Capsule_Wall_Thickness = entity.Capsule_Wall_Thickness,
@@ -43,8 +42,7 @@ namespace IonFiltra.BagFilters.Application.Mappers.Bagfilters.Sections.Capsule_I
                 BagfilterMasterId = dto.BagfilterMasterId,
                 Valve_Size = dto.CapsuleInputs.Valve_Size,
                 Voltage_Rating = dto.CapsuleInputs.Voltage_Rating,
-                Cage_Type = dto.CapsuleInputs.Cage_Type,
-                Cage_Length = dto.CapsuleInputs.Cage_Length,
+              
                 Capsule_Height = dto.CapsuleInputs.Capsule_Height,
                 Tube_Sheet_Thickness = dto.CapsuleInputs.Tube_Sheet_Thickness,
                 Capsule_Wall_Thickness = dto.CapsuleInputs.Capsule_Wall_Thickness,

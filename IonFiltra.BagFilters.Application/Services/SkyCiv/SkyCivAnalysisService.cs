@@ -133,7 +133,7 @@ namespace IonFiltra.BagFilters.Application.Services.SkyCiv
                 {
                     new { function = "S3D.session.start", arguments = new { keep_open = true } },
                     new { function = "S3D.model.set", arguments = new { s3d_model = s3dModel } },
-                    new { function = "S3D.model.mesh", arguments = new { method = "delaunay", granularity = 1, plate_ids = plateIds } },
+                    new { function = "S3D.model.mesh", arguments = new { method = "delaunay", granularity = 3, plate_ids = plateIds } },
                     new { function = "S3D.model.solve", arguments = new { analysis_type = "linear", repair_model = true, return_data = true, format = "json" } },
                     new { function = "S3D.model.get" },
                     new { function = "S3D.results.get" },

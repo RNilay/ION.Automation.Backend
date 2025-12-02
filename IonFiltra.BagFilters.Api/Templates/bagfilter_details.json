@@ -237,8 +237,8 @@
                                     "InlineCss": "{#USER}"
                                 },
                                 {
-                                    "Label": "Specific Gravity (m/sec)",
-                                    "ValueKey": "Specific_Gravity",
+                                    "Label": "Can Correction (m/sec)",
+                                    "ValueKey": "Can_Correction",
                                     "InlineCss": "{#USER}"
                                 },
                                 {
@@ -301,39 +301,7 @@
                                 },
 
                                 {
-                                    "Label": "Cage Inputs",
-                                    "ValueKey": null,
-                                    "IsHeader": true,
-                                    "InlineCss": "background-color:#92D050; font-weight:bold;",
-                                    "ColSpan": 2
-                                },
-                                {
-                                    "Label": "Cage Wire Diameter (mm)",
-                                    "ValueKey": "Cage_Wire_Dia",
-                                    "InlineCss": "{#USER}"
-                                },
-                                {
-                                    "Label": "No Of Cage Wires",
-                                    "ValueKey": "No_Of_Cage_Wires",
-                                    "InlineCss": "{#USER}"
-                                },
-                                {
-                                    "Label": "Ring Spacing (mm)",
-                                    "ValueKey": "Ring_Spacing",
-                                    "InlineCss": "{#USER}"
-                                },
-                                //leave a blank row after each section
-                                {
-                                    "Label": "-",
-                                    "ValueKey": null,
-                                    "IsHeader": true,
-                                    "InlineCss": "background-color:#FFFFFF; color: #FFFFFF;",
-                                    "ColSpan": 2
-                                },
-
-
-                                {
-                                    "Label": "Bag Selection",
+                                    "Label": "Filter Bag Selection",
                                     "ValueKey": null,
                                     "IsHeader": true,
                                     "InlineCss": "background-color:#92D050; font-weight:bold;",
@@ -409,6 +377,62 @@
                                 },
 
                                 {
+                                    "Label": "Cage Inputs",
+                                    "ValueKey": null,
+                                    "IsHeader": true,
+                                    "InlineCss": "background-color:#92D050; font-weight:bold;",
+                                    "ColSpan": 2
+                                },
+                                {
+                                    "Label": "Cage Type",
+                                    "ValueKey": "Cage_Type",
+                                    "InlineCss": "{#USER}"
+                                },
+                                {
+                                    "Label": "Cage-Sub Type",
+                                    "ValueKey": "Cage_Sub_Type",
+                                    "InlineCss": "{#USER}"
+                                },
+                                {
+                                    "Label": "Cage Wire Diameter (mm)",
+                                    "ValueKey": "Cage_Wire_Dia",
+                                    "InlineCss": "{#USER}"
+                                },
+                                {
+                                    "Label": "No Of Cage Wires",
+                                    "ValueKey": "No_Of_Cage_Wires",
+                                    "InlineCss": "{#USER}"
+                                },
+                                {
+                                    "Label": "Ring Spacing (mm)",
+                                    "ValueKey": "Ring_Spacing",
+                                    "InlineCss": "{#USER}"
+                                },
+                                {
+                                    "Label": "Cage Diameter (mm)",
+                                    "ValueKey": "Cage_Diameter",
+                                    "InlineCss": "{#USER}"
+                                },
+                                {
+                                    "Label": "Cage Length (mm)",
+                                    "ValueKey": "Cage_Length",
+                                    "InlineCss": "{#USER}"
+                                },
+                                {
+                                    "Label": "Cage Configuration",
+                                    "ValueKey": "Cage_Configuration",
+                                    "InlineCss": "{#USER}"
+                                },
+                                //leave a blank row after each section
+                                {
+                                    "Label": "-",
+                                    "ValueKey": null,
+                                    "IsHeader": true,
+                                    "InlineCss": "background-color:#FFFFFF; color: #FFFFFF;",
+                                    "ColSpan": 2
+                                },
+
+                                {
                                     "Label": "Structure Inputs",
                                     "ValueKey": null,
                                     "IsHeader": true,
@@ -425,11 +449,7 @@
                                     "ValueKey": "Support_Structure_Type",
                                     "InlineCss": "{#USER}"
                                 },
-                                {
-                                    "Label": "Can Correction",
-                                    "ValueKey": "Can_Correction",
-                                    "InlineCss": "{#USER}"
-                                },
+
                                 {
                                     "Label": "Pitch (C/C spacing between two adjacent bag filters)",
                                     "ValueKey": "Max_Bags_And_Pitch",
@@ -524,16 +544,6 @@
                                 {
                                     "Label": "Voltage Rating (V)",
                                     "ValueKey": "Voltage_Rating",
-                                    "InlineCss": "{#USER}"
-                                },
-                                {
-                                    "Label": "Cage Type",
-                                    "ValueKey": "Cage_Type",
-                                    "InlineCss": "{#USER}"
-                                },
-                                {
-                                    "Label": "Cage Length",
-                                    "ValueKey": "Cage_Length",
                                     "InlineCss": "{#USER}"
                                 },
                                 {
@@ -719,6 +729,11 @@
                                     "InlineCss": "{#USER}"
                                 },
                                 {
+                                    "Label": "Height Of RAV (mm)",
+                                    "ValueKey": "Rav_Height",
+                                    "InlineCss": "{#CALC}"
+                                },
+                                {
                                     "Label": "Material Handling",
                                     "ValueKey": "Material_Handling",
                                     "InlineCss": "{#USER}"
@@ -827,6 +842,11 @@
                                 {
                                     "Label": "Clearance Below Hopper Flange (mm)",
                                     "ValueKey": "Ground_Clearance",
+                                    "InlineCss": "{#USER}"
+                                },
+                                {
+                                    "Label": "Height of Slide Gate (mm)",
+                                    "ValueKey": "Slide_Gate_Height",
                                     "InlineCss": "{#USER}"
                                 },
                                 {

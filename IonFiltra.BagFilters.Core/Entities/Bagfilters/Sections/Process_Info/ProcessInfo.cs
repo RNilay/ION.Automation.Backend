@@ -16,7 +16,7 @@ namespace IonFiltra.BagFilters.Core.Entities.Bagfilters.Sections.Process_Info
         public decimal? Dew_Point_C { get; set; }
         public string? Outlet_Emission_mgpm3 { get; set; }
         public decimal? Process_Cloth_Ratio { get; set; }
-        public decimal? Specific_Gravity { get; set; }
+        public decimal? Can_Correction { get; set; }
         public string? Customer_Equipment_Tag_No { get; set; }
         public string? Bagfilter_Cleaning_Type { get; set; }
         public string? Offline_Maintainence { get; set; }

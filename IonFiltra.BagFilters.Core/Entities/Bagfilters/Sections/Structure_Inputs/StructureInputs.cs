@@ -7,7 +7,7 @@ namespace IonFiltra.BagFilters.Core.Entities.Bagfilters.Sections.Structure_Input
         public int BagfilterMasterId { get; set; }
         public string? Gas_Entry { get; set; }
         public string? Support_Structure_Type { get; set; }
-        public decimal? Can_Correction { get; set; }
+       
         public decimal? Nominal_Width { get; set; }
         public decimal? Max_Bags_And_Pitch { get; set; }
         public decimal? Nominal_Width_Meters { get; set; }

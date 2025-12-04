@@ -152,6 +152,24 @@ namespace IonFiltra.BagFilters.API.Controllers.Bagfilters.BagfilterInputs
             }
         }
 
+        [HttpPut("update-batch")]
+        public async Task<IActionResult> UpdateBatch([FromBody] List<BagfilterInputMainDto> dtos, CancellationToken ct)
+        {
+            if (dtos == null || dtos.Count == 0)
+                return BadRequest("Request body cannot be empty.");
+
+            try
+            {
+                var result = await _service.UpdateRangeAsync(dtos, ct);
+                return StatusCode(201, result);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "An error occurred while updating BagfilterInput batch.");
+                return StatusCode(500, "An error occurred while processing your request.");
+            }
+        }
+
 
 
         [HttpPut("update")]

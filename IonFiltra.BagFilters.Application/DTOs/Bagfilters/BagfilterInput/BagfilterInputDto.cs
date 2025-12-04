@@ -1,3 +1,5 @@
+using IonFiltra.BagFilters.Core.Entities.Bagfilters.BagfilterInputs;
+using IonFiltra.BagFilters.Core.Entities.Bagfilters.BagfilterMasterEntity;
 using Newtonsoft.Json.Linq;
 
 namespace IonFiltra.BagFilters.Application.DTOs.Bagfilters.BagfilterInputs
@@ -129,4 +131,22 @@ namespace IonFiltra.BagFilters.Application.DTOs.Bagfilters.BagfilterInputs
         public int TotalGroupsCount { get; set; } = 0;
         public int MatchedGroupsCount { get; set; } = 0;
     }
+
+    public class UpdateRangeResultDto
+    {
+      
+        public List<int> UpdatedBagfilterInputIds { get; set; } = new();
+
+       
+        public List<int> CreatedBagfilterInputIds { get; set; } = new();
+
+    
+        public List<BagfilterMatchDto> Matches { get; set; } = new();
+
+      
+        public string? Message { get; set; }
+    }
+
+    
+
 }

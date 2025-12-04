@@ -63,5 +63,35 @@ namespace IonFiltra.BagFilters.Infrastructure.Repositories.Bagfilters.BagfilterM
                 }
             });
         }
+
+        public async Task<List<int>> AddMastersAsync(IEnumerable<BagfilterMaster> masters, CancellationToken ct = default)
+        {
+            var list = (masters ?? Enumerable.Empty<BagfilterMaster>()).ToList();
+            if (!list.Any()) return new List<int>();
+
+            return await _transactionHelper.ExecuteAsync(async dbContext =>
+            {
+                // Defensive: set CreatedAt and any defaults before adding
+                var now = DateTime.UtcNow;
+                foreach (var m in list)
+                {
+                    // if the caller pre-set Id > 0, you may want to ignore or throw — here we ensure it's treated as new
+                    m.BagfilterMasterId = 0; // ensure EF treats as new entity (optional; remove if you rely on caller)
+                    m.CreatedAt = m.CreatedAt == default ? now : m.CreatedAt;
+                }
+
+                // Add all masters in a single batch
+                await dbContext.BagfilterMasters.AddRangeAsync(list, ct);
+
+                // Save once — this will populate the identity PKs on the tracked master entities
+                await dbContext.SaveChangesAsync(ct);
+
+                // Collect the generated IDs in the same order as the input list
+                var createdIds = list.Select(m => m.BagfilterMasterId).ToList();
+                _logger.LogInformation("Inserted {Count} BagfilterMaster(s). FirstId={FirstId}", createdIds.Count, createdIds.FirstOrDefault());
+                return createdIds;
+            });
+        }
+
     }
 }

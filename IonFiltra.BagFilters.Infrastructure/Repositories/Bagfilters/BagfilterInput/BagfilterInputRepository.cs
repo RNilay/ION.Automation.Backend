@@ -1,4 +1,4 @@
-using System.Linq.Expressions;
+﻿using System.Linq.Expressions;
 using IonFiltra.BagFilters.Core.Entities.Bagfilters.BagfilterInputs;
 using IonFiltra.BagFilters.Core.Entities.Bagfilters.BagfilterMasterEntity;
 using IonFiltra.BagFilters.Core.Interfaces.Repositories.Bagfilters.BagfilterInputs;
@@ -7,6 +7,8 @@ using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
 using System.Globalization;
 using IonFiltra.BagFilters.Core.Entities.EnquiryEntity;
+using IonFiltra.BagFilters.Application.DTOs.Bagfilters.BagfilterInputs;
+using static IonFiltra.BagFilters.Application.Services.Bagfilters.BagfilterInputs.BagfilterInputService;
 
 
 namespace IonFiltra.BagFilters.Infrastructure.Repositories.Bagfilters.BagfilterInputs
@@ -110,6 +112,134 @@ namespace IonFiltra.BagFilters.Infrastructure.Repositories.Bagfilters.BagfilterI
                 }
             });
         }
+
+        public async Task UpdateRangeAsync(
+        List<RepositoryInputUpdateDto> dtos,
+        CancellationToken ct = default)
+        {
+            if (dtos == null || dtos.Count == 0) return;
+
+            await _transactionHelper.ExecuteAsync(async dbContext =>
+            {
+                // -------- 1) Prefetch all input entities to update ----------
+                var inputIds = dtos
+                    .Select(d => d.ExistingInputId)
+                    .Distinct()
+                    .ToList();
+
+                var inputEntities = await dbContext.BagfilterInputs
+                    .Where(i => inputIds.Contains(i.BagfilterInputId))
+                    .ToListAsync(ct);
+
+                var inputMap = inputEntities.ToDictionary(i => i.BagfilterInputId);
+
+                // -------- 2) Prefetch master entities that might need updating ----------
+                // We only update masters when:
+                // - MasterEntityToUpdate != null
+                // - ResolvedNewMasterId == 0   (we are *not* switching to a new master)
+                // - ExistingMasterId > 0
+                var masterIdsToUpdate = dtos
+                    .Where(d => d.MasterEntityToUpdate != null
+                                && d.ResolvedNewMasterId == 0
+                                && d.ExistingMasterId > 0)
+                    .Select(d => d.ExistingMasterId)
+                    .Distinct()
+                    .ToList();
+
+                var masterMap = new Dictionary<int, BagfilterMaster>();
+                if (masterIdsToUpdate.Any())
+                {
+                    var masters = await dbContext.BagfilterMasters
+                        .Where(m => masterIdsToUpdate.Contains(m.BagfilterMasterId))
+                        .ToListAsync(ct);
+
+                    masterMap = masters.ToDictionary(m => m.BagfilterMasterId);
+                }
+
+                // -------- 3) Apply each DTO to the tracked entities ----------
+                foreach (var dto in dtos)
+                {
+                    // 3a) Update BagfilterInput
+                    if (!inputMap.TryGetValue(dto.ExistingInputId, out var existingInput))
+                    {
+                        _logger.LogWarning("BagfilterInput with Id {Id} not found during UpdateRangeAsync", dto.ExistingInputId);
+                        continue;
+                    }
+
+                    // preserve CreatedAt, primary key
+                    var createdAt = existingInput.CreatedAt;
+
+                    // 🔹 Make sure the DTO's key + CreatedAt match the tracked entity
+                    //    so SetValues does NOT try to change the PK.
+                    if (dto.InputEntity == null)
+                    {
+                        _logger.LogWarning("InputEntity is null for ExistingInputId {Id} during UpdateRangeAsync", dto.ExistingInputId);
+                        continue;
+                    }
+
+                    dto.InputEntity.BagfilterInputId = dto.ExistingInputId;
+                    dto.InputEntity.CreatedAt = createdAt; // we don't want client overriding CreatedAt
+
+                    // Copy scalar values from InputEntity → existingInput
+                    var inputEntry = dbContext.Entry(existingInput);
+                    inputEntry.CurrentValues.SetValues(dto.InputEntity);
+
+                    // 🔹 Make absolutely sure EF does NOT treat PK as modified
+                    inputEntry.Property(x => x.BagfilterInputId).IsModified = false;
+
+                    // restore invariants
+                    existingInput.CreatedAt = createdAt;
+                    existingInput.UpdatedAt = DateTime.Now;
+
+                    // Re-point master FK if a new master was created/resolved
+                    if (dto.ResolvedNewMasterId > 0)
+                    {
+                        existingInput.BagfilterMasterId = dto.ResolvedNewMasterId;
+                        existingInput.BagfilterMaster = null; // avoid EF trying to insert/attach from DTO
+                    }
+                    else if (dto.ExistingMasterId > 0)
+                    {
+                        // keep/restore the existing master FK
+                        existingInput.BagfilterMasterId = dto.ExistingMasterId;
+                        existingInput.BagfilterMaster = null;
+                    }
+
+                    // 3b) Optionally update the existing BagfilterMaster row
+                    if (dto.MasterEntityToUpdate != null
+                        && dto.ResolvedNewMasterId == 0
+                        && dto.ExistingMasterId > 0)
+                    {
+                        if (masterMap.TryGetValue(dto.ExistingMasterId, out var existingMaster))
+                        {
+                            var masterCreatedAt = existingMaster.CreatedAt;
+
+                            var masterEntry = dbContext.Entry(existingMaster);
+
+                            // same pattern: never try to change PK / CreatedAt via SetValues
+                            dto.MasterEntityToUpdate.BagfilterMasterId = dto.ExistingMasterId;
+                            dto.MasterEntityToUpdate.CreatedAt = masterCreatedAt;
+
+                            masterEntry.CurrentValues.SetValues(dto.MasterEntityToUpdate);
+                            masterEntry.Property(x => x.BagfilterMasterId).IsModified = false;
+
+                            existingMaster.CreatedAt = masterCreatedAt;
+                            existingMaster.UpdatedAt = DateTime.Now;
+                        }
+                        else
+                        {
+                            _logger.LogWarning(
+                                "BagfilterMaster with Id {Id} not found for update during UpdateRangeAsync",
+                                dto.ExistingMasterId);
+                        }
+                    }
+                }
+
+
+                // -------- 4) Persist all changes in one shot ----------
+                await dbContext.SaveChangesAsync(ct);
+            });
+        }
+
 
         public async Task<List<int>> AddRangeAsync(IEnumerable<(BagfilterMaster Master, BagfilterInput Input)> pairs)
         {

@@ -11,6 +11,8 @@ namespace IonFiltra.BagFilters.Application.Interfaces
 
         //Task<List<int>> AddRangeAsync(List<BagfilterInputMainDto> dtos);
         Task<AddRangeResultDto> AddRangeAsync(List<BagfilterInputMainDto> dtos, CancellationToken ct);
+
+        Task<UpdateRangeResultDto> UpdateRangeAsync(List<BagfilterInputMainDto> dtos, CancellationToken ct);
     }
 }
     

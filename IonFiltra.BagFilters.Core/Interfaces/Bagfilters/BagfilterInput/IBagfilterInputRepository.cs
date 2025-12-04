@@ -12,6 +12,9 @@ namespace IonFiltra.BagFilters.Core.Interfaces.Repositories.Bagfilters.Bagfilter
         Task<int> AddAsync(BagfilterInput entity);
         Task UpdateAsync(BagfilterInput entity);
 
+        Task UpdateRangeAsync(List<RepositoryInputUpdateDto> dtos,CancellationToken ct = default);
+
+
         Task<List<int>> AddRangeAsync(IEnumerable<(BagfilterMaster Master, BagfilterInput Input)> pairs);
 
         Task<List<int>> AddRangeAsync(

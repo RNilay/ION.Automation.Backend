@@ -115,4 +115,14 @@ namespace IonFiltra.BagFilters.Core.Entities.Bagfilters.BagfilterInputs
         public decimal? Number_Of_Rows { get; set; }
     }
 
+
+    public class RepositoryInputUpdateDto
+    {
+        public int ExistingInputId { get; set; }
+        public BagfilterInput InputEntity { get; set; } = null!;
+        public int ExistingMasterId { get; set; }
+        public BagfilterMaster? MasterEntityToUpdate { get; set; } // optional, update existing master fields
+        public int ResolvedNewMasterId { get; set; } // optional - if set, attach to this master id
+    }
+
 }

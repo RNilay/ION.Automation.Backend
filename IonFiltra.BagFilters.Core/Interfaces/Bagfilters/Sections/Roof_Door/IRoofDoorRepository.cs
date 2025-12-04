@@ -7,6 +7,16 @@ namespace IonFiltra.BagFilters.Core.Interfaces.Repositories.Bagfilters.Sections.
         Task<RoofDoor?> GetById(int id);
         Task<int> AddAsync(RoofDoor entity);
         Task UpdateAsync(RoofDoor entity);
+        Task<int?> GetIdForMasterAsync(int bagfilterMasterId, CancellationToken ct = default);
+
+        Task<Dictionary<int, RoofDoor>> GetByMasterIdsAsync(
+    IEnumerable<int> bagfilterMasterIds,
+    CancellationToken ct = default);
+
+        Task UpsertRangeAsync(
+            IEnumerable<RoofDoor> entities,
+            CancellationToken ct = default);
+
     }
 }
     

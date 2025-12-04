@@ -7,6 +7,16 @@ namespace IonFiltra.BagFilters.Core.Interfaces.Repositories.Bagfilters.Sections.
         Task<StructureInputs?> GetById(int id);
         Task<int> AddAsync(StructureInputs entity);
         Task UpdateAsync(StructureInputs entity);
+        Task<int?> GetIdForMasterAsync(int bagfilterMasterId, CancellationToken ct = default);
+
+        Task<Dictionary<int, StructureInputs>> GetByMasterIdsAsync(
+        IEnumerable<int> bagfilterMasterIds,
+        CancellationToken ct = default);
+
+        Task UpsertRangeAsync(
+            IEnumerable<StructureInputs> entities,
+            CancellationToken ct = default);
+
     }
 }
     

@@ -105,7 +105,8 @@ try
     {
         var opts = sp.GetRequiredService<IOptions<SkyCivOptions>>().Value;
         http.BaseAddress = new Uri(opts.ApiUrl);
-        http.Timeout = TimeSpan.FromSeconds(opts.TimeoutSeconds);
+        http.Timeout = TimeSpan.FromMinutes(opts.TimeoutMinutes);
+        //http.Timeout = Timeout.InfiniteTimeSpan;  // ⬅️ no built-in timeout
         // default headers (optional)
         http.DefaultRequestHeaders.Accept.Add(new System.Net.Http.Headers.MediaTypeWithQualityHeaderValue("application/json"));
     });

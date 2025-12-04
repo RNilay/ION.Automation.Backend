@@ -12,6 +12,7 @@ namespace IonFiltra.BagFilters.Core.Common
         public string Username { get; set; }
         public string Key { get; set; }
         public int TimeoutSeconds { get; set; } = 120; // default timeout
+        public int TimeoutMinutes { get; set; } = 10; //optional
     }
 
 }

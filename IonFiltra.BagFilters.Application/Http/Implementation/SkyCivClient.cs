@@ -40,9 +40,15 @@ namespace IonFiltra.BagFilters.Infrastructure.Http.Implementation
         {
             var json = JsonConvert.SerializeObject(payload);
             using var content = new StringContent(json, Encoding.UTF8, "application/json");
-            
+
+            // link caller token + our own timeout
+            using var cts = CancellationTokenSource.CreateLinkedTokenSource(ct);
+            cts.CancelAfter(TimeSpan.FromMinutes(10)); // cancels after 10 minutes
+
             // Post to base address (empty relative URI)
-            using var response = await _http.PostAsync("", content, ct);
+            using var response = await _http.PostAsync("", content, cts.Token);
+            response.EnsureSuccessStatusCode(); // fail fast on non-2xx
+
             var text = await response.Content.ReadAsStringAsync(ct);
 
             return JObject.Parse(text);

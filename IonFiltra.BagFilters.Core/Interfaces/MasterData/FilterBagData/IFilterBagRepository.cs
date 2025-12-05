@@ -7,6 +7,12 @@ namespace IonFiltra.BagFilters.Core.Interfaces.Repositories.MasterData.FilterBag
         Task<FilterBag?> GetById(int id);
         Task<int> AddAsync(FilterBag entity);
         Task UpdateAsync(FilterBag entity);
+        Task<IEnumerable<FilterBag>> GetAll();
+
+        Task SoftDeleteAsync(int id);
+
+
+
     }
 }
     

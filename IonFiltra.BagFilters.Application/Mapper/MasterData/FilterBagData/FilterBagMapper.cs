@@ -11,7 +11,7 @@ namespace IonFiltra.BagFilters.Application.Mappers.MasterData.FilterBagData
             return new FilterBagMainDto
             {
                 Id = entity.Id,
-
+                IsDeleted = entity.IsDeleted,
                 FilterBag = new FilterBagDto
                 {
                     Material = entity.Material,
@@ -19,6 +19,7 @@ namespace IonFiltra.BagFilters.Application.Mappers.MasterData.FilterBagData
                     Size = entity.Size,
                     Make = entity.Make,
                     Cost = entity.Cost,
+                    
                 },
 
             };
@@ -35,6 +36,7 @@ namespace IonFiltra.BagFilters.Application.Mappers.MasterData.FilterBagData
                 Size = dto.FilterBag.Size,
                 Make = dto.FilterBag.Make,
                 Cost = dto.FilterBag.Cost,
+                IsDeleted = dto.IsDeleted,
 
             };
         }

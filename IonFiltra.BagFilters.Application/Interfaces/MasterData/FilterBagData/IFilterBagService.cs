@@ -7,6 +7,10 @@ namespace IonFiltra.BagFilters.Application.Interfaces
         Task<FilterBagMainDto> GetById(int id);
         Task<int> AddAsync(FilterBagMainDto dto);
         Task UpdateAsync(FilterBagMainDto dto);
+
+        Task<IEnumerable<FilterBagMainDto>> GetAll();
+
+        Task DeleteAsync(int id);
     }
 }
     

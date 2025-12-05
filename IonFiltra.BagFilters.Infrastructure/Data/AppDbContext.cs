@@ -1,10 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
-using System.Xml;
-using IonFiltra.BagFilters.Core.Common;
+﻿using IonFiltra.BagFilters.Core.Common;
 using IonFiltra.BagFilters.Core.Entities.Assignment;
 using IonFiltra.BagFilters.Core.Entities.BagfilterDatabase.WithCanopy;
 using IonFiltra.BagFilters.Core.Entities.BagfilterDatabase.WithoutCanopy;
@@ -28,8 +22,15 @@ using IonFiltra.BagFilters.Core.Entities.BOM.PaintingRates;
 using IonFiltra.BagFilters.Core.Entities.BOM.Rates;
 using IonFiltra.BagFilters.Core.Entities.EnquiryEntity;
 using IonFiltra.BagFilters.Core.Entities.MasterData.FilterBagData;
+using IonFiltra.BagFilters.Core.Entities.MasterData.TimerData;
 using IonFiltra.BagFilters.Core.Entities.SkyCivEntities;
 using Microsoft.EntityFrameworkCore;
+using System;
+using System.Collections.Generic;
+using System.Linq;
+using System.Text;
+using System.Threading.Tasks;
+using System.Xml;
 
 
 namespace IonFiltra.BagFilters.Infrastructure.Data
@@ -82,6 +83,7 @@ namespace IonFiltra.BagFilters.Infrastructure.Data
 
         //Master Data tables
         public DbSet<FilterBag> FilterBags { get; set; }
+        public DbSet<TimerEntity> TimerEntitys { get; set; }
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
@@ -246,6 +248,12 @@ namespace IonFiltra.BagFilters.Infrastructure.Data
             modelBuilder.Entity<FilterBag>(entity =>
             {
                 entity.ToTable("FilterBag", GlobalConstants.IONFILTRA_SCHEMA);
+                entity.HasKey(u => u.Id);
+            });
+
+            modelBuilder.Entity<TimerEntity>(entity =>
+            {
+                entity.ToTable("TimerEntity", GlobalConstants.IONFILTRA_SCHEMA);
                 entity.HasKey(u => u.Id);
             });
         }

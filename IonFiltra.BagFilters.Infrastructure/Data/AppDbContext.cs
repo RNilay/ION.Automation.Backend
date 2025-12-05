@@ -22,6 +22,7 @@ using IonFiltra.BagFilters.Core.Entities.BOM.PaintingRates;
 using IonFiltra.BagFilters.Core.Entities.BOM.Rates;
 using IonFiltra.BagFilters.Core.Entities.EnquiryEntity;
 using IonFiltra.BagFilters.Core.Entities.MasterData.FilterBagData;
+using IonFiltra.BagFilters.Core.Entities.MasterData.SolenoidValveData;
 using IonFiltra.BagFilters.Core.Entities.MasterData.TimerData;
 using IonFiltra.BagFilters.Core.Entities.SkyCivEntities;
 using Microsoft.EntityFrameworkCore;
@@ -84,6 +85,8 @@ namespace IonFiltra.BagFilters.Infrastructure.Data
         //Master Data tables
         public DbSet<FilterBag> FilterBags { get; set; }
         public DbSet<TimerEntity> TimerEntitys { get; set; }
+
+        public DbSet<SolenoidValve> SolenoidValves { get; set; }
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
@@ -254,6 +257,12 @@ namespace IonFiltra.BagFilters.Infrastructure.Data
             modelBuilder.Entity<TimerEntity>(entity =>
             {
                 entity.ToTable("TimerEntity", GlobalConstants.IONFILTRA_SCHEMA);
+                entity.HasKey(u => u.Id);
+            });
+
+            modelBuilder.Entity<SolenoidValve>(entity =>
+            {
+                entity.ToTable("SolenoidValve", GlobalConstants.IONFILTRA_SCHEMA);
                 entity.HasKey(u => u.Id);
             });
         }

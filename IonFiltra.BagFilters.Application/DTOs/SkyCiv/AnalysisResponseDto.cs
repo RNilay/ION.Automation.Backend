@@ -16,6 +16,14 @@ namespace IonFiltra.BagFilters.Application.DTOs.SkyCiv
         public string Message { get; set; }    // optional
     }
 
+    public class ResultResponseDto
+    {
+        public string SessionId { get; set; }
+        public JObject ModelData { get; set; } // S3D.model.get -> data
+        public string Status { get; set; }     // Succeeded / Failed
+        public string Message { get; set; }    // optional
+    }
+
     public class AnalysisRequestDto
     {
         [Required]

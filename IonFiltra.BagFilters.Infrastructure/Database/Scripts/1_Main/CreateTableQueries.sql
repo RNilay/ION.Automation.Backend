@@ -586,3 +586,17 @@ CREATE TABLE ionfiltrabagfilters.PaintingCostConfig (
     CreatedAt DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
     UpdatedAt DATETIME NULL ON UPDATE CURRENT_TIMESTAMP
 );
+
+----master data tables
+
+CREATE TABLE
+    ionfiltrabagfilters.FilterBag (
+        Id INT AUTO_INCREMENT PRIMARY KEY,
+        Material VARCHAR(255),
+        Gsm DECIMAL(10, 2),
+        Size VARCHAR(50),
+        Make VARCHAR(100),
+        Cost DECIMAL(10, 2),
+        CreatedAt DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+        UpdatedAt DATETIME NULL ON UPDATE CURRENT_TIMESTAMP,
+    );

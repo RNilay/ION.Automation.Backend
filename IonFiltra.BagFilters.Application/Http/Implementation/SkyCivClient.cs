@@ -22,21 +22,8 @@ namespace IonFiltra.BagFilters.Infrastructure.Http.Implementation
             _opts = opts.Value;
         }
 
-        //public async Task<JObject> PostForAnalysisAsync(object payload, CancellationToken ct = default)
-        //{
-        //    var json = JsonConvert.SerializeObject(payload);
-        //    using var content = new StringContent(json, Encoding.UTF8, "application/json");
-
-        //    // If you want to add auth to payload instead of header, include it in payload (your payload does that)
-        //    using var response = await _http.PostAsync(_opts.ApiUrl, content, ct);
-        //    var text = await response.Content.ReadAsStringAsync(ct);
-
-        //    // Optionally, do not call EnsureSuccessStatusCode if the API returns 200 with error payloads.
-        //    // response.EnsureSuccessStatusCode();
-
-        //    return JObject.Parse(text);
-        //}
-        public async Task<JObject> PostForAnalysisAsync(object payload, CancellationToken ct = default)
+      
+        public async Task<JObject> PostAsync(object payload, CancellationToken ct = default)
         {
             var json = JsonConvert.SerializeObject(payload);
             using var content = new StringContent(json, Encoding.UTF8, "application/json");

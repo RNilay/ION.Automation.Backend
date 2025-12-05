@@ -14,4 +14,15 @@ namespace IonFiltra.BagFilters.Core.Entities.SkyCivEntities
         public string Status { get; set; }
         public string ErrorMessage { get; set; }
     }
+
+
+    public class DesignSession
+    {
+        public int Id { get; set; }
+        public string SessionId { get; set; }
+        public DateTime CreatedAt { get; set; }
+        public string Status { get; set; }
+        public string ErrorMessage { get; set; }
+    }
+
 }

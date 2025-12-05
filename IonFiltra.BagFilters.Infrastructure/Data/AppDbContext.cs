@@ -27,6 +27,7 @@ using IonFiltra.BagFilters.Core.Entities.BOM.Painting_Cost;
 using IonFiltra.BagFilters.Core.Entities.BOM.PaintingRates;
 using IonFiltra.BagFilters.Core.Entities.BOM.Rates;
 using IonFiltra.BagFilters.Core.Entities.EnquiryEntity;
+using IonFiltra.BagFilters.Core.Entities.MasterData.FilterBagData;
 using IonFiltra.BagFilters.Core.Entities.SkyCivEntities;
 using Microsoft.EntityFrameworkCore;
 
@@ -78,6 +79,9 @@ namespace IonFiltra.BagFilters.Infrastructure.Data
         public DbSet<BillOfMaterialRates> BillOfMaterialRatess { get; set; }
 
         public DbSet<PaintingCostConfig> PaintingCostConfigs { get; set; }
+
+        //Master Data tables
+        public DbSet<FilterBag> FilterBags { get; set; }
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
@@ -235,6 +239,13 @@ namespace IonFiltra.BagFilters.Infrastructure.Data
             modelBuilder.Entity<PaintingCostConfig>(entity =>
             {
                 entity.ToTable("PaintingCostConfig", GlobalConstants.IONFILTRA_SCHEMA);
+                entity.HasKey(u => u.Id);
+            });
+            //master data tables
+
+            modelBuilder.Entity<FilterBag>(entity =>
+            {
+                entity.ToTable("FilterBag", GlobalConstants.IONFILTRA_SCHEMA);
                 entity.HasKey(u => u.Id);
             });
         }

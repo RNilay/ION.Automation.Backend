@@ -63,6 +63,38 @@ namespace IonFiltra.BagFilters.Infrastructure.Repositories.MasterData.FilterBagD
                 }
             });
         }
+
+        public async Task<IEnumerable<FilterBag>> GetAll()
+        {
+            return await _transactionHelper.ExecuteAsync(async dbContext =>
+            {
+                _logger.LogInformation("Fetching all FilterBag rows.");
+
+                return await dbContext.FilterBags
+                 .Where(x => !x.IsDeleted)      // NEW
+                 .AsNoTracking()
+                 .OrderBy(x => x.Id)
+                 .ToListAsync();
+            });
+        }
+
+        public async Task SoftDeleteAsync(int id)
+        {
+            await _transactionHelper.ExecuteAsync(async dbContext =>
+            {
+                var entity = await dbContext.FilterBags.FindAsync(id);
+
+                if (entity != null)
+                {
+                    entity.IsDeleted = true;
+                    entity.UpdatedAt = DateTime.UtcNow;
+
+                    await dbContext.SaveChangesAsync();
+                }
+            });
+        }
+
+
     }
 }
     

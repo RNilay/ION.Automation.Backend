@@ -40,6 +40,22 @@ namespace IonFiltra.BagFilters.Application.Services.MasterData.FilterBagData
             var entity = FilterBagMapper.ToEntity(dto);
             await _repository.UpdateAsync(entity);
         }
+
+        public async Task<IEnumerable<FilterBagMainDto>> GetAll()
+        {
+            _logger.LogInformation("Fetching all FilterBags.");
+
+            var entities = await _repository.GetAll();
+
+            return entities.Select(x => FilterBagMapper.ToMainDto(x));
+        }
+
+        public async Task DeleteAsync(int id)
+        {
+            await _repository.SoftDeleteAsync(id);
+        }
+
+
     }
 }
     

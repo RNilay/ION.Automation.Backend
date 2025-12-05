@@ -60,6 +60,45 @@ namespace IonFiltra.BagFilters.API.Controllers.MasterData.FilterBagData
             }
         }
 
+        [HttpGet("get-all")]
+        public async Task<IActionResult> GetAll()
+        {
+            _logger.LogInformation("GetAll FilterBag started");
+
+            try
+            {
+                var result = await _service.GetAll();
+
+                if (result == null || !result.Any())
+                {
+                    return Ok(new
+                    {
+                        success = false,
+                        message = "No FilterBag found.",
+                        data = (object?)null
+                    });
+                }
+
+                return Ok(new
+                {
+                    success = true,
+                    message = "FilterBag list fetched successfully.",
+                    data = result
+                });
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error fetching FilterBag.");
+                return StatusCode(500, new
+                {
+                    success = false,
+                    message = "An error occurred while processing your request.",
+                    data = (object?)null
+                });
+            }
+        }
+
+
 
         [HttpPost("add")]
         public async Task<IActionResult> Add([FromBody] FilterBagMainDto dto)
@@ -111,6 +150,35 @@ namespace IonFiltra.BagFilters.API.Controllers.MasterData.FilterBagData
                 return StatusCode(500, new {message = "An error occurred while updating the record."});
             }
         }
+
+        [HttpDelete("delete/{id}")]
+        public async Task<IActionResult> Delete(int id)
+        {
+            if (id <= 0)
+                return BadRequest("Invalid ID.");
+
+            try
+            {
+                await _service.DeleteAsync(id);
+
+                return Ok(new
+                {
+                    success = true,
+                    message = "Record deleted successfully (soft delete)."
+                });
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error deleting FilterBag.");
+                return StatusCode(500, new
+                {
+                    success = false,
+                    message = "An error occurred while deleting the record."
+                });
+            }
+        }
+
+
     }
 }
     

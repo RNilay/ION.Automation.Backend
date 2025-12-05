@@ -8,5 +8,6 @@ namespace IonFiltra.BagFilters.Application.DTOs.MasterData.FilterBagData
         public string? Make { get; set; }
         public decimal? Cost { get; set; }
 
+
     }
 }

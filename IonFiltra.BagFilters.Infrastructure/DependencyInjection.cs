@@ -28,6 +28,7 @@ using IonFiltra.BagFilters.Application.Services.BOM.Rates;
 using IonFiltra.BagFilters.Application.Services.EnquiryService;
 using IonFiltra.BagFilters.Application.Services.GenericView;
 using IonFiltra.BagFilters.Application.Services.MasterData.FilterBagData;
+using IonFiltra.BagFilters.Application.Services.MasterData.SolenoidValveData;
 using IonFiltra.BagFilters.Application.Services.MasterData.TimerData;
 using IonFiltra.BagFilters.Application.Services.Report;
 using IonFiltra.BagFilters.Application.Services.SkyCiv;
@@ -55,6 +56,7 @@ using IonFiltra.BagFilters.Core.Interfaces.Repositories.BOM.Painting_Cost;
 using IonFiltra.BagFilters.Core.Interfaces.Repositories.BOM.PaintingRates;
 using IonFiltra.BagFilters.Core.Interfaces.Repositories.BOM.Rates;
 using IonFiltra.BagFilters.Core.Interfaces.Repositories.MasterData.FilterBagData;
+using IonFiltra.BagFilters.Core.Interfaces.Repositories.MasterData.SolenoidValveData;
 using IonFiltra.BagFilters.Core.Interfaces.Repositories.MasterData.TimerData;
 using IonFiltra.BagFilters.Core.Interfaces.SkyCiv;
 using IonFiltra.BagFilters.Infrastructure.Data;
@@ -82,6 +84,7 @@ using IonFiltra.BagFilters.Infrastructure.Repositories.BOM.PaintingRates;
 using IonFiltra.BagFilters.Infrastructure.Repositories.BOM.Rates;
 using IonFiltra.BagFilters.Infrastructure.Repositories.GenericView;
 using IonFiltra.BagFilters.Infrastructure.Repositories.MasterData.FilterBagData;
+using IonFiltra.BagFilters.Infrastructure.Repositories.MasterData.SolenoidValveData;
 using IonFiltra.BagFilters.Infrastructure.Repositories.MasterData.TimerData;
 using IonFiltra.BagFilters.Infrastructure.Repositories.SkyCiv;
 using Microsoft.EntityFrameworkCore;
@@ -195,6 +198,9 @@ namespace IonFiltra.BagFilters.Infrastructure
 
             services.AddScoped<ITimerEntityService, TimerEntityService>();
             services.AddScoped<ITimerEntityRepository, TimerEntityRepository>();
+
+            services.AddScoped<ISolenoidValveService, SolenoidValveService>();
+            services.AddScoped<ISolenoidValveRepository, SolenoidValveRepository>();
 
             return services;
         }

@@ -23,3 +23,7 @@ INSERT INTO ionfiltrabagfilters.SolenoidValve (Make, Size, Model, Cost) VALUES
 ('Manik', '1.5"', '24106E-52-12G+I-110V-50HZ-22H', 1475),
 ('Manik', '1.5"', '24106E-52-12G+I-24V-DC-22H', 1475),
 ('Manik', '1.5"', '24106E-52-12G+I', 1475);
+
+
+INSERT INTO ionfiltrabagfilters.DPTEntity (Make, Model, Cost)
+VALUES ('Siemens', '7MF0340-1DM01-5AM2-Z A00+C11+E01+H01', 36500);

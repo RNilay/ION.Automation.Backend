@@ -34,7 +34,7 @@ namespace IonFiltra.BagFilters.Infrastructure.Repositories.GenericView
                     ? $"`{viewName}`"
                     : $"`{GlobalConstants.IONFILTRA_SCHEMA}`.`{viewName}`";
 
-                var query = $"SELECT * FROM {qualified}";
+                var query = $"SELECT * FROM {qualified} WHERE IsDeleted = false";
 
                 using (var command = connection.CreateCommand())
                 {
@@ -55,7 +55,7 @@ namespace IonFiltra.BagFilters.Infrastructure.Repositories.GenericView
                                 var row = new Dictionary<string, object>();
                                 for (var i = 0; i < reader.FieldCount; i++)
                                 {
-                                    var columnName = reader.GetName(i);
+                                    var columnName = reader.GetName(i).ToLower();
                                     var value = await reader.IsDBNullAsync(i) ? null : reader.GetValue(i);
                                     row[columnName] = value;
                                 }
@@ -137,7 +137,7 @@ namespace IonFiltra.BagFilters.Infrastructure.Repositories.GenericView
                                 var row = new Dictionary<string, object>();
                                 for (var i = 0; i < reader.FieldCount; i++)
                                 {
-                                    var columnName = reader.GetName(i);
+                                    var columnName = reader.GetName(i).ToLower();
                                     var value = await reader.IsDBNullAsync(i) ? null : reader.GetValue(i);
                                     row[columnName] = value;
                                 }
@@ -154,5 +154,110 @@ namespace IonFiltra.BagFilters.Infrastructure.Repositories.GenericView
                 return result;
             });
         }
+
+        public async Task<int> InsertAsync(string tableName, Dictionary<string, object> data)
+        {
+            return await _transactionHelper.ExecuteAsync(async dbContext =>
+            {
+                var connection = dbContext.Database.GetDbConnection();
+                if (connection.State != ConnectionState.Open)
+                    await connection.OpenAsync();
+
+                var columns = string.Join(", ", data.Keys.Select(k => $"`{k}`"));
+                var parameters = string.Join(", ", data.Keys.Select((k, i) => $"@p{i}"));
+
+                var query = $"INSERT INTO `{GlobalConstants.IONFILTRA_SCHEMA}`.`{tableName}` ({columns}) VALUES ({parameters})";
+
+                using var command = connection.CreateCommand();
+                command.CommandText = query;
+
+                int index = 0;
+                foreach (var kv in data)
+                {
+                    var parameter = command.CreateParameter();
+                    parameter.ParameterName = $"@p{index}";
+                    parameter.Value = kv.Value ?? DBNull.Value;
+                    command.Parameters.Add(parameter);
+                    index++;
+                }
+
+                var transaction = dbContext.Database.CurrentTransaction;
+                if (transaction != null)
+                    command.Transaction = transaction.GetDbTransaction();
+
+                await command.ExecuteNonQueryAsync();
+
+                // Return inserted ID
+                command.CommandText = "SELECT LAST_INSERT_ID();";
+                var id = Convert.ToInt32(await command.ExecuteScalarAsync());
+
+                return id;
+            });
+        }
+
+        public async Task<int> UpdateAsync(string tableName, int id, Dictionary<string, object> data)
+        {
+            return await _transactionHelper.ExecuteAsync(async dbContext =>
+            {
+                var connection = dbContext.Database.GetDbConnection();
+                if (connection.State != ConnectionState.Open)
+                    await connection.OpenAsync();
+
+                var setters = string.Join(", ", data.Keys.Select((k, i) => $"`{k}` = @p{i}"));
+                var query = $"UPDATE `{GlobalConstants.IONFILTRA_SCHEMA}`.`{tableName}` SET {setters} WHERE Id = @id";
+
+                using var command = connection.CreateCommand();
+                command.CommandText = query;
+
+                int index = 0;
+                foreach (var kv in data)
+                {
+                    var parameter = command.CreateParameter();
+                    parameter.ParameterName = $"@p{index}";
+                    parameter.Value = kv.Value ?? DBNull.Value;
+                    command.Parameters.Add(parameter);
+                    index++;
+                }
+
+                var idParam = command.CreateParameter();
+                idParam.ParameterName = "@id";
+                idParam.Value = id;
+                command.Parameters.Add(idParam);
+
+                var transaction = dbContext.Database.CurrentTransaction;
+                if (transaction != null)
+                    command.Transaction = transaction.GetDbTransaction();
+
+                return await command.ExecuteNonQueryAsync();
+            });
+        }
+
+        public async Task<int> DeleteAsync(string tableName, int id)
+        {
+            return await _transactionHelper.ExecuteAsync(async dbContext =>
+            {
+                var connection = dbContext.Database.GetDbConnection();
+                if (connection.State != ConnectionState.Open)
+                    await connection.OpenAsync();
+
+                string query = $"UPDATE `{GlobalConstants.IONFILTRA_SCHEMA}`.`{tableName}` SET IsDeleted = 1 WHERE Id = @id";
+
+                using var command = connection.CreateCommand();
+                command.CommandText = query;
+
+                var idParam = command.CreateParameter();
+                idParam.ParameterName = "@id";
+                idParam.Value = id;
+                command.Parameters.Add(idParam);
+
+                var transaction = dbContext.Database.CurrentTransaction;
+                if (transaction != null)
+                    command.Transaction = transaction.GetDbTransaction();
+
+                return await command.ExecuteNonQueryAsync();
+            });
+        }
+
+
     }
 }

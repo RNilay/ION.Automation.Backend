@@ -27,6 +27,7 @@ using IonFiltra.BagFilters.Application.Services.BOM.PaintingRates;
 using IonFiltra.BagFilters.Application.Services.BOM.Rates;
 using IonFiltra.BagFilters.Application.Services.EnquiryService;
 using IonFiltra.BagFilters.Application.Services.GenericView;
+using IonFiltra.BagFilters.Application.Services.MasterData.DPTData;
 using IonFiltra.BagFilters.Application.Services.MasterData.FilterBagData;
 using IonFiltra.BagFilters.Application.Services.MasterData.SolenoidValveData;
 using IonFiltra.BagFilters.Application.Services.MasterData.TimerData;
@@ -55,6 +56,7 @@ using IonFiltra.BagFilters.Core.Interfaces.Repositories.BOM.Bill_Of_Material;
 using IonFiltra.BagFilters.Core.Interfaces.Repositories.BOM.Painting_Cost;
 using IonFiltra.BagFilters.Core.Interfaces.Repositories.BOM.PaintingRates;
 using IonFiltra.BagFilters.Core.Interfaces.Repositories.BOM.Rates;
+using IonFiltra.BagFilters.Core.Interfaces.Repositories.MasterData.DPTData;
 using IonFiltra.BagFilters.Core.Interfaces.Repositories.MasterData.FilterBagData;
 using IonFiltra.BagFilters.Core.Interfaces.Repositories.MasterData.SolenoidValveData;
 using IonFiltra.BagFilters.Core.Interfaces.Repositories.MasterData.TimerData;
@@ -83,6 +85,7 @@ using IonFiltra.BagFilters.Infrastructure.Repositories.BOM.Painting_Cost;
 using IonFiltra.BagFilters.Infrastructure.Repositories.BOM.PaintingRates;
 using IonFiltra.BagFilters.Infrastructure.Repositories.BOM.Rates;
 using IonFiltra.BagFilters.Infrastructure.Repositories.GenericView;
+using IonFiltra.BagFilters.Infrastructure.Repositories.MasterData.DPTData;
 using IonFiltra.BagFilters.Infrastructure.Repositories.MasterData.FilterBagData;
 using IonFiltra.BagFilters.Infrastructure.Repositories.MasterData.SolenoidValveData;
 using IonFiltra.BagFilters.Infrastructure.Repositories.MasterData.TimerData;
@@ -201,6 +204,9 @@ namespace IonFiltra.BagFilters.Infrastructure
 
             services.AddScoped<ISolenoidValveService, SolenoidValveService>();
             services.AddScoped<ISolenoidValveRepository, SolenoidValveRepository>();
+
+            services.AddScoped<IDPTEntityService, DPTEntityService>();
+            services.AddScoped<IDPTEntityRepository, DPTEntityRepository>();
 
             return services;
         }

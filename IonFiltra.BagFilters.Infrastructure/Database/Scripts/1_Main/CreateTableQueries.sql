@@ -624,3 +624,13 @@ CREATE TABLE ionfiltrabagfilters.SolenoidValve (
     IsDeleted TINYINT(1) NOT NULL DEFAULT 0
     );
     
+
+    CREATE TABLE ionfiltrabagfilters.DPTEntity (
+    Id INT AUTO_INCREMENT PRIMARY KEY,
+    Make VARCHAR(255) ,
+    Model VARCHAR(500) ,
+    Cost DECIMAL(10,2),
+    CreatedAt DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    UpdatedAt DATETIME NULL ON UPDATE CURRENT_TIMESTAMP,
+    IsDeleted TINYINT(1) NOT NULL DEFAULT 0
+    );

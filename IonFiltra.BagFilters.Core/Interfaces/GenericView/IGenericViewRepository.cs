@@ -11,5 +11,9 @@ namespace IonFiltra.BagFilters.Core.Interfaces.GenericView
         Task<List<Dictionary<string, object>>> GetViewData(string viewName);
 
         Task<List<Dictionary<string, object>>> GetViewDataWithParam(string viewName, Dictionary<string, object> parameters);
+
+        Task<int> InsertAsync(string tableName, Dictionary<string, object> data);
+        Task<int> UpdateAsync(string tableName, int id, Dictionary<string, object> data);
+        Task<int> DeleteAsync(string tableName, int id);
     }
 }

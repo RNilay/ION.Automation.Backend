@@ -60,6 +60,28 @@ namespace IonFiltra.BagFilters.Api.Controllers.GenericViews
             return Ok(data);
         }
 
+        [HttpPost("{tableName}")]
+        public async Task<IActionResult> Insert(string tableName, [FromBody] Dictionary<string, object> data)
+        {
+            var id = await _viewService.InsertAsync(tableName, data);
+            return Ok(new { id });
+        }
+
+        [HttpPut("{tableName}/{id}")]
+        public async Task<IActionResult> Update(string tableName, int id, [FromBody] Dictionary<string, object> data)
+        {
+            await _viewService.UpdateAsync(tableName, id, data);
+            return Ok();
+        }
+
+        [HttpDelete("{tableName}/{id}")]
+        public async Task<IActionResult> Delete(string tableName, int id)
+        {
+            await _viewService.DeleteAsync(tableName, id);
+            return Ok();
+        }
+
+
 
         // 🚀 Helper function to convert JsonElement values
         private static object ConvertJsonElement(object value)
@@ -77,6 +99,8 @@ namespace IonFiltra.BagFilters.Api.Controllers.GenericViews
             }
             return value;
         }
+
+
 
 
     }

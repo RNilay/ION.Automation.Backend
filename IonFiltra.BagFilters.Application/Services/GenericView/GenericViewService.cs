@@ -35,5 +35,15 @@ namespace IonFiltra.BagFilters.Application.Services.GenericView
         {
             return await _repository.GetViewDataWithParam(viewName, parameters);
         }
+
+        // ⭐ NEW METHODS ⭐
+        public Task<int> InsertAsync(string tableName, Dictionary<string, object> data)
+            => _repository.InsertAsync(tableName, data);
+
+        public Task<int> UpdateAsync(string tableName, int id, Dictionary<string, object> data)
+            => _repository.UpdateAsync(tableName, id, data);
+
+        public Task<int> DeleteAsync(string tableName, int id)
+            => _repository.DeleteAsync(tableName, id);
     }
 }

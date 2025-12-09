@@ -23,6 +23,7 @@ using IonFiltra.BagFilters.Core.Entities.BOM.Rates;
 using IonFiltra.BagFilters.Core.Entities.EnquiryEntity;
 using IonFiltra.BagFilters.Core.Entities.MasterData.DPTData;
 using IonFiltra.BagFilters.Core.Entities.MasterData.FilterBagData;
+using IonFiltra.BagFilters.Core.Entities.MasterData.Master_Definition;
 using IonFiltra.BagFilters.Core.Entities.MasterData.SolenoidValveData;
 using IonFiltra.BagFilters.Core.Entities.MasterData.TimerData;
 using IonFiltra.BagFilters.Core.Entities.SkyCivEntities;
@@ -84,6 +85,7 @@ namespace IonFiltra.BagFilters.Infrastructure.Data
         public DbSet<PaintingCostConfig> PaintingCostConfigs { get; set; }
 
         //Master Data tables
+        public DbSet<MasterDefinitions> MasterDefinitions { get; set; }
         public DbSet<FilterBag> FilterBags { get; set; }
         public DbSet<TimerEntity> TimerEntitys { get; set; }
 
@@ -250,6 +252,13 @@ namespace IonFiltra.BagFilters.Infrastructure.Data
                 entity.HasKey(u => u.Id);
             });
             //master data tables
+
+            modelBuilder.Entity<MasterDefinitions>(entity =>
+            {
+                entity.ToTable("MasterDefinitions", GlobalConstants.IONFILTRA_SCHEMA);
+                entity.HasKey(u => u.Id);
+                entity.Property(u => u.MasterKey).IsRequired();
+            });
 
             modelBuilder.Entity<FilterBag>(entity =>
             {

@@ -3,6 +3,7 @@ using IonFiltra.BagFilters.Application.Interfaces.Bagfilters.BagfilterMaster;
 using IonFiltra.BagFilters.Application.Interfaces.Bagfilters.Sections.Bag_Selection;
 using IonFiltra.BagFilters.Application.Interfaces.Enquiry;
 using IonFiltra.BagFilters.Application.Interfaces.GenericView;
+using IonFiltra.BagFilters.Application.Interfaces.MasterData.Master_Definition;
 using IonFiltra.BagFilters.Application.Interfaces.Report;
 using IonFiltra.BagFilters.Application.Services.Assignment;
 using IonFiltra.BagFilters.Application.Services.BagfilterDatabase.WithCanopy;
@@ -29,6 +30,7 @@ using IonFiltra.BagFilters.Application.Services.EnquiryService;
 using IonFiltra.BagFilters.Application.Services.GenericView;
 using IonFiltra.BagFilters.Application.Services.MasterData.DPTData;
 using IonFiltra.BagFilters.Application.Services.MasterData.FilterBagData;
+using IonFiltra.BagFilters.Application.Services.MasterData.Master_Definition;
 using IonFiltra.BagFilters.Application.Services.MasterData.SolenoidValveData;
 using IonFiltra.BagFilters.Application.Services.MasterData.TimerData;
 using IonFiltra.BagFilters.Application.Services.Report;
@@ -36,6 +38,7 @@ using IonFiltra.BagFilters.Application.Services.SkyCiv;
 using IonFiltra.BagFilters.Core.Interfaces.Bagfilters.BagfilterMasters;
 using IonFiltra.BagFilters.Core.Interfaces.EnquiryRep;
 using IonFiltra.BagFilters.Core.Interfaces.GenericView;
+using IonFiltra.BagFilters.Core.Interfaces.MasterData.Master_Definition;
 using IonFiltra.BagFilters.Core.Interfaces.Repositories.Assignment;
 using IonFiltra.BagFilters.Core.Interfaces.Repositories.BagfilterDatabase.WithCanopy;
 using IonFiltra.BagFilters.Core.Interfaces.Repositories.BagfilterDatabase.WithoutCanopy;
@@ -87,6 +90,7 @@ using IonFiltra.BagFilters.Infrastructure.Repositories.BOM.Rates;
 using IonFiltra.BagFilters.Infrastructure.Repositories.GenericView;
 using IonFiltra.BagFilters.Infrastructure.Repositories.MasterData.DPTData;
 using IonFiltra.BagFilters.Infrastructure.Repositories.MasterData.FilterBagData;
+using IonFiltra.BagFilters.Infrastructure.Repositories.MasterData.Master_Definition;
 using IonFiltra.BagFilters.Infrastructure.Repositories.MasterData.SolenoidValveData;
 using IonFiltra.BagFilters.Infrastructure.Repositories.MasterData.TimerData;
 using IonFiltra.BagFilters.Infrastructure.Repositories.SkyCiv;
@@ -196,6 +200,11 @@ namespace IonFiltra.BagFilters.Infrastructure
             services.AddScoped<IPaintingCostConfigRepository, PaintingCostConfigRepository>();
 
             //master data tables
+
+            services.AddScoped<IMasterDefinitionsRepository, MasterDefinitionsRepository>();
+            services.AddScoped<IMasterDefinitionsService, MasterDefinitionsService>();
+
+
             services.AddScoped<IFilterBagService, FilterBagService>();
             services.AddScoped<IFilterBagRepository, FilterBagRepository>();
 

@@ -788,7 +788,7 @@ CREATE TABLE ionfiltrabagfilters.CableEntity (
     Make VARCHAR(255),
     Size VARCHAR(500),
     Type VARCHAR(500),
-    `Cost/Mtr` DECIMAL(10, 2),
+    Cost DECIMAL(10, 2),
     CreatedAt DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
     UpdatedAt DATETIME NULL ON UPDATE CURRENT_TIMESTAMP,
     IsDeleted TINYINT(1) NOT NULL DEFAULT 0,
@@ -861,7 +861,7 @@ CREATE TABLE ionfiltrabagfilters.HopperHeatingPad (
     Id INT AUTO_INCREMENT PRIMARY KEY,
     Make VARCHAR(255),
     Model VARCHAR(500),
-    `Cost/Sqm` DECIMAL(10, 2),
+    Cost DECIMAL(10, 2),
     CreatedAt DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
     UpdatedAt DATETIME NULL ON UPDATE CURRENT_TIMESTAMP,
     IsDeleted TINYINT(1) NOT NULL DEFAULT 0,
@@ -993,4 +993,17 @@ CREATE TABLE ionfiltrabagfilters.TimerEntity(
     IsDeleted TINYINT(1) NOT NULL DEFAULT 0,
     IsDefault TINYINT(1) NOT NULL DEFAULT 0
 );
+
+
+CREATE TABLE ionfiltrabagfilters.MasterDefinitions (
+    Id INT AUTO_INCREMENT PRIMARY KEY,
+    MasterKey VARCHAR(100) NOT NULL,
+    DisplayName VARCHAR(255) NOT NULL,
+    ApiRoute VARCHAR(255),
+    SectionOrder INT,
+    IsActive TINYINT(1) NOT NULL DEFAULT 1,
+    ColumnsJson JSON,
+    CreatedAt DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    UpdatedAt DATETIME NULL ON UPDATE CURRENT_TIMESTAMP
+    );
 

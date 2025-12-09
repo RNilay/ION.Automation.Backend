@@ -104,7 +104,7 @@ INSERT INTO ionfiltrabagfilters.JunctionBox (Make, Model, Cost) VALUES
 ('1model', '>30', 0);
 
 
-INSERT INTO ionfiltrabagfilters.VibrationTransmitter (Make, Size, `Cost/Mtr`) VALUES 
+INSERT INTO ionfiltrabagfilters.VibrationTransmitter (Make, Size, Cost) VALUES 
 ('CTC', 'Vibration Transmitter with L Type Connector, M/LP202-1R2-1E', 18000);
 
 
@@ -112,7 +112,7 @@ INSERT INTO ionfiltrabagfilters.Thermostat (Make, Model, Cost) VALUES
 ('', 'Capillary Thermostat (50-300 Deg C)', 3500);
 
 
-INSERT INTO ionfiltrabagfilters.HopperHeatingPad (Make, Model, `Cost/Sqm`) VALUES 
+INSERT INTO ionfiltrabagfilters.HopperHeatingPad (Make, Model, Cost) VALUES 
 ('', 'Manual input', 0);
 
 

@@ -81,6 +81,24 @@ namespace IonFiltra.BagFilters.Api.Controllers.GenericViews
             return Ok();
         }
 
+        [HttpPut("filterbag/set-default/{id}")]
+        public async Task<IActionResult> SetFilterBagDefault(int id)
+        {
+            try
+            {
+                // Step 1 — Reset all defaults
+                await _viewService.ExecuteRawSqlAsync("UPDATE FilterBag SET IsDefault = 0");
+
+                // Step 2 — Set selected row
+                await _viewService.ExecuteRawSqlAsync($"UPDATE FilterBag SET IsDefault = 1 WHERE Id = {id}");
+
+                return Ok(new { success = true });
+            }
+            catch (Exception ex)
+            {
+                return BadRequest(new { success = false, error = ex.Message });
+            }
+        }
 
 
         // 🚀 Helper function to convert JsonElement values

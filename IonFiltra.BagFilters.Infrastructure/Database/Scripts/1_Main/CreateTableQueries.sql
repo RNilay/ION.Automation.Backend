@@ -884,7 +884,7 @@ CREATE TABLE ionfiltrabagfilters.HopperHeatingcontroller (
 CREATE TABLE ionfiltrabagfilters.CentrifualFan(
     Id INT AUTO_INCREMENT PRIMARY KEY,
     Make VARCHAR(255),
-    Volume VARCHAR(255),
+    Volume DECIMAL(10, 2),
     Cost DECIMAL(10, 2),
     CreatedAt DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
     UpdatedAt DATETIME NULL ON UPDATE CURRENT_TIMESTAMP,
@@ -896,8 +896,8 @@ CREATE TABLE ionfiltrabagfilters.CentrifualFan(
 CREATE TABLE ionfiltrabagfilters.ScrewConveyor(
     Id INT AUTO_INCREMENT PRIMARY KEY,
     Make VARCHAR(255),
-    Length VARCHAR(255),
-    Width VARCHAR(255),
+    Length DECIMAL(10, 2),
+    Width DECIMAL(10, 2),
     Cost DECIMAL(10, 2),
     CreatedAt DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
     UpdatedAt DATETIME NULL ON UPDATE CURRENT_TIMESTAMP,
@@ -909,8 +909,8 @@ CREATE TABLE ionfiltrabagfilters.ScrewConveyor(
 CREATE TABLE ionfiltrabagfilters.DragChainConveyor(
     Id INT AUTO_INCREMENT PRIMARY KEY,
     Make VARCHAR(255),
-    Length VARCHAR(255),
-    Width VARCHAR(255),
+    Length DECIMAL(10, 2),
+    Width DECIMAL(10, 2),
     Cost DECIMAL(10, 2),
     CreatedAt DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
     UpdatedAt DATETIME NULL ON UPDATE CURRENT_TIMESTAMP,

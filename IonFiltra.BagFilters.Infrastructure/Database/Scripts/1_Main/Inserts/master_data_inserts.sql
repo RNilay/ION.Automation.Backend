@@ -113,22 +113,22 @@ INSERT INTO ionfiltrabagfilters.Thermostat (Make, Model, Cost) VALUES
 
 
 INSERT INTO ionfiltrabagfilters.HopperHeatingPad (Make, Model, Cost) VALUES 
-('', 'Manual input', 0);
+('', '', 0);
 
 
 INSERT INTO ionfiltrabagfilters.CentrifualFan (Make, Volume, Cost) VALUES 
-('Laxmi', 'Manual input', 0),
-('Ritz', '', 0),
-('Venti Olde', '', 0),
-('CBI', '', 0);
+('Laxmi', 0, 0),
+('Ritz', 0, 0),
+('Venti Olde', 0, 0),
+('CBI', 0, 0);
 
 
 INSERT INTO ionfiltrabagfilters.ScrewConveyor (Make, Length, Width, Cost) VALUES 
-('Scewtech', 'Manual input', 'Manual input', 0);
+('Scewtech', 0, 0, 0);
 
 
 INSERT INTO ionfiltrabagfilters.DragChainConveyor (Make, Length, Width, Cost) VALUES 
-('Demech', '-', '-', 0);
+('Demech', 0, 0, 0);
 
 
 INSERT INTO ionfiltrabagfilters.RAVGearedMotor (KW, Make, Cost) VALUES 

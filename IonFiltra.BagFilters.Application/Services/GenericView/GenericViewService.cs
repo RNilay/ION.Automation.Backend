@@ -45,5 +45,11 @@ namespace IonFiltra.BagFilters.Application.Services.GenericView
 
         public Task<int> DeleteAsync(string tableName, int id)
             => _repository.DeleteAsync(tableName, id);
+
+        public Task ExecuteRawSqlAsync(string sql)
+        {
+            return _repository.ExecuteRawSqlAsync(sql);
+        }
+
     }
 }

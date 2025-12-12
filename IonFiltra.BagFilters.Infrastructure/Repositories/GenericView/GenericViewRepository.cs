@@ -258,6 +258,70 @@ namespace IonFiltra.BagFilters.Infrastructure.Repositories.GenericView
             });
         }
 
+        public async Task ExecuteRawSqlAsync(string sql)
+        {
+            await _transactionHelper.ExecuteAsync(async dbContext =>
+            {
+                var connection = dbContext.Database.GetDbConnection();
+                if (connection.State != ConnectionState.Open)
+                    await connection.OpenAsync();
+
+                using var command = connection.CreateCommand();
+                command.CommandText = sql;
+
+                var transaction = dbContext.Database.CurrentTransaction;
+                if (transaction != null)
+                    command.Transaction = transaction.GetDbTransaction();
+
+                await command.ExecuteNonQueryAsync();
+
+                return 0; // dummy return because ExecuteAsync expects a return value
+            });
+        }
+
+        public async Task ResetDefaultsInAllTablesAsync()
+{
+    await _transactionHelper.ExecuteAsync(async dbContext =>
+    {
+        var connection = dbContext.Database.GetDbConnection();
+        if (connection.State != ConnectionState.Open)
+            await connection.OpenAsync();
+
+        // 1️⃣ Get all tables that have IsDefault column
+        string query = $@"
+            SELECT TABLE_NAME 
+            FROM INFORMATION_SCHEMA.COLUMNS 
+            WHERE COLUMN_NAME = 'IsDefault'
+              AND TABLE_SCHEMA = '{GlobalConstants.IONFILTRA_SCHEMA}';
+        ";
+
+        var tables = new List<string>();
+
+        using (var cmd = connection.CreateCommand())
+        {
+            cmd.CommandText = query;
+            var reader = await cmd.ExecuteReaderAsync();
+            while (await reader.ReadAsync())
+            {
+                tables.Add(reader.GetString(0));
+            }
+            reader.Close();
+        }
+
+        // 2️⃣ Reset defaults in ALL tables
+        foreach (var table in tables)
+        {
+            using var resetCmd = connection.CreateCommand();
+            resetCmd.CommandText = $"UPDATE `{GlobalConstants.IONFILTRA_SCHEMA}`.`{table}` SET IsDefault = 0 WHERE IsDefault = 1;";
+            await resetCmd.ExecuteNonQueryAsync();
+        }
+
+        return 0;
+    });
+}
+
+
+
 
     }
 }

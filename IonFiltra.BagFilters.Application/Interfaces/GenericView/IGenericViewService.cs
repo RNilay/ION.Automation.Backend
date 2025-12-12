@@ -14,5 +14,9 @@ namespace IonFiltra.BagFilters.Application.Interfaces.GenericView
         Task<int> InsertAsync(string tableName, Dictionary<string, object> data);
         Task<int> UpdateAsync(string tableName, int id, Dictionary<string, object> data);
         Task<int> DeleteAsync(string tableName, int id);
+
+        Task ExecuteRawSqlAsync(string sql);
+
+
     }
 }

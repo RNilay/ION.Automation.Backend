@@ -482,6 +482,23 @@ CREATE TABLE
         FOREIGN KEY (BagfilterMasterId) REFERENCES ionfiltrabagfilters.bagfiltermaster(BagfilterMasterId) ON DELETE CASCADE
     );
 
+CREATE TABLE
+    ionfiltrabagfilters.BoughtOutItemSelection (
+        Id INT AUTO_INCREMENT PRIMARY KEY,
+        EnquiryId INT NOT NULL,
+        BagfilterMasterId INT,
+        MasterDefinitionId INT,
+        MasterKey VARCHAR(100) NOT NULL,
+        SelectedRowId INT,
+        CreatedAt DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+        UpdatedAt DATETIME NULL ON UPDATE CURRENT_TIMESTAMP,
+        -- One row per (bagfilter, master) combo
+        CONSTRAINT UQ_BagfilterBoughtOutItems_Master UNIQUE (BagfilterMasterId, MasterDefinitionId),
+        FOREIGN KEY (EnquiryId) REFERENCES ionfiltrabagfilters.Enquiry (Id) ON DELETE CASCADE,
+        FOREIGN KEY (BagfilterMasterId) REFERENCES ionfiltrabagfilters.bagfiltermaster (BagfilterMasterId) ON DELETE CASCADE,
+        FOREIGN KEY (MasterDefinitionId) REFERENCES ionfiltrabagfilters.MasterDefinitions (Id)
+    );
+
 
 --- Master Table for Database of Without Canpoy Bagfilters
 

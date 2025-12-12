@@ -2,6 +2,7 @@
 using System.Linq;
 using IonFiltra.BagFilters.Application.DTOs.Bagfilters.BagfilterInputs;
 using IonFiltra.BagFilters.Application.DTOs.BOM.Bill_Of_Material;
+using IonFiltra.BagFilters.Application.DTOs.MasterData.BoughtOutItems;
 using IonFiltra.BagFilters.Application.DTOs.SkyCiv;
 using IonFiltra.BagFilters.Application.Interfaces;
 using IonFiltra.BagFilters.Application.Mappers.Bagfilters.BagfilterInputs;
@@ -23,7 +24,10 @@ using IonFiltra.BagFilters.Core.Entities.Bagfilters.Sections.Weight_Summary;
 using IonFiltra.BagFilters.Core.Entities.BOM.Bill_Of_Material;
 using IonFiltra.BagFilters.Core.Entities.BOM.Painting_Cost;
 using IonFiltra.BagFilters.Core.Entities.EnquiryEntity;
+using IonFiltra.BagFilters.Core.Entities.MasterData.BoughtOutItems;
 using IonFiltra.BagFilters.Core.Interfaces.Bagfilters.BagfilterMasters;
+using IonFiltra.BagFilters.Core.Interfaces.GenericView;
+using IonFiltra.BagFilters.Core.Interfaces.MasterData.Master_Definition;
 using IonFiltra.BagFilters.Core.Interfaces.Repositories.Bagfilters.BagfilterInputs;
 using IonFiltra.BagFilters.Core.Interfaces.Repositories.Bagfilters.Sections.Access_Group;
 using IonFiltra.BagFilters.Core.Interfaces.Repositories.Bagfilters.Sections.Bag_Selection;
@@ -39,6 +43,7 @@ using IonFiltra.BagFilters.Core.Interfaces.Repositories.Bagfilters.Sections.Supp
 using IonFiltra.BagFilters.Core.Interfaces.Repositories.Bagfilters.Sections.Weight_Summary;
 using IonFiltra.BagFilters.Core.Interfaces.Repositories.BOM.Bill_Of_Material;
 using IonFiltra.BagFilters.Core.Interfaces.Repositories.BOM.Painting_Cost;
+using IonFiltra.BagFilters.Core.Interfaces.Repositories.MasterData.BoughtOutItems;
 using IonFiltra.BagFilters.Core.Interfaces.SkyCiv;
 using Microsoft.Extensions.Logging;
 using Newtonsoft.Json;
@@ -68,11 +73,14 @@ namespace IonFiltra.BagFilters.Application.Services.Bagfilters.BagfilterInputs
 
         private readonly IBillOfMaterialRepository _billOfMaterialRepository;
         private readonly IPaintingCostRepository _paintingCostRepository;
+
+        private readonly IBoughtOutItemSelectionRepository _boughtOutRepo;
+        private readonly IMasterDefinitionsRepository _masterDefinitionsRepository;
         // new: registry of handlers keyed by DTO property name (case-insensitive)
         private readonly Dictionary<string, Func<BagfilterInputMainDto, int, CancellationToken, Task>> _childHandlers;
         private readonly Dictionary<string, Func<BagfilterInputMainDto, int, CancellationToken, Task>> _childUpdateHandlers;
 
-
+        private readonly IGenericViewRepository _genericViewRepository;
 
 
 
@@ -94,7 +102,10 @@ namespace IonFiltra.BagFilters.Application.Services.Bagfilters.BagfilterInputs
             IRoofDoorRepository roofDoorRepository,
             IPaintingAreaRepository paintingAreaRepository,
             IBillOfMaterialRepository billOfMaterialRepository,
-            IPaintingCostRepository paintingCostRepository
+            IPaintingCostRepository paintingCostRepository,
+            IBoughtOutItemSelectionRepository boughtOutRepo,
+            IMasterDefinitionsRepository masterDefinitionsRepository,
+            IGenericViewRepository genericViewRepository
         )
         {
             _repository = repository;
@@ -117,25 +128,11 @@ namespace IonFiltra.BagFilters.Application.Services.Bagfilters.BagfilterInputs
             _billOfMaterialRepository = billOfMaterialRepository ?? throw new ArgumentNullException(nameof(billOfMaterialRepository));
             _paintingCostRepository = paintingCostRepository ?? throw new ArgumentNullException(nameof(paintingCostRepository));
 
-            //// initialize handler registry
-            //_childHandlers = new Dictionary<string, Func<BagfilterInputMainDto, int, CancellationToken, Task>>(StringComparer.OrdinalIgnoreCase)
-            //{
-            //    // key is the DTO property name (e.g. "WeightSummary" or "weightSummary" - registry is case-insensitive)
-            //    ["weightSummary"] = HandleWeightSummaryAsync,
-            //    ["processInfo"] = HandleProcessInfoAsync,
-            //    ["cageInputs"] = HandleCageInputsAsync,
-            //    ["bagSelection"] = HandleBagSelectionAsync,
-            //    ["structureInputs"] = HandleStructureInputsAsync,
-            //    ["capsuleInputs"] = HandleCapsuleInputsAsync,
-            //    ["casingInputs"] = HandleCasingInputsAsync,
-            //    ["hopperInputs"] = HandleHopperInputsAsync,
-            //    ["supportStructure"] = HandleSupportStructureAsync,
-            //    ["accessGroup"] = HandleAccessGroupAsync,
-            //    ["roofDoor"] = HandleRoofDoorAsync,
-            //    ["paintingArea"] = HandlePaintingAreaAsync,
-            //    ["billOfMaterial"] = HandleBillOfMaterialAsync,
-            //    ["paintingCost"] = HandlePaintingCostAsync,
-            //};
+            _boughtOutRepo = boughtOutRepo;
+            _masterDefinitionsRepository = masterDefinitionsRepository;
+            _genericViewRepository = genericViewRepository;
+
+
 
             _childHandlers = new Dictionary<string, Func<BagfilterInputMainDto, int, CancellationToken, Task>>(StringComparer.OrdinalIgnoreCase);
             _childUpdateHandlers = new Dictionary<string, Func<BagfilterInputMainDto, int, CancellationToken, Task>>(StringComparer.OrdinalIgnoreCase);
@@ -156,6 +153,7 @@ namespace IonFiltra.BagFilters.Application.Services.Bagfilters.BagfilterInputs
             RegisterChildHandler("paintingArea", HandlePaintingAreaAsync);
             RegisterChildHandler("billOfMaterial", HandleBillOfMaterialAsync);
             RegisterChildHandler("paintingCost", HandlePaintingCostAsync);
+            RegisterChildHandler("boughtOutItems", HandleBoughtOutItemsAsync);
 
         }
 
@@ -380,38 +378,183 @@ namespace IonFiltra.BagFilters.Application.Services.Bagfilters.BagfilterInputs
             // Build a dictionary for quick lookup
             var masterMap = inputs.ToDictionary(x => x.BagfilterInputId, x => x.BagfilterMasterId);
 
+
            
-            // 7) Build child tasks
-            var childTasks = new List<Task>();
+            // Build an array mapping dto index -> BagfilterMasterId
+            var masterIdByIndex = new int[dtos.Count];
+
+            for (int i = 0; i < dtos.Count; i++)
+            {
+                var createdInputId = createdInputIds.ElementAtOrDefault(i);
+                if (createdInputId > 0 && masterMap.TryGetValue(createdInputId, out var mid))
+                    masterIdByIndex[i] = mid;
+                else
+                    masterIdByIndex[i] = 0;
+            }
+
+            // === Batched children (same pattern as UpdateRangeAsync) ===
+
+            // WeightSummary
+            await BatchUpsertChildAsync<WeightSummary>(
+                dtos,
+                masterIdByIndex,
+                hasChildDto: dto => dto.WeightSummary != null,
+                getExistingByMasterIds: (masterIds, token) => _weightSummaryRepository.GetByMasterIdsAsync(masterIds, token),
+                mapEntity: (dto, masterId, existing) => MapWeightSummary(dto, masterId, existing),
+                upsertRange: (entities, token) => _weightSummaryRepository.UpsertRangeAsync(entities, token),
+                ct);
+
+            // ProcessInfo
+            await BatchUpsertChildAsync<ProcessInfo>(
+                dtos,
+                masterIdByIndex,
+                hasChildDto: dto => dto.ProcessInfo != null,
+                getExistingByMasterIds: (masterIds, token) => _processInfoRepository.GetByMasterIdsAsync(masterIds, token),
+                mapEntity: (dto, masterId, existing) => MapProcessInfo(dto, masterId, existing),
+                upsertRange: (entities, token) => _processInfoRepository.UpsertRangeAsync(entities, token),
+                ct);
+
+            // CageInputs
+            await BatchUpsertChildAsync<CageInputs>(
+                dtos,
+                masterIdByIndex,
+                hasChildDto: dto => dto.CageInputs != null,
+                getExistingByMasterIds: (masterIds, token) => _cageInputsRepository.GetByMasterIdsAsync(masterIds, token),
+                mapEntity: (dto, masterId, existing) => MapCageInputs(dto, masterId, existing),
+                upsertRange: (entities, token) => _cageInputsRepository.UpsertRangeAsync(entities, token),
+                ct);
+
+            await BatchUpsertChildAsync<BagSelection>(dtos, masterIdByIndex,
+            hasChildDto: dto => dto.BagSelection != null,
+            getExistingByMasterIds: (masterIds, token) => _bagSelectionRepository.GetByMasterIdsAsync(masterIds, token),
+            mapEntity: (dto, masterId, existing) => MapBagSelection(dto, masterId, existing),
+            upsertRange: (entities, token) => _bagSelectionRepository.UpsertRangeAsync(entities, token),
+            ct);
+
+            await BatchUpsertChildAsync<StructureInputs>(dtos, masterIdByIndex,
+            hasChildDto: dto => dto.StructureInputs != null,
+            getExistingByMasterIds: (masterIds, token) => _structureInputsRepository.GetByMasterIdsAsync(masterIds, token),
+            mapEntity: (dto, masterId, existing) => MapStructureInputs(dto, masterId, existing),
+            upsertRange: (entities, token) => _structureInputsRepository.UpsertRangeAsync(entities, token),
+            ct);
+
+            await BatchUpsertChildAsync<CapsuleInputs>(dtos, masterIdByIndex,
+            hasChildDto: dto => dto.CapsuleInputs != null,
+            getExistingByMasterIds: (masterIds, token) => _capsuleInputsRepository.GetByMasterIdsAsync(masterIds, token),
+            mapEntity: (dto, masterId, existing) => MapCapsuleInputs(dto, masterId, existing),
+            upsertRange: (entities, token) => _capsuleInputsRepository.UpsertRangeAsync(entities, token),
+            ct);
+
+            await BatchUpsertChildAsync<CasingInputs>(dtos, masterIdByIndex,
+            hasChildDto: dto => dto.CasingInputs != null,
+            getExistingByMasterIds: (masterIds, token) => _casingInputsRepository.GetByMasterIdsAsync(masterIds, token),
+            mapEntity: (dto, masterId, existing) => MapCasingInputs(dto, masterId, existing),
+            upsertRange: (entities, token) => _casingInputsRepository.UpsertRangeAsync(entities, token),
+            ct);
+
+            await BatchUpsertChildAsync<HopperInputs>(dtos, masterIdByIndex,
+            hasChildDto: dto => dto.HopperInputs != null,
+            getExistingByMasterIds: (masterIds, token) => _hopperInputsRepository.GetByMasterIdsAsync(masterIds, token),
+            mapEntity: (dto, masterId, existing) => MapHopperInputs(dto, masterId, existing),
+            upsertRange: (entities, token) => _hopperInputsRepository.UpsertRangeAsync(entities, token),
+            ct);
+
+            await BatchUpsertChildAsync<SupportStructure>(dtos, masterIdByIndex,
+            hasChildDto: dto => dto.SupportStructure != null,
+            getExistingByMasterIds: (masterIds, token) => _supportStructureRepository.GetByMasterIdsAsync(masterIds, token),
+            mapEntity: (dto, masterId, existing) => MapSupportStructure(dto, masterId, existing),
+            upsertRange: (entities, token) => _supportStructureRepository.UpsertRangeAsync(entities, token),
+            ct);
+
+            await BatchUpsertChildAsync<AccessGroup>(dtos, masterIdByIndex,
+            hasChildDto: dto => dto.AccessGroup != null,
+            getExistingByMasterIds: (masterIds, token) => _accessGroupRepository.GetByMasterIdsAsync(masterIds, token),
+            mapEntity: (dto, masterId, existing) => MapAccessGroup(dto, masterId, existing),
+            upsertRange: (entities, token) => _accessGroupRepository.UpsertRangeAsync(entities, token),
+            ct);
+
+            await BatchUpsertChildAsync<RoofDoor>(dtos, masterIdByIndex,
+            hasChildDto: dto => dto.RoofDoor != null,
+            getExistingByMasterIds: (masterIds, token) => _roofDoorRepository.GetByMasterIdsAsync(masterIds, token),
+            mapEntity: (dto, masterId, existing) => MapRoofDoor(dto, masterId, existing),
+            upsertRange: (entities, token) => _roofDoorRepository.UpsertRangeAsync(entities, token),
+            ct);
+
+            await BatchUpsertChildAsync<PaintingArea>(dtos, masterIdByIndex,
+            hasChildDto: dto => dto.PaintingArea != null,
+            getExistingByMasterIds: (masterIds, token) => _paintingAreaRepository.GetByMasterIdsAsync(masterIds, token),
+            mapEntity: (dto, masterId, existing) => MapPaintingArea(dto, masterId, existing),
+            upsertRange: (entities, token) => _paintingAreaRepository.UpsertRangeAsync(entities, token),
+            ct);
+
+            await BatchUpsertChildAsync<PaintingCost>(dtos, masterIdByIndex,
+            hasChildDto: dto => dto.PaintingCost != null,
+            getExistingByMasterIds: (masterIds, token) => _paintingCostRepository.GetByMasterIdsAsync(masterIds, token),
+            mapEntity: (dto, masterId, existing) => MapPaintingCost(dto, masterId, existing),
+            upsertRange: (entities, token) => _paintingCostRepository.UpsertRangeAsync(entities, token),
+            ct);
+
+            // === Batched BillOfMaterial
+
+            var bomDataByMaster = new Dictionary<int, List<BillOfMaterial>>();
 
             for (int i = 0; i < dtos.Count; i++)
             {
                 var dto = dtos[i];
-                var createdInputId = createdInputIds.ElementAtOrDefault(i);
-                var masterId = masterMap.TryGetValue(createdInputId, out var mid) ? mid : 0;
 
-                foreach (var handlerKv in _childHandlers)
+                // decide when to touch BOM:
+                //   - If you want "no change" when list is empty, require Count > 0
+                if (dto.BillOfMaterial == null || dto.BillOfMaterial.Count == 0)
+                    continue;
+
+                var masterId = masterIdByIndex[i];
+                if (masterId <= 0)
+                    continue;
+
+                var mappedRows = MapBillOfMaterialCollection(dto, masterId);
+                if (mappedRows.Count == 0)
+                    continue;
+
+                if (!bomDataByMaster.TryGetValue(masterId, out var list))
                 {
-                    var task = handlerKv.Value(dto, masterId, ct);
-                    if (task != null)
-                        childTasks.Add(task);
+                    list = new List<BillOfMaterial>();
+                    bomDataByMaster[masterId] = list;
                 }
+
+                // if you can have multiple dtos for same masterId, they’ll aggregate
+                list.AddRange(mappedRows);
             }
 
-            // 8) WAIT for all child tasks BEFORE returning
-            if (childTasks.Count > 0)
+            // Now replace BOM sets per master in one transactional call
+            if (bomDataByMaster.Count > 0)
             {
-                try
-                {
-                    await Task.WhenAll(childTasks);
-                }
-                catch (Exception ex)
-                {
-                    _logger.LogError(ex, "Child handler failure.");
-                    throw; // Required to avoid partial writes
-                }
+                await _billOfMaterialRepository.ReplaceForMastersAsync(bomDataByMaster, ct);
             }
 
+
+            // ===============================
+            // === Batched BoughtOutItems ===
+            // ===============================
+
+            var boughtOutMasterIds = masterIdByIndex.Where(x => x > 0).Distinct().ToList();
+
+            if (boughtOutMasterIds.Count > 0)
+            {
+                var existingBoughtOut =
+                    await _boughtOutRepo.GetByMasterIdsAsync(boughtOutMasterIds, ct);
+
+                var boughtOutEntities =
+                    await MapBoughtOutItemsBatchAsync(
+                        dtos,
+                        masterIdByIndex,
+                        existingBoughtOut,
+                        ct);
+
+                if (boughtOutEntities.Count > 0)
+                {
+                    await _boughtOutRepo.UpsertRangeAsync(boughtOutEntities);
+                }
+            }
 
 
 
@@ -551,472 +694,6 @@ namespace IonFiltra.BagFilters.Application.Services.Bagfilters.BagfilterInputs
         }
 
 
-
-
-        //public async Task<UpdateRangeResultDto> UpdateRangeAsync(List<BagfilterInputMainDto> dtos, CancellationToken ct)
-        //{
-        //    if (dtos == null || dtos.Count == 0) return new UpdateRangeResultDto();
-
-        //    // Step A: Map DTOs -> desired pair state, build grouping keys & groups (same as AddRange)
-        //    var pairs = new List<(BagfilterMaster Master, BagfilterInput Input)>(dtos.Count);
-        //    var pairGroupKeys = new List<string>(dtos.Count);
-        //    var groups = new Dictionary<string, List<int>>();
-
-        //    for (int idx = 0; idx < dtos.Count; idx++)
-        //    {
-        //        var dto = dtos[idx];
-
-        //        if (dto.BagfilterMaster == null && dto.BagfilterMasterId <= 0)
-        //            throw new ArgumentException("Each item must include BagfilterMaster data or an existing BagfilterMasterId.");
-
-        //        var masterEntity = dto.BagfilterMaster != null
-        //            ? new BagfilterMaster
-        //            {
-        //                BagFilterName = dto.BagfilterMaster.BagFilterName,
-        //                Status = dto.BagfilterMaster.Status,
-        //                Revision = dto.BagfilterMaster.Revision,
-        //                AssignmentId = dto.BagfilterMaster.AssignmentId,
-        //                CreatedAt = DateTime.UtcNow,
-        //                EnquiryId = dto.BagfilterMaster.EnquiryId
-        //            }
-        //            : new BagfilterMaster
-        //            {
-        //                BagfilterMasterId = dto.BagfilterMasterId,
-        //                CreatedAt = DateTime.UtcNow
-        //            };
-
-        //        var inputDto = dto.BagfilterInput ?? throw new ArgumentException("BagfilterInput is required.");
-        //        var inputEntity = MapBagfilterInputDtoToEntity(inputDto);
-        //        inputEntity.CreatedAt = DateTime.UtcNow;
-
-        //        if (masterEntity.BagfilterMasterId > 0)
-        //            inputEntity.BagfilterMasterId = masterEntity.BagfilterMasterId;
-        //        else
-        //            inputEntity.BagfilterMaster = masterEntity;
-
-        //        pairs.Add((masterEntity, inputEntity));
-
-        //        var groupKey = BuildGroupKey(inputEntity.Location, inputEntity.No_Of_Column, inputEntity.Ground_Clearance, inputEntity.Bag_Per_Row, inputEntity.Number_Of_Rows);
-        //        pairGroupKeys.Add(groupKey);
-
-        //        if (!groups.TryGetValue(groupKey, out var list)) { list = new List<int>(); groups[groupKey] = list; }
-        //        list.Add(idx);
-        //    }
-
-        //    // Step B: Find candidates for groups
-        //    var groupKeys = groups.Keys
-        //        .Select(k =>
-        //        {
-        //            var firstIdx = groups[k].First();
-        //            var repInput = pairs[firstIdx].Input;
-        //            return new GroupKey
-        //            {
-        //                Location = repInput.Location,
-        //                No_Of_Column = repInput.No_Of_Column,
-        //                Ground_Clearance = repInput.Ground_Clearance,
-        //                Bag_Per_Row = repInput.Bag_Per_Row,
-        //                Number_Of_Rows = repInput.Number_Of_Rows
-        //            };
-        //        })
-        //        .ToList();
-
-        //    var candidates = await _repository.FindCandidatesByGroupKeysAsync(groupKeys); // BagfilterInput + Master included
-
-        //    // Step C: For each group, create placeholder and decide match/update vs insert
-        //    var groupKeysList = groups.Keys.ToList();
-        //    var groupIdByKey = new Dictionary<string, string>(groupKeysList.Count);
-        //    for (int i = 0; i < groupKeysList.Count; i++) groupIdByKey[groupKeysList[i]] = $"Group {i + 1}";
-
-        //    var groupMatchMap = new Dictionary<string, BagfilterMatchDto>(groups.Count);
-        //    var matchedEnquiryIds = new HashSet<int>();
-
-        //    foreach (var groupKey in groupKeysList)
-        //    {
-        //        var repPairIdx = groups[groupKey].First();
-        //        var repInput = pairs[repPairIdx].Input;
-        //        var incomingEnquiryId = dtoHasEnquiryId(pairs[repPairIdx]);
-
-        //        var placeholder = new BagfilterMatchDto
-        //        {
-        //            GroupId = groupIdByKey[groupKey],
-        //            Location = repInput.Location,
-        //            BagfilterInputId = 0,
-        //            BagfilterMasterId = 0,
-        //            AssignmentId = null,
-        //            EnquiryId = null,
-        //            BagFilterName = null,
-        //            CustomerName = null,
-        //            CreatedAt = null,
-        //            No_Of_Column = repInput.No_Of_Column,
-        //            Ground_Clearance = repInput.Ground_Clearance,
-        //            Bag_Per_Row = repInput.Bag_Per_Row,
-        //            Number_Of_Rows = repInput.Number_Of_Rows,
-        //            IsMatched = false
-        //        };
-
-        //        var matchCandidate = candidates
-        //            .FirstOrDefault(c =>
-        //                string.Equals(c.Location ?? "", repInput.Location ?? "", StringComparison.InvariantCultureIgnoreCase)
-        //                && EqualsNullable(c.No_Of_Column, repInput.No_Of_Column)
-        //                && EqualsNullable(c.Ground_Clearance, repInput.Ground_Clearance)
-        //                && EqualsNullable(c.Bag_Per_Row, repInput.Bag_Per_Row)
-        //                && EqualsNullable(c.Number_Of_Rows, repInput.Number_Of_Rows)
-        //                && (incomingEnquiryId == null || c.EnquiryId != incomingEnquiryId)
-        //            );
-
-        //        if (matchCandidate != null)
-        //        {
-        //            placeholder.IsMatched = true;
-        //            placeholder.BagfilterInputId = matchCandidate.BagfilterInputId;
-        //            placeholder.BagfilterMasterId = matchCandidate.BagfilterMasterId;
-        //            placeholder.AssignmentId = matchCandidate.BagfilterMaster?.AssignmentId;
-        //            placeholder.EnquiryId = matchCandidate.EnquiryId;
-        //            placeholder.BagFilterName = matchCandidate.BagfilterMaster?.BagFilterName;
-        //            if (matchCandidate.EnquiryId.HasValue) matchedEnquiryIds.Add(matchCandidate.EnquiryId.Value);
-        //        }
-
-        //        groupMatchMap[groupKey] = placeholder;
-        //    }
-
-        //    // Enrich enquiries if any (same as AddRange)
-        //    Dictionary<int, Enquiry> enquiryMap = new();
-        //    if (matchedEnquiryIds.Any())
-        //    {
-        //        var enquiryDict = await _repository.GetEnquiriesByIdsAsync(matchedEnquiryIds);
-        //        if (enquiryDict != null && enquiryDict.Any()) enquiryMap = enquiryDict;
-        //    }
-        //    foreach (var kv in groupMatchMap.ToList())
-        //    {
-        //        var matchDto = kv.Value;
-        //        if (matchDto.IsMatched && matchDto.EnquiryId.HasValue && enquiryMap.TryGetValue(matchDto.EnquiryId.Value, out var enq))
-        //        {
-        //            matchDto.CustomerName = enq.Customer;
-        //            matchDto.CreatedAt = enq.CreatedAt;
-        //        }
-        //    }
-
-        //    // Step D: Decide per-pair operations
-        //    // We'll prepare:
-        //    // - updates: pairIndex -> (existingInputId, existingMasterId, updatedInputEntity, updatedMasterEntity OR newMasterToInsert)
-        //    // - inserts: list of pairs (master+input) to create (for unmatched groups or when new master requested)
-        //    var updates = new Dictionary<int, UpdateIntent>(); // UpdateIntent is defined below
-        //    var inserts = new List<(BagfilterMaster Master, BagfilterInput Input, int originalPairIndex)>();
-
-        //    for (int pairIndex = 0; pairIndex < pairs.Count; pairIndex++)
-        //    {
-        //        var groupKey = pairGroupKeys[pairIndex];
-        //        var pair = pairs[pairIndex];
-        //        var matchDto = groupMatchMap.TryGetValue(groupKey, out var m) ? m : null;
-
-        //        if (matchDto != null && matchDto.IsMatched && matchDto.BagfilterInputId > 0)
-        //        {
-        //            // Update path: we have an existing row to update
-        //            var existingInputId = matchDto.BagfilterInputId;
-        //            var existingMasterId = matchDto.BagfilterMasterId; // may be zero/nullable
-
-        //            // Determine if incoming master info indicates a "new master" (distinct BagFilterName or explicit masterId mismatch)
-        //            var incomingMasterName = pair.Master?.BagFilterName;
-        //            var incomingMasterId = pair.Master?.BagfilterMasterId ?? 0;
-
-        //            var requiresNewMaster = false;
-        //            if (!string.IsNullOrWhiteSpace(incomingMasterName))
-        //            {
-        //                // if the incoming name differs from matched one -> create new master
-        //                if (!string.Equals(incomingMasterName, matchDto.BagFilterName ?? "", StringComparison.InvariantCultureIgnoreCase))
-        //                {
-        //                    requiresNewMaster = true;
-        //                }
-        //            }
-        //            // if incoming explicitly references a masterId that is not the matched master, treat as new (or verify existence)
-        //            if (incomingMasterId > 0 && incomingMasterId != (matchDto.BagfilterMasterId))
-        //            {
-        //                // we should verify whether incomingMasterId exists; for simplicity treat it as "new master reference" (create new master copy)
-        //                requiresNewMaster = true;
-        //            }
-
-        //            if (requiresNewMaster)
-        //            {
-        //                // Create a new master entity (copy incoming master data if provided; otherwise minimal)
-        //                var newMaster = pair.Master ?? new BagfilterMaster
-        //                {
-        //                    BagFilterName = incomingMasterName ?? ("Master_For_Input_" + existingInputId),
-        //                    CreatedAt = DateTime.UtcNow
-        //                };
-
-        //                // Prepare an insert for the new master and an update for input pointing to new master after insert.
-        //                // We'll insert new master and new input OR update input to reference new master id after insertion.
-        //                // Simpler path: insert a new master and then set input.BagfilterMasterId to new master id in a subsequent step.
-        //                updates[pairIndex] = new UpdateIntent
-        //                {
-        //                    PairIndex = pairIndex,
-        //                    ExistingInputId = existingInputId,
-        //                    ExistingMasterId = existingMasterId,
-        //                    InputToUpdate = pair.Input,
-        //                    NewMasterToCreate = newMaster,
-        //                    UpdateMaster = false // because we create new master
-        //                };
-        //            }
-        //            else
-        //            {
-        //                // No new master required — maybe update existing master fields and/or input fields
-        //                updates[pairIndex] = new UpdateIntent
-        //                {
-        //                    PairIndex = pairIndex,
-        //                    ExistingInputId = existingInputId,
-        //                    ExistingMasterId = existingMasterId,
-        //                    InputToUpdate = pair.Input,
-        //                    MasterToUpdate = pair.Master, // may be a shell with fields to update
-        //                    UpdateMaster = pair.Master != null && pair.Master.BagfilterMasterId == 0 // flag to update existing master instead of creating new? keep conservative
-        //                };
-        //            }
-        //        }
-        //        else
-        //        {
-        //            // Insert path — either unmatched group or explicit new master requested; create new master+input pair
-        //            inserts.Add((pairs[pairIndex].Master, pairs[pairIndex].Input, pairIndex));
-        //        }
-        //    }
-
-        //    // Step E: Persist updates and inserts
-        //    // Strategy:
-        //    // 1) For updates that require new master creation, create those masters first (so we can attach their IDs to inputs)
-        //    // 2) For updates that simply update existing records, call repository.UpdateRangeAsync (you must implement)
-        //    // 3) For inserts, call repository.AddRangeAsync (existing method). Make sure to keep insertion order aligned with original pair indices.
-        //    // We'll implement a simple, safe order.
-
-        //    // --- E1: Create all new masters required by updates (so we can update input.masterId) ---
-        //    var newMastersToCreate = new List<(int pairIndex, BagfilterMaster master)>();
-        //    foreach (var kv in updates)
-        //    {
-        //        var intent = kv.Value;
-        //        if (intent.NewMasterToCreate != null)
-        //            newMastersToCreate.Add((kv.Key, intent.NewMasterToCreate));
-        //    }
-
-        //    // Persist new masters and collect mapping pairIndex -> createdMasterId
-        //    var createdMasterIdsForUpdates = new Dictionary<int, int>();
-        //    if (newMastersToCreate.Any())
-        //    {
-        //        // Create masters in a single transaction using repo helper (you should add repository method AddMastersAsync)
-        //        var mastersOnly = newMastersToCreate.Select(x => x.master).ToList();
-        //        var createdMasterIds = await _masterRepository.AddMastersAsync(mastersOnly, ct); // returns list aligned with mastersOnly
-        //        for (int i = 0; i < newMastersToCreate.Count; i++)
-        //        {
-        //            createdMasterIdsForUpdates[newMastersToCreate[i].pairIndex] = createdMasterIds[i];
-        //        }
-        //    }
-
-        //    // Apply created masterIds into update intents (so inputs point to new master)
-        //    foreach (var kv in updates)
-        //    {
-        //        var intent = kv.Value;
-        //        if (intent.NewMasterToCreate != null && createdMasterIdsForUpdates.TryGetValue(kv.Key, out var mid))
-        //        {
-        //            intent.ResolvedNewMasterId = mid;
-        //            // also set the InputToUpdate's BagfilterMasterId so repository update knows how to set FK
-        //            intent.InputToUpdate.BagfilterMasterId = mid;
-        //            intent.InputToUpdate.BagfilterMaster = null; // avoid EF trying to insert the master again
-        //        }
-        //    }
-
-        //    // --- E2: Execute updates against existing rows (batch)
-        //    var updatesList = updates.Values.ToList();
-        //    if (updatesList.Any())
-        //    {
-        //        // repository.UpdateRangeAsync should accept a list of update DTOs or entities and apply changes in a transaction.
-        //        // We construct lightweight DTOs: (ExistingInputId, InputToUpdate, ExistingMasterId, MasterToUpdate, ResolvedNewMasterId)
-        //        var updateDtos = updatesList.Select(u => new RepositoryInputUpdateDto
-        //        {
-        //            ExistingInputId = u.ExistingInputId,
-        //            InputEntity = u.InputToUpdate,
-        //            ExistingMasterId = u.ExistingMasterId,
-        //            MasterEntityToUpdate = u.MasterToUpdate,
-        //            ResolvedNewMasterId = u.ResolvedNewMasterId
-        //        }).ToList();
-
-        //        // Call repository to apply updates in a single transaction
-        //        await _repository.UpdateRangeAsync(updateDtos);
-        //    }
-
-        //    // --- E3: Perform inserts for unmatched pairs (use your existing AddRangeAsync repo method)
-        //    var insertPairsAligned = inserts.Select(t =>
-        //    {
-        //        // keep same master+input objects as earlier; repository.AddRangeAsync expects (Master, Input)
-        //        return (Master: t.Master, Input: t.Input);
-        //    }).ToList();
-
-        //    // We need to know createdInputIds aligned with original pair indices.
-        //    // We'll call AddRangeAsync with pairs for unmatched items, but we must keep alignment.
-        //    var createdInputIdsForInserts = new Dictionary<int, int>(); // pairIndex -> createdInputId
-        //    if (insertPairsAligned.Any())
-        //    {
-        //        // We will reuse AddRangeAsync but it expects enumeration matching its internal ordering.
-        //        // So call with pairs in same order as 'inserts' list and then map back to original pair indices.
-        //        var addPairsList = insertPairsAligned;
-        //        var createdIds = await _repository.AddRangeAsync(addPairsList);
-
-        //        for (int i = 0; i < inserts.Count; i++)
-        //        {
-        //            var originalIndex = inserts[i].originalPairIndex;
-        //            createdInputIdsForInserts[originalIndex] = createdIds.ElementAtOrDefault(i);
-        //        }
-        //    }
-
-        //    // After updates/inserts we should fetch latest inputs to build masterMap and determine which items need SkyCiv.
-        //    // Collect all involved inputIds: updated existing ids + created ones
-        //    var updatedExistingIds = updatesList.Select(u => u.ExistingInputId).ToList();
-        //    var createdIdsAll = createdInputIdsForInserts.Values.Where(id => id > 0).ToList();
-        //    var allIdsToFetch = updatedExistingIds.Concat(createdIdsAll).Distinct().ToList();
-
-        //    var inputsAfterOps = await _repository.GetByIdsAsync(allIdsToFetch);
-
-        //    var masterMap = inputsAfterOps.ToDictionary(x => x.BagfilterInputId, x => x.BagfilterMasterId);
-
-        //    // Step F: Child handler calls (UpdateAsync for updated inputs, Add for newly created)
-        //    var childTasks = new List<Task>();
-
-        //    // Helper to check whether a pair was an insert or an update
-        //    bool IsInserted(int pairIndex) => createdInputIdsForInserts.ContainsKey(pairIndex) && createdInputIdsForInserts[pairIndex] > 0;
-        //    bool IsUpdated(int pairIndex) => updates.ContainsKey(pairIndex);
-
-        //    for (int i = 0; i < dtos.Count; i++)
-        //    {
-        //        var dto = dtos[i];
-        //        int inputId;
-        //        int masterId;
-
-        //        if (IsInserted(i))
-        //        {
-        //            inputId = createdInputIdsForInserts[i];
-        //            _ = masterMap.TryGetValue(inputId, out masterId);
-        //            // call Add style handler (same as your AddRange flow)
-        //            foreach (var handlerKv in _childHandlers)
-        //            {
-        //                var task = handlerKv.Value(dto, masterId, ct); // existing add handler
-        //                if (task != null) childTasks.Add(task);
-        //            }
-        //        }
-        //        else if (IsUpdated(i))
-        //        {
-        //            var intent = updates[i];
-        //            inputId = intent.ExistingInputId;
-        //            masterId = intent.ResolvedNewMasterId > 0 ? intent.ResolvedNewMasterId : intent.ExistingMasterId;
-        //            // call UpdateAsync on child handlers - you must expose these update delegates (see notes below)
-        //            foreach (var handlerKv in _childUpdateHandlers)
-        //            {
-        //                var updateTask = handlerKv.Value(dto, masterId, ct); // signature: Func<dto, masterId, inputId, ct, Task>
-        //                if (updateTask != null) childTasks.Add(updateTask);
-        //            }
-        //        }
-        //        else
-        //        {
-        //            // neither inserted nor updated - this can happen for pairs that were matched but had no change.
-        //            // Still, if you want to ensure child handlers are in sync, call UpdateAsync with existing ids.
-        //            var groupKey = pairGroupKeys[i];
-        //            var gm = groupMatchMap[groupKey];
-        //            if (gm != null && gm.IsMatched && gm.BagfilterInputId > 0)
-        //            {
-        //                inputId = gm.BagfilterInputId;
-        //                masterId = gm.BagfilterMasterId;
-        //                foreach (var handlerKv in _childUpdateHandlers)
-        //                {
-        //                    var updateTask = handlerKv.Value(dto, masterId, ct);
-        //                    if (updateTask != null) childTasks.Add(updateTask);
-        //                }
-        //            }
-        //        }
-        //    }
-
-        //    // Wait for child handlers
-        //    if (childTasks.Count > 0)
-        //    {
-        //        try
-        //        {
-        //            await Task.WhenAll(childTasks);
-        //        }
-        //        catch (Exception ex)
-        //        {
-        //            _logger.LogError(ex, "Child handler failure during UpdateRangeAsync.");
-        //            throw;
-        //        }
-        //    }
-
-        //    // Step G: SkyCiv analysis
-        //    // Re-run analysis for:
-        //    // - newly inserted inputs
-        //    // - updated inputs where S3D model differs from DB (we need to fetch previous model to determine if changed)
-        //    var skycivCandidates = new List<int>(); // inputIds to run analysis for
-
-        //    // Add all created ones
-        //    skycivCandidates.AddRange(createdIdsAll);
-
-        //    // For updates: detect changed S3D models (we need to fetch original DB inputs for comparison; use 'candidates' list earlier)
-        //    // Build dictionary of candidate input id -> original S3dModel (if we have it from earlier candidate fetch)
-        //    var candidateModelMap = candidates
-        //        .Where(c => c.BagfilterInputId > 0)
-        //        .ToDictionary(c => c.BagfilterInputId, c => c.S3dModel ?? string.Empty);
-
-        //    foreach (var kv in updates)
-        //    {
-        //        var intent = kv.Value;
-        //        var existingId = intent.ExistingInputId;
-        //        // find the input after update to get current S3dModel
-        //        var after = inputsAfterOps.FirstOrDefault(x => x.BagfilterInputId == existingId);
-        //        var afterModel = after?.S3dModel ?? string.Empty;
-        //        candidateModelMap.TryGetValue(existingId, out var beforeModel);
-
-        //        if (!string.Equals(beforeModel ?? string.Empty, afterModel ?? string.Empty, StringComparison.Ordinal))
-        //        {
-        //            skycivCandidates.Add(existingId);
-        //        }
-        //    }
-
-        //    // Run SkyCiv for the skycivCandidates (same ProcessPairAsync helper as AddRange, but we will pass the list)
-        //    if (skycivCandidates.Any())
-        //    {
-        //        const int maxConcurrency = 2;
-        //        using var sem = new SemaphoreSlim(maxConcurrency);
-        //        var tasks = new List<Task>();
-        //        foreach (var inputId in skycivCandidates.Distinct())
-        //        {
-        //            // find pairIndex for this inputId
-        //            var pairIndex = -1;
-        //            // created ones are in createdInputIdsForInserts mapping
-        //            var kvCreated = createdInputIdsForInserts.FirstOrDefault(kv2 => kv2.Value == inputId);
-        //            if (!kvCreated.Equals(default(KeyValuePair<int, int>))) pairIndex = kvCreated.Key;
-        //            else
-        //            {
-        //                // updated ones: find matching updates entry
-        //                var upd = updates.Values.FirstOrDefault(u => u.ExistingInputId == inputId);
-        //                if (upd != null) pairIndex = upd.PairIndex;
-        //            }
-
-        //            if (pairIndex < 0) continue;
-
-        //            tasks.Add(ProcessPairAsync(pairIndex, pairs, pairGroupKeys, allIdsToFetch.ToList(), groupMatchMap, sem, ct));
-        //        }
-
-        //        try
-        //        {
-        //            await Task.WhenAll(tasks).ConfigureAwait(false);
-        //        }
-        //        catch (Exception ex)
-        //        {
-        //            _logger?.LogError(ex, "SkyCiv analysis failed during UpdateRangeAsync.");
-        //            throw;
-        //        }
-        //    }
-
-        //    // Step H: Prepare result DTO
-        //    var result = new UpdateRangeResultDto
-        //    {
-        //        UpdatedBagfilterInputIds = updatedExistingIds,
-        //        CreatedBagfilterInputIds = createdIdsAll,
-        //        Matches = groupMatchMap.Values.ToList()
-        //    };
-
-        //    return result;
-        //}
 
 
         public async Task<UpdateRangeResultDto> UpdateRangeAsync(List<BagfilterInputMainDto> dtos, CancellationToken ct)
@@ -1547,6 +1224,33 @@ namespace IonFiltra.BagFilters.Application.Services.Bagfilters.BagfilterInputs
             }
 
 
+            // ===============================
+            // === Batched BoughtOutItems ===
+            // ===============================
+
+            var boughtOutMasterIds = masterIdByIndex.Where(x => x > 0).Distinct().ToList();
+
+            if (boughtOutMasterIds.Count > 0)
+            {
+                var existingBoughtOut =
+                    await _boughtOutRepo.GetByMasterIdsAsync(boughtOutMasterIds, ct);
+
+                var boughtOutEntities =
+                    await MapBoughtOutItemsBatchAsync(
+                        dtos,
+                        masterIdByIndex,
+                        existingBoughtOut,
+                        ct);
+
+                if (boughtOutEntities.Count > 0)
+                {
+                    await _boughtOutRepo.UpsertRangeAsync(boughtOutEntities);
+                }
+            }
+
+
+
+
             // Step G: SkyCiv analysis
             // Re-run analysis for:
             // - newly inserted inputs
@@ -1771,6 +1475,81 @@ namespace IonFiltra.BagFilters.Application.Services.Bagfilters.BagfilterInputs
             }
         }
 
+        private async Task PersistBoughtOutItemsForDtoAsync(
+            BagfilterInputMainDto dto,
+            int bagfilterMasterId,
+            CancellationToken ct)
+        {
+            if (dto == null) throw new ArgumentNullException(nameof(dto));
+            if (bagfilterMasterId <= 0) return;
+
+            var items = dto.BoughtOutItems;
+            if (items == null || items.Count == 0)
+                return; // nothing to persist for this BF
+
+            // We assume BagfilterInput.EnquiryId is always set for these
+            var enquiryId = dto.BagfilterInput?.EnquiryId;
+            if (enquiryId == null || enquiryId <= 0)
+            {
+                _logger.LogWarning(
+                    "Skipping BoughtOutItems for BagfilterMasterId {Id} because EnquiryId is missing.",
+                    bagfilterMasterId);
+                return;
+            }
+
+            // 1) Load master definitions once (for this call)
+            var masterDefs = await _masterDefinitionsRepository.GetAllActiveAsync();
+            var masterDefByKey = masterDefs
+                .Where(d => !string.IsNullOrWhiteSpace(d.MasterKey))
+                .ToDictionary(d => d.MasterKey!, d => d, StringComparer.OrdinalIgnoreCase);
+
+            // 2) Map DTO -> entities
+            var entities = new List<BoughtOutItemSelection>();
+
+            foreach (var item in items)
+            {
+                if (string.IsNullOrWhiteSpace(item.MasterKey) || item.SelectedRowId == null)
+                    continue;
+
+                if (!masterDefByKey.TryGetValue(item.MasterKey, out var def))
+                {
+                    _logger.LogWarning(
+                        "Unknown MasterKey {MasterKey} in BoughtOutItems for BagfilterMasterId {Id}",
+                        item.MasterKey,
+                        bagfilterMasterId);
+                    continue;
+                }
+
+                var entity = new BoughtOutItemSelection
+                {
+                    EnquiryId = (int)enquiryId,
+                    BagfilterMasterId = bagfilterMasterId,
+                    MasterDefinitionId = def.Id,
+                    MasterKey = item.MasterKey,
+                    SelectedRowId = item.SelectedRowId,
+                    CreatedAt = DateTime.UtcNow
+                };
+
+                entities.Add(entity);
+            }
+
+            if (entities.Count == 0)
+                return;
+
+            // 3) Upsert for this (EnquiryId, BagfilterMasterId) set
+            try
+            {
+                await _boughtOutRepo.UpsertRangeAsync(entities);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(
+                    ex,
+                    "Failed to persist BoughtOutItems for BagfilterMasterId {Id}",
+                    bagfilterMasterId);
+                throw;
+            }
+        }
 
 
         //Helpers
@@ -1959,57 +1738,7 @@ namespace IonFiltra.BagFilters.Application.Services.Bagfilters.BagfilterInputs
             }
         }
 
-        private async Task HandleWeightSummaryUpdateAsync(BagfilterInputMainDto dto, int bagfilterMasterId, CancellationToken ct)
-        {
-            if (dto == null) throw new ArgumentNullException(nameof(dto));
-            if (dto.WeightSummary == null) return;
-
-            // Map DTO -> entity
-            var entity = new WeightSummary
-            {
-                // keep EnquiryId if you want to persist it from incoming DTO
-                EnquiryId = (int)dto.BagfilterInput?.EnquiryId, // int? on entity if applicable
-                BagfilterMasterId = bagfilterMasterId,
-
-                Casing_Weight = dto.WeightSummary.Casing_Weight,
-                Capsule_Weight = dto.WeightSummary.Capsule_Weight,
-                Tot_Weight_Per_Compartment = dto.WeightSummary.Tot_Weight_Per_Compartment,
-                Hopper_Weight = dto.WeightSummary.Hopper_Weight,
-                Weight_Of_Cage_Ladder = dto.WeightSummary.Weight_Of_Cage_Ladder,
-                Railing_Weight = dto.WeightSummary.Railing_Weight,
-                Tubesheet_Weight = dto.WeightSummary.Tubesheet_Weight,
-                Air_Header_Blow_Pipe = dto.WeightSummary.Air_Header_Blow_Pipe,
-                Hopper_Access_Stool_Weight = dto.WeightSummary.Hopper_Access_Stool_Weight,
-                Weight_Of_Mid_Landing_Plt = dto.WeightSummary.Weight_Of_Mid_Landing_Plt,
-                Weight_Of_Maintainence_Pltform = dto.WeightSummary.Weight_Of_Maintainence_Pltform,
-                Cage_Weight = dto.WeightSummary.Cage_Weight,
-                Structure_Weight = dto.WeightSummary.Structure_Weight,
-                Weight_Total = dto.WeightSummary.Weight_Total,
-
-                UpdatedAt = DateTime.UtcNow
-            };
-
-            try
-            {
-                var existingId = await _weightSummaryRepository.GetIdForMasterAsync(bagfilterMasterId);
-                if (existingId.HasValue)
-                {
-                    entity.Id = existingId.Value;
-                    await _weightSummaryRepository.UpdateAsync(entity);
-                }
-                else
-                {
-                    entity.CreatedAt = DateTime.UtcNow;
-                    await _weightSummaryRepository.AddAsync(entity);
-                }
-            }
-            catch (Exception ex)
-            {
-                _logger.LogError(ex, "Failed to upsert WeightSummary for MasterId {MasterId}", bagfilterMasterId);
-                throw;
-            }
-        }
-
+     
 
         private async Task HandleProcessInfoAsync(BagfilterInputMainDto dto, int bagfilterMasterId, CancellationToken ct)
         {
@@ -2060,65 +1789,6 @@ namespace IonFiltra.BagFilters.Application.Services.Bagfilters.BagfilterInputs
             }
         }
 
-        private async Task HandleProcessInfoUpdateAsync(BagfilterInputMainDto dto, int bagfilterMasterId, CancellationToken ct)
-        {
-            if (dto == null) throw new ArgumentNullException(nameof(dto));
-            if (dto.ProcessInfo == null)
-                return;
-
-            var input = dto.ProcessInfo;
-
-            // Map DTO -> Entity (same mapping as your Add handler)
-            var entity = new ProcessInfo
-            {
-                EnquiryId = (int)dto.BagfilterInput?.EnquiryId,
-                BagfilterMasterId = bagfilterMasterId,
-                Process_Volume_M3h = input.Process_Volume_M3h,
-                Location = input.Location,
-                ProcessVolumeMin = input.Process_Vol_M3_Min,
-                Process_Acrmax = input.Process_Acrmax,
-                ClothArea = input.ClothArea,
-                Process_Dust = input.Process_Dust,
-                Process_Dustload_gmspm3 = input.Process_Dustload_gmspm3,
-                Process_Temp_C = input.Process_Temp_C,
-                Dew_Point_C = input.Dew_Point_C,
-                Outlet_Emission_mgpm3 = input.Outlet_Emission_mgpm3,
-                Process_Cloth_Ratio = input.Process_Cloth_Ratio,
-                Can_Correction = input.Can_Correction,
-                Customer_Equipment_Tag_No = input.Customer_Equipment_Tag_No,
-                Bagfilter_Cleaning_Type = input.Bagfilter_Cleaning_Type,
-                Offline_Maintainence = input.Offline_Maintainence,
-                Bag_Filter_Capacity_V = input.Bag_Filter_Capacity_V,
-                Process_Vol_M3_Sec = input.Process_Vol_M3_Sec,
-                Process_Vol_M3_Min = input.Process_Vol_M3_Min,
-                Bag_Area = input.Bag_Area,
-                Bag_Bottom_Area = input.Bag_Bottom_Area,
-                Min_Cloth_Area_Req = input.Min_Cloth_Area_Req,
-                Min_Bag_Req = input.Min_Bag_Req,
-                UpdatedAt = DateTime.UtcNow
-            };
-
-            try
-            {
-                var existingId = await _processInfoRepository.GetIdForMasterAsync(bagfilterMasterId, ct);
-                if (existingId.HasValue)
-                {
-                    entity.Id = existingId.Value;
-                    await _processInfoRepository.UpdateAsync(entity);
-                }
-                else
-                {
-                    entity.CreatedAt = DateTime.UtcNow;
-                    await _processInfoRepository.AddAsync(entity);
-                }
-            }
-            catch (Exception ex)
-            {
-                _logger.LogError(ex, "Failed to upsert ProcessInfo for MasterId {MasterId}", bagfilterMasterId);
-                throw;
-            }
-        }
-
 
         private async Task HandleCageInputsAsync(BagfilterInputMainDto dto, int bagfilterMasterId, CancellationToken ct)
         {
@@ -2155,49 +1825,7 @@ namespace IonFiltra.BagFilters.Application.Services.Bagfilters.BagfilterInputs
             }
         }
 
-        private async Task HandleCageInputsUpdateAsync(BagfilterInputMainDto dto, int bagfilterMasterId, CancellationToken ct)
-        {
-            if (dto == null) throw new ArgumentNullException(nameof(dto));
-            if (dto.CageInputs == null) return;
-
-            var src = dto.CageInputs;
-
-            var entity = new CageInputs
-            {
-                EnquiryId = (int)dto.BagfilterInput.EnquiryId,
-                BagfilterMasterId = bagfilterMasterId,
-                Cage_Type = src.Cage_Type,
-                Cage_Sub_Type = src.Cage_Sub_Type,
-                Cage_Wire_Dia = src.Cage_Wire_Dia,
-                No_Of_Cage_Wires = src.No_Of_Cage_Wires,
-                Ring_Spacing = src.Ring_Spacing,
-                Cage_Diameter = src.Cage_Diameter,
-                Cage_Length = src.Cage_Length,
-                Cage_Configuration = src.Cage_Configuration,
-                UpdatedAt = DateTime.UtcNow
-            };
-
-            try
-            {
-                var existingId = await _cageInputsRepository.GetIdForMasterAsync(bagfilterMasterId, ct);
-                if (existingId.HasValue)
-                {
-                    entity.Id = existingId.Value;
-                    await _cageInputsRepository.UpdateAsync(entity);
-                }
-                else
-                {
-                    entity.CreatedAt = DateTime.UtcNow;
-                    await _cageInputsRepository.AddAsync(entity);
-                }
-            }
-            catch (Exception ex)
-            {
-                _logger.LogError(ex, "Failed to upsert CageInputs for MasterId {MasterId}", bagfilterMasterId);
-                throw;
-            }
-        }
-
+  
 
         private async Task HandleBagSelectionAsync(BagfilterInputMainDto dto, int bagfilterMasterId, CancellationToken ct)
         {
@@ -2234,52 +1862,6 @@ namespace IonFiltra.BagFilters.Application.Services.Bagfilters.BagfilterInputs
             catch (Exception ex)
             {
                 _logger.LogError(ex, "Failed to persist BagSelection for BagfilterMasterId {Id}", bagfilterMasterId);
-                throw;
-            }
-        }
-
-        private async Task HandleBagSelectionUpdateAsync(BagfilterInputMainDto dto, int bagfilterMasterId, CancellationToken ct)
-        {
-            if (dto == null) throw new ArgumentNullException(nameof(dto));
-            if (dto.BagSelection == null) return;
-
-            var src = dto.BagSelection;
-            var entity = new BagSelection
-            {
-                EnquiryId = (int)dto.BagfilterInput.EnquiryId,
-                BagfilterMasterId = bagfilterMasterId,
-                Filter_Bag_Dia = src.Filter_Bag_Dia,
-                Fil_Bag_Length = src.Fil_Bag_Length,
-                ClothAreaPerBag = src.ClothAreaPerBag,
-                noOfBags = src.noOfBags,
-                Fil_Bag_Recommendation = src.Fil_Bag_Recommendation,
-                Bag_Per_Row = src.Bag_Per_Row,
-                Number_Of_Rows = src.Number_Of_Rows,
-                Actual_Bag_Req = src.Actual_Bag_Req,
-                Wire_Cross_Sec_Area = src.Wire_Cross_Sec_Area,
-                No_Of_Rings = src.No_Of_Rings,
-                Tot_Wire_Length = src.Tot_Wire_Length,
-                Cage_Weight = src.Cage_Weight,
-                UpdatedAt = DateTime.UtcNow
-            };
-
-            try
-            {
-                var existingId = await _bagSelectionRepository.GetIdForMasterAsync(bagfilterMasterId, ct);
-                if (existingId.HasValue)
-                {
-                    entity.Id = existingId.Value;
-                    await _bagSelectionRepository.UpdateAsync(entity);
-                }
-                else
-                {
-                    entity.CreatedAt = DateTime.UtcNow;
-                    await _bagSelectionRepository.AddAsync(entity);
-                }
-            }
-            catch (Exception ex)
-            {
-                _logger.LogError(ex, "Failed to upsert BagSelection for MasterId {MasterId}", bagfilterMasterId);
                 throw;
             }
         }
@@ -2330,58 +1912,7 @@ namespace IonFiltra.BagFilters.Application.Services.Bagfilters.BagfilterInputs
             }
         }
 
-        private async Task HandleStructureInputsUpdateAsync(BagfilterInputMainDto dto, int bagfilterMasterId, CancellationToken ct)
-        {
-            if (dto == null) throw new ArgumentNullException(nameof(dto));
-            if (dto.StructureInputs == null) return;
-
-            var src = dto.StructureInputs;
-            var entity = new StructureInputs
-            {
-                EnquiryId = (int)dto.BagfilterInput.EnquiryId,
-                BagfilterMasterId = bagfilterMasterId,
-                Gas_Entry = src.Gas_Entry,
-                Support_Structure_Type = src.Support_Structure_Type,
-
-                Nominal_Width = src.Nominal_Width,
-                Max_Bags_And_Pitch = src.Max_Bags_And_Pitch,
-                Nominal_Width_Meters = src.Nominal_Width_Meters,
-                Nominal_Length = src.Nominal_Length,
-                Nominal_Length_Meters = src.Nominal_Length_Meters,
-                Area_Adjust_Can_Vel = src.Area_Adjust_Can_Vel,
-                Can_Area_Req = src.Can_Area_Req,
-                Total_Avl_Area = src.Total_Avl_Area,
-                Length_Correction = src.Length_Correction,
-                Length_Correction_Derived = src.Length_Correction_Derived,
-                Actual_Length = src.Actual_Length,
-                Actual_Length_Meters = src.Actual_Length_Meters,
-                Ol_Flange_Length = src.Ol_Flange_Length,
-                Ol_Flange_Length_Mm = src.Ol_Flange_Length_Mm,
-                UpdatedAt = DateTime.UtcNow
-            };
-
-            try
-            {
-                var existingId = await _structureInputsRepository.GetIdForMasterAsync(bagfilterMasterId, ct);
-                if (existingId.HasValue)
-                {
-                    entity.Id = existingId.Value;
-                    await _structureInputsRepository.UpdateAsync(entity);
-                }
-                else
-                {
-                    entity.CreatedAt = DateTime.UtcNow;
-                    await _structureInputsRepository.AddAsync(entity);
-                }
-            }
-            catch (Exception ex)
-            {
-                _logger.LogError(ex, "Failed to upsert StructureInputs for MasterId {MasterId}", bagfilterMasterId);
-                throw;
-            }
-        }
-
-
+ 
         private async Task HandleCapsuleInputsAsync(BagfilterInputMainDto dto, int bagfilterMasterId, CancellationToken ct)
         {
             if (dto == null) throw new ArgumentNullException(nameof(dto));
@@ -2421,52 +1952,6 @@ namespace IonFiltra.BagFilters.Application.Services.Bagfilters.BagfilterInputs
             }
         }
 
-        private async Task HandleCapsuleInputsUpdateAsync(BagfilterInputMainDto dto, int bagfilterMasterId, CancellationToken ct)
-        {
-            if (dto == null) throw new ArgumentNullException(nameof(dto));
-            if (dto.CapsuleInputs == null) return;
-
-            var src = dto.CapsuleInputs;
-            var entity = new CapsuleInputs
-            {
-                EnquiryId = (int)dto.BagfilterInput.EnquiryId,
-                BagfilterMasterId = bagfilterMasterId,
-                Valve_Size = src.Valve_Size,
-                Voltage_Rating = src.Voltage_Rating,
-                Capsule_Height = src.Capsule_Height,
-                Tube_Sheet_Thickness = src.Tube_Sheet_Thickness,
-                Capsule_Wall_Thickness = src.Capsule_Wall_Thickness,
-                Canopy = src.Canopy,
-                Solenoid_Valve_Maintainence = src.Solenoid_Valve_Maintainence,
-                Capsule_Area = src.Capsule_Area,
-                Capsule_Weight = src.Capsule_Weight,
-                Tubesheet_Area = src.Tubesheet_Area,
-                Tubesheet_Weight = src.Tubesheet_Weight,
-                UpdatedAt = DateTime.UtcNow
-            };
-
-            try
-            {
-                var existingId = await _capsuleInputsRepository.GetIdForMasterAsync(bagfilterMasterId, ct);
-                if (existingId.HasValue)
-                {
-                    entity.Id = existingId.Value;
-                    await _capsuleInputsRepository.UpdateAsync(entity);
-                }
-                else
-                {
-                    entity.CreatedAt = DateTime.UtcNow;
-                    await _capsuleInputsRepository.AddAsync(entity);
-                }
-            }
-            catch (Exception ex)
-            {
-                _logger.LogError(ex, "Failed to upsert CapsuleInputs for MasterId {MasterId}", bagfilterMasterId);
-                throw;
-            }
-        }
-
-
         private async Task HandleCasingInputsAsync(BagfilterInputMainDto dto, int bagfilterMasterId, CancellationToken ct)
         {
             if (dto == null) throw new ArgumentNullException(nameof(dto));
@@ -2495,44 +1980,6 @@ namespace IonFiltra.BagFilters.Application.Services.Bagfilters.BagfilterInputs
             catch (Exception ex)
             {
                 _logger.LogError(ex, "Failed to persist CasingInputs for bagfilterMasterId {Id}", bagfilterMasterId);
-                throw;
-            }
-        }
-
-        private async Task HandleCasingInputsUpdateAsync(BagfilterInputMainDto dto, int bagfilterMasterId, CancellationToken ct)
-        {
-            if (dto == null) throw new ArgumentNullException(nameof(dto));
-            if (dto.CasingInputs == null) return;
-
-            var src = dto.CasingInputs;
-            var entity = new CasingInputs
-            {
-                EnquiryId = (int)dto.BagfilterInput.EnquiryId,
-                BagfilterMasterId = bagfilterMasterId,
-                Casing_Wall_Thickness = src.Casing_Wall_Thickness,
-                Casing_Height = src.Casing_Height,
-                Casing_Area = src.Casing_Area,
-                Casing_Weight = src.Casing_Weight,
-                UpdatedAt = DateTime.UtcNow
-            };
-
-            try
-            {
-                var existingId = await _casingInputsRepository.GetIdForMasterAsync(bagfilterMasterId, ct);
-                if (existingId.HasValue)
-                {
-                    entity.Id = existingId.Value;
-                    await _casingInputsRepository.UpdateAsync(entity);
-                }
-                else
-                {
-                    entity.CreatedAt = DateTime.UtcNow;
-                    await _casingInputsRepository.AddAsync(entity);
-                }
-            }
-            catch (Exception ex)
-            {
-                _logger.LogError(ex, "Failed to upsert CasingInputs for MasterId {MasterId}", bagfilterMasterId);
                 throw;
             }
         }
@@ -2600,74 +2047,6 @@ namespace IonFiltra.BagFilters.Application.Services.Bagfilters.BagfilterInputs
             }
         }
 
-        private async Task HandleHopperInputsUpdateAsync(BagfilterInputMainDto dto, int bagfilterMasterId, CancellationToken ct)
-        {
-            if (dto == null) throw new ArgumentNullException(nameof(dto));
-            if (dto.HopperInputs == null) return;
-
-            var src = dto.HopperInputs;
-            var entity = new HopperInputs
-            {
-                EnquiryId = (int)dto.BagfilterInput.EnquiryId,
-                BagfilterMasterId = bagfilterMasterId,
-
-                Hopper_Type = src.Hopper_Type,
-                Process_Compartments = src.Process_Compartments,
-                Tot_No_Of_Hoppers = src.Tot_No_Of_Hoppers,
-                Tot_No_Of_Trough = src.Tot_No_Of_Trough,
-                Plenum_Width = src.Plenum_Width,
-                Inlet_Height = src.Inlet_Height,
-                Hopper_Thickness = src.Hopper_Thickness,
-                Hopper_Valley_Angle = src.Hopper_Valley_Angle,
-                Access_Door_Type = src.Access_Door_Type,
-                Access_Door_Qty = src.Access_Door_Qty,
-                Rav_Maintainence_Pltform = src.Rav_Maintainence_Pltform,
-                Hopper_Access_Stool = src.Hopper_Access_Stool,
-                Is_Distance_Piece = src.Is_Distance_Piece,
-                Distance_Piece_Height = src.Distance_Piece_Height,
-                Stiffening_Factor = src.Stiffening_Factor,
-                Hopper = src.Hopper,
-                Discharge_Opening_Sqr = src.Discharge_Opening_Sqr,
-                Rav_Height = src.Rav_Height,
-                Material_Handling = src.Material_Handling,
-                Material_Handling_Qty = src.Material_Handling_Qty,
-                Trough_Outlet_Length = src.Trough_Outlet_Length,
-                Trough_Outlet_Width = src.Trough_Outlet_Width,
-                Material_Handling_Xxx = src.Material_Handling_Xxx,
-                Hor_Diff_Length = src.Hor_Diff_Length,
-                Hor_Diff_Width = src.Hor_Diff_Width,
-                Slant_Offset_Dist = src.Slant_Offset_Dist,
-                Hopper_Height = src.Hopper_Height,
-                Hopper_Height_Mm = src.Hopper_Height_Mm,
-                Slanting_Hopper_Height = src.Slanting_Hopper_Height,
-                Hopper_Area_Length = src.Hopper_Area_Length,
-                Hopper_Area_Width = src.Hopper_Area_Width,
-                Hopper_Tot_Area = src.Hopper_Tot_Area,
-                Hopper_Weight = src.Hopper_Weight,
-                UpdatedAt = DateTime.UtcNow
-            };
-
-            try
-            {
-                var existingId = await _hopperInputsRepository.GetIdForMasterAsync(bagfilterMasterId, ct);
-                if (existingId.HasValue)
-                {
-                    entity.Id = existingId.Value;
-                    await _hopperInputsRepository.UpdateAsync(entity);
-                }
-                else
-                {
-                    entity.CreatedAt = DateTime.UtcNow;
-                    await _hopperInputsRepository.AddAsync(entity);
-                }
-            }
-            catch (Exception ex)
-            {
-                _logger.LogError(ex, "Failed to upsert HopperInputs for MasterId {MasterId}", bagfilterMasterId);
-                throw;
-            }
-        }
-
 
         private async Task HandleSupportStructureAsync(BagfilterInputMainDto dto, int bagfilterMasterId, CancellationToken ct)
         {
@@ -2702,49 +2081,6 @@ namespace IonFiltra.BagFilters.Application.Services.Bagfilters.BagfilterInputs
             catch (Exception ex)
             {
                 _logger.LogError(ex, "Failed to persist SupportStructure for BagfilterMasterId {Id}", bagfilterMasterId);
-                throw;
-            }
-        }
-
-        private async Task HandleSupportStructureUpdateAsync(BagfilterInputMainDto dto, int bagfilterMasterId, CancellationToken ct)
-        {
-            if (dto == null) throw new ArgumentNullException(nameof(dto));
-            if (dto.SupportStructure == null) return;
-
-            var src = dto.SupportStructure;
-            var entity = new SupportStructure
-            {
-                EnquiryId = (int)dto.BagfilterInput.EnquiryId,
-                BagfilterMasterId = bagfilterMasterId,
-                Support_Struct_Type = src.Support_Struct_Type,
-                NoOfColumn = src.NoOfColumn,
-                Column_Height = src.Column_Height,
-                Ground_Clearance = src.Ground_Clearance,
-                Slide_Gate_Height = src.Slide_Gate_Height,
-                Dist_Btw_Column_In_X = src.Dist_Btw_Column_In_X,
-                Dist_Btw_Column_In_Z = src.Dist_Btw_Column_In_Z,
-                No_Of_Bays_In_X = src.No_Of_Bays_In_X,
-                No_Of_Bays_In_Z = src.No_Of_Bays_In_Z,
-                UpdatedAt = DateTime.UtcNow
-            };
-
-            try
-            {
-                var existingId = await _supportStructureRepository.GetIdForMasterAsync(bagfilterMasterId, ct);
-                if (existingId.HasValue)
-                {
-                    entity.Id = existingId.Value;
-                    await _supportStructureRepository.UpdateAsync(entity);
-                }
-                else
-                {
-                    entity.CreatedAt = DateTime.UtcNow;
-                    await _supportStructureRepository.AddAsync(entity);
-                }
-            }
-            catch (Exception ex)
-            {
-                _logger.LogError(ex, "Failed to upsert SupportStructure for MasterId {MasterId}", bagfilterMasterId);
                 throw;
             }
         }
@@ -2792,56 +2128,6 @@ namespace IonFiltra.BagFilters.Application.Services.Bagfilters.BagfilterInputs
             }
         }
 
-        private async Task HandleAccessGroupUpdateAsync(BagfilterInputMainDto dto, int bagfilterMasterId, CancellationToken ct)
-        {
-            if (dto == null) throw new ArgumentNullException(nameof(dto));
-            if (dto.AccessGroup == null) return;
-
-            var src = dto.AccessGroup;
-            var entity = new AccessGroup
-            {
-                EnquiryId = (int)dto.BagfilterInput.EnquiryId,
-                BagfilterMasterId = bagfilterMasterId,
-
-                Access_Type = src.Access_Type,
-                Cage_Weight_Ladder = src.Cage_Weight_Ladder,
-                Mid_Landing_Pltform = src.Mid_Landing_Pltform,
-                Platform_Weight = src.Platform_Weight,
-                Staircase_Height = src.Staircase_Height,
-                Staircase_Weight = src.Staircase_Weight,
-                Railing_Weight = src.Railing_Weight,
-                Maintainence_Pltform = src.Maintainence_Pltform,
-                Maintainence_Pltform_Weight = src.Maintainence_Pltform_Weight,
-                BlowPipe = src.BlowPipe,
-                PressureHeader = src.PressureHeader,
-                DistancePiece = src.DistancePiece,
-                Access_Stool_Size_Mm = src.Access_Stool_Size_Mm,
-                Access_Stool_Size_Kg = src.Access_Stool_Size_Kg,
-
-                UpdatedAt = DateTime.UtcNow
-            };
-
-            try
-            {
-                var existingId = await _accessGroupRepository.GetIdForMasterAsync(bagfilterMasterId, ct);
-                if (existingId.HasValue)
-                {
-                    entity.Id = existingId.Value;
-                    await _accessGroupRepository.UpdateAsync(entity);
-                }
-                else
-                {
-                    entity.CreatedAt = DateTime.UtcNow;
-                    await _accessGroupRepository.AddAsync(entity);
-                }
-            }
-            catch (Exception ex)
-            {
-                _logger.LogError(ex, "Failed to upsert AccessGroup for MasterId {MasterId}", bagfilterMasterId);
-                throw;
-            }
-        }
-
 
         private async Task HandleRoofDoorAsync(BagfilterInputMainDto dto, int bagfilterMasterId, CancellationToken ct)
         {
@@ -2879,50 +2165,6 @@ namespace IonFiltra.BagFilters.Application.Services.Bagfilters.BagfilterInputs
                 throw;
             }
         }
-
-        private async Task HandleRoofDoorUpdateAsync(BagfilterInputMainDto dto, int bagfilterMasterId, CancellationToken ct)
-        {
-            if (dto == null) throw new ArgumentNullException(nameof(dto));
-            if (dto.RoofDoor == null) return;
-
-            var src = dto.RoofDoor;
-            var entity = new RoofDoor
-            {
-                EnquiryId = (int)dto.BagfilterInput.EnquiryId,
-                BagfilterMasterId = bagfilterMasterId,
-
-                Roof_Door_Thickness = src.Roof_Door_Thickness,
-                T2d = src.T2d,
-                T3d = src.T3d,
-                N_Doors = src.N_Doors,
-                Compartment_No = src.Compartment_No,
-                Stiffness_Factor_For_Roof_Door = src.Stiffness_Factor_For_Roof_Door,
-                Weight_Per_Door = src.Weight_Per_Door,
-                Tot_Weight_Per_Compartment = src.Tot_Weight_Per_Compartment,
-                UpdatedAt = DateTime.UtcNow
-            };
-
-            try
-            {
-                var existingId = await _roofDoorRepository.GetIdForMasterAsync(bagfilterMasterId, ct);
-                if (existingId.HasValue)
-                {
-                    entity.Id = existingId.Value;
-                    await _roofDoorRepository.UpdateAsync(entity);
-                }
-                else
-                {
-                    entity.CreatedAt = DateTime.UtcNow;
-                    await _roofDoorRepository.AddAsync(entity);
-                }
-            }
-            catch (Exception ex)
-            {
-                _logger.LogError(ex, "Failed to upsert RoofDoor for MasterId {MasterId}", bagfilterMasterId);
-                throw;
-            }
-        }
-
 
         private async Task HandlePaintingAreaAsync(BagfilterInputMainDto dto, int bagfilterMasterId, CancellationToken ct)
         {
@@ -2979,68 +2221,6 @@ namespace IonFiltra.BagFilters.Application.Services.Bagfilters.BagfilterInputs
             }
         }
 
-        private async Task HandlePaintingAreaUpdateAsync(BagfilterInputMainDto dto, int bagfilterMasterId, CancellationToken ct)
-        {
-            if (dto == null) throw new ArgumentNullException(nameof(dto));
-            if (dto.PaintingArea == null) return;
-
-            var src = dto.PaintingArea;
-            var entity = new PaintingArea
-            {
-                EnquiryId = (int)dto.BagfilterInput.EnquiryId,
-                BagfilterMasterId = bagfilterMasterId,
-
-                Inside_Area_Casing_Area_Mm2 = src.Inside_Area_Casing_Area_Mm2,
-                Inside_Area_Casing_Area_M2 = src.Inside_Area_Casing_Area_M2,
-                Inside_Area_Hopper_Area_Mm2 = src.Inside_Area_Hopper_Area_Mm2,
-                Inside_Area_Hopper_Area_M2 = src.Inside_Area_Hopper_Area_M2,
-                Inside_Area_Air_Header_Mm2 = src.Inside_Area_Air_Header_Mm2,
-                Inside_Area_Air_Header_M2 = src.Inside_Area_Air_Header_M2,
-                Inside_Area_Purge_Pipe_Mm2 = src.Inside_Area_Purge_Pipe_Mm2,
-                Inside_Area_Purge_Pipe_M2 = src.Inside_Area_Purge_Pipe_M2,
-                Inside_Area_Roof_Door_Mm2 = src.Inside_Area_Roof_Door_Mm2,
-                Inside_Area_Roof_Door_M2 = src.Inside_Area_Roof_Door_M2,
-                Inside_Area_Tube_Sheet_Mm2 = src.Inside_Area_Tube_Sheet_Mm2,
-                Inside_Area_Tube_Sheet_M2 = src.Inside_Area_Tube_Sheet_M2,
-                Inside_Area_Total_M2 = src.Inside_Area_Total_M2,
-                Outside_Area_Casing_Area_Mm2 = src.Outside_Area_Casing_Area_Mm2,
-                Outside_Area_Casing_Area_M2 = src.Outside_Area_Casing_Area_M2,
-                Outside_Area_Hopper_Area_Mm2 = src.Outside_Area_Hopper_Area_Mm2,
-                Outside_Area_Hopper_Area_M2 = src.Outside_Area_Hopper_Area_M2,
-                Outside_Area_Air_Header_Mm2 = src.Outside_Area_Air_Header_Mm2,
-                Outside_Area_Air_Header_M2 = src.Outside_Area_Air_Header_M2,
-                Outside_Area_Purge_Pipe_Mm2 = src.Outside_Area_Purge_Pipe_Mm2,
-                Outside_Area_Purge_Pipe_M2 = src.Outside_Area_Purge_Pipe_M2,
-                Outside_Area_Roof_Door_Mm2 = src.Outside_Area_Roof_Door_Mm2,
-                Outside_Area_Roof_Door_M2 = src.Outside_Area_Roof_Door_M2,
-                Outside_Area_Tube_Sheet_Mm2 = src.Outside_Area_Tube_Sheet_Mm2,
-                Outside_Area_Tube_Sheet_M2 = src.Outside_Area_Tube_Sheet_M2,
-                Outside_Area_Total_M2 = src.Outside_Area_Total_M2,
-                // TODO: map painting area fields
-                UpdatedAt = DateTime.UtcNow
-            };
-
-            try
-            {
-                var existingId = await _paintingAreaRepository.GetIdForMasterAsync(bagfilterMasterId, ct);
-                if (existingId.HasValue)
-                {
-                    entity.Id = existingId.Value;
-                    await _paintingAreaRepository.UpdateAsync(entity);
-                }
-                else
-                {
-                    entity.CreatedAt = DateTime.UtcNow;
-                    await _paintingAreaRepository.AddAsync(entity);
-                }
-            }
-            catch (Exception ex)
-            {
-                _logger.LogError(ex, "Failed to upsert PaintingArea for MasterId {MasterId}", bagfilterMasterId);
-                throw;
-            }
-        }
-
         private async Task HandleBillOfMaterialAsync(BagfilterInputMainDto dto, int bagfilterMasterId, CancellationToken ct)
         {
             if (dto == null) throw new ArgumentNullException(nameof(dto));
@@ -3078,45 +2258,6 @@ namespace IonFiltra.BagFilters.Application.Services.Bagfilters.BagfilterInputs
             }
         }
 
-        private async Task HandleBillOfMaterialUpdateAsync(BagfilterInputMainDto dto, int bagfilterMasterId, CancellationToken ct)
-        {
-            if (dto == null) throw new ArgumentNullException(nameof(dto));
-            if (dto.BillOfMaterial == null || !dto.BillOfMaterial.Any())
-            {
-               
-                return;
-            }
-
-            var enquiryId = dto.BagfilterInput?.EnquiryId ?? 0;
-
-            var entities = dto.BillOfMaterial.Select((line, idx) => new BillOfMaterial
-            {
-                EnquiryId = enquiryId,
-                BagfilterMasterId = bagfilterMasterId,
-                Item = line.Item,
-                Material = line.Material,
-                Weight = line.Weight,
-                Units = line.Units,
-                Rate = line.Rate,
-                Cost = line.Cost,
-                SortOrder = line.SortOrder ?? (idx + 1),
-                CreatedAt = DateTime.UtcNow
-            }).ToList();
-
-            try
-            {
-                // Do delete + insert in repository to keep a single transaction if you prefer:
-                await _billOfMaterialRepository.ReplaceForMasterAsync(bagfilterMasterId, entities, ct);
-            }
-            catch (Exception ex)
-            {
-                _logger.LogError(ex, "Failed to persist BillOfMaterial (Batch) for BagfilterMasterId {BfMasterId}", bagfilterMasterId);
-                throw;
-            }
-        }
-
-
-
         private async Task HandlePaintingCostAsync(BagfilterInputMainDto dto, int bagfilterMasterId, CancellationToken ct)
         {
             if (dto == null) throw new ArgumentNullException(nameof(dto));
@@ -3146,44 +2287,17 @@ namespace IonFiltra.BagFilters.Application.Services.Bagfilters.BagfilterInputs
                 throw;
             }
         }
-        private async Task HandlePaintingCostUpdateAsync(BagfilterInputMainDto dto, int bagfilterMasterId, CancellationToken ct)
+
+
+        private Task HandleBoughtOutItemsAsync(
+        BagfilterInputMainDto dto,
+        int bagfilterMasterId,
+        CancellationToken ct)
         {
-            if (dto == null) throw new ArgumentNullException(nameof(dto));
-            if (dto.PaintingCost == null) return;
-
-            var src = dto.PaintingCost;
-            var entity = new PaintingCost
-            {
-                EnquiryId = (int)dto.BagfilterInput.EnquiryId,
-                BagfilterMasterId = bagfilterMasterId,
-
-                PaintingTableJson = src.PaintingTableJson,
-
-                UpdatedAt = DateTime.UtcNow
-            };
-
-            try
-            {
-                var existingId = await _paintingCostRepository.GetIdForMasterAsync(bagfilterMasterId, ct);
-                if (existingId.HasValue)
-                {
-                    entity.Id = existingId.Value;
-                    await _paintingCostRepository.UpdateAsync(entity);
-                }
-                else
-                {
-                    entity.CreatedAt = DateTime.UtcNow;
-                    await _paintingCostRepository.AddAsync(entity);
-                }
-            }
-            catch (Exception ex)
-            {
-                _logger.LogError(ex, "Failed to upsert PaintingCost for MasterId {MasterId}", bagfilterMasterId);
-                throw;
-            }
+            // For now Add and Update use the same logic because UpsertRange
+            // handles both inserting and updating rows.
+            return PersistBoughtOutItemsForDtoAsync(dto, bagfilterMasterId, ct);
         }
-
-
 
 
 
@@ -3883,6 +2997,118 @@ namespace IonFiltra.BagFilters.Application.Services.Bagfilters.BagfilterInputs
         }
 
 
+
+        private async Task<List<BoughtOutItemSelection>>
+    MapBoughtOutItemsBatchAsync(
+    List<BagfilterInputMainDto> dtos,
+    int[] masterIdByIndex,
+    Dictionary<(int, int), BoughtOutItemSelection> existingMap,
+    CancellationToken ct)
+        {
+            var masterDefs = await _masterDefinitionsRepository.GetAllActiveAsync();
+            var masterDefByKey = masterDefs
+                .Where(x => !string.IsNullOrWhiteSpace(x.MasterKey))
+                .ToDictionary(x => x.MasterKey, x => x, StringComparer.OrdinalIgnoreCase);
+
+            var result = new List<BoughtOutItemSelection>();
+
+
+            // We’ll precompute default SelectedRowId per masterDef (once)
+            var defaultRowIdByMasterDefId = new Dictionary<int, int?>();
+
+            // Only bother if there exists at least one dto with empty BoughtOutItems
+            var anyNeedsDefaults = dtos.Any(d =>
+                d.BoughtOutItems == null || d.BoughtOutItems.Count == 0);
+
+            if (anyNeedsDefaults)
+            {
+                foreach (var def in masterDefs)
+                {
+                    var defaultId = await GetDefaultRowIdForMasterAsync(def.ApiRoute, ct);
+                    defaultRowIdByMasterDefId[def.Id] = defaultId;
+                }
+            }
+
+            for (int i = 0; i < dtos.Count; i++)
+            {
+                var dto = dtos[i];
+                var masterId = masterIdByIndex[i];
+                if (masterId <= 0) continue;
+
+                var enquiryId = dto.BagfilterInput?.EnquiryId;
+                if (enquiryId == null || enquiryId <= 0) continue;
+
+                var explicitItems = dto.BoughtOutItems;
+
+                // Build effective list: explicit selections if any, otherwise defaults
+                List<BoughtOutItemSelectionDto> effectiveItems;
+
+                if (explicitItems != null && explicitItems.Count > 0)
+                {
+                    effectiveItems = explicitItems;
+                }
+                else
+                {
+                    // No explicit selections -> build defaults for this BF
+                    effectiveItems = new List<BoughtOutItemSelectionDto>();
+
+                    foreach (var def in masterDefs)
+                    {
+                        if (!defaultRowIdByMasterDefId.TryGetValue(def.Id, out var defaultId) ||
+                            defaultId == null)
+                            continue; // no default row for this master
+
+                        if (string.IsNullOrWhiteSpace(def.MasterKey))
+                            continue;
+
+                        effectiveItems.Add(new BoughtOutItemSelectionDto
+                        {
+                            MasterKey = def.MasterKey,
+                            SelectedRowId = defaultId
+                        });
+                    }
+
+                    // still nothing? then skip this BF
+                    if (effectiveItems.Count == 0)
+                        continue;
+                }
+
+                foreach (var item in effectiveItems)
+                {
+                    if (string.IsNullOrWhiteSpace(item.MasterKey) || item.SelectedRowId == null)
+                        continue;
+
+                    if (!masterDefByKey.TryGetValue(item.MasterKey, out var def))
+                    {
+                        _logger.LogWarning("Invalid masterKey {Key}", item.MasterKey);
+                        continue;
+                    }
+
+                    var key = (masterId, def.Id);
+                    existingMap.TryGetValue(key, out var existing);
+
+                    var entity = new BoughtOutItemSelection
+                    {
+                        Id = existing?.Id ?? 0,
+                        EnquiryId = enquiryId.Value,
+                        BagfilterMasterId = masterId,
+                        MasterDefinitionId = def.Id,
+                        MasterKey = item.MasterKey,
+                        SelectedRowId = item.SelectedRowId,
+                        CreatedAt = existing?.CreatedAt ?? DateTime.UtcNow,
+                        UpdatedAt = existing != null ? DateTime.UtcNow : null
+                    };
+
+                    result.Add(entity);
+                }
+            }
+
+            return result;
+        }
+
+
+
+
         /// <summary>
         /// Generic batched upsert for child entities keyed by BagfilterMasterId.
         /// </summary>
@@ -3940,6 +3166,35 @@ namespace IonFiltra.BagFilters.Application.Services.Bagfilters.BagfilterInputs
             // 4) One batched upsert call for this child type
             await upsertRange(toUpsert, ct);
         }
+
+
+        private async Task<int?> GetDefaultRowIdForMasterAsync(string? apiRoute, CancellationToken ct)
+        {
+            if (string.IsNullOrWhiteSpace(apiRoute))
+                return null;
+
+            // Uses your generic view to read master table rows
+            var rows = await _genericViewRepository.GetViewData(apiRoute);
+
+            if (rows == null || rows.Count == 0)
+                return null;
+
+            var first = rows[0];
+
+            // your GenericViewRepository lowercases column names: columnName = reader.GetName(i).ToLower()
+            if (!first.TryGetValue("id", out var raw) || raw == null)
+                return null;
+
+            try
+            {
+                return Convert.ToInt32(raw);
+            }
+            catch
+            {
+                return null;
+            }
+        }
+
 
 
 

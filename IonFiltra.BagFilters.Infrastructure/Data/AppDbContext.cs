@@ -21,6 +21,7 @@ using IonFiltra.BagFilters.Core.Entities.BOM.Painting_Cost;
 using IonFiltra.BagFilters.Core.Entities.BOM.PaintingRates;
 using IonFiltra.BagFilters.Core.Entities.BOM.Rates;
 using IonFiltra.BagFilters.Core.Entities.EnquiryEntity;
+using IonFiltra.BagFilters.Core.Entities.MasterData.BoughtOutItems;
 using IonFiltra.BagFilters.Core.Entities.MasterData.DPTData;
 using IonFiltra.BagFilters.Core.Entities.MasterData.FilterBagData;
 using IonFiltra.BagFilters.Core.Entities.MasterData.Master_Definition;
@@ -83,6 +84,9 @@ namespace IonFiltra.BagFilters.Infrastructure.Data
         public DbSet<BillOfMaterialRates> BillOfMaterialRatess { get; set; }
 
         public DbSet<PaintingCostConfig> PaintingCostConfigs { get; set; }
+
+
+        public DbSet<BoughtOutItemSelection> BoughtOutItemSelections { get; set; }
 
         //Master Data tables
         public DbSet<MasterDefinitions> MasterDefinitions { get; set; }
@@ -251,6 +255,15 @@ namespace IonFiltra.BagFilters.Infrastructure.Data
                 entity.ToTable("PaintingCostConfig", GlobalConstants.IONFILTRA_SCHEMA);
                 entity.HasKey(u => u.Id);
             });
+
+
+            modelBuilder.Entity<BoughtOutItemSelection>(entity =>
+            {
+                entity.ToTable("BoughtOutItemSelection", GlobalConstants.IONFILTRA_SCHEMA);
+                entity.HasKey(u => u.Id);
+                entity.Property(u => u.EnquiryId).IsRequired();
+            });
+
             //master data tables
 
             modelBuilder.Entity<MasterDefinitions>(entity =>

@@ -13,6 +13,7 @@ using IonFiltra.BagFilters.Application.DTOs.Bagfilters.Sections.Support_Structur
 using IonFiltra.BagFilters.Application.DTOs.Bagfilters.Sections.Weight_Summary;
 using IonFiltra.BagFilters.Application.DTOs.BOM.Bill_Of_Material;
 using IonFiltra.BagFilters.Application.DTOs.BOM.Painting_Cost;
+using IonFiltra.BagFilters.Application.DTOs.MasterData.BoughtOutItems;
 
 namespace IonFiltra.BagFilters.Application.DTOs.Bagfilters.BagfilterInputs
 {
@@ -41,6 +42,10 @@ namespace IonFiltra.BagFilters.Application.DTOs.Bagfilters.BagfilterInputs
         = new List<BillOfMaterialDto>();
 
         public PaintingCostDto? PaintingCost { get; set; }
+
+        public List<BoughtOutItemSelectionDto>? BoughtOutItems { get; set; }
+         = new List<BoughtOutItemSelectionDto>();
+
 
     }
 }

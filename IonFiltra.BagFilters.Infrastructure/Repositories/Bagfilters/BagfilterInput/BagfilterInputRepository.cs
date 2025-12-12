@@ -365,6 +365,9 @@ namespace IonFiltra.BagFilters.Infrastructure.Repositories.Bagfilters.BagfilterI
                     await dbContext.SaveChangesAsync();
                 }
 
+                if (createdInputIds.Count != pairsList.Count)
+                    throw new InvalidOperationException("Repository must return one input id per pair in the same order.");
+
                 return createdInputIds;
             });
         }

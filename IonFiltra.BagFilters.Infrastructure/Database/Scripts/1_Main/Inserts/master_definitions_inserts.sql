@@ -35,7 +35,7 @@ INSERT INTO ionfiltrabagfilters.MasterDefinitions
 VALUES
 (
     'solenoidValve',
-    'Solenoid Valve',
+    'Solenoid Operated Double Diaphragm Valve',
     'SolenoidValve',       -- DB table name
     2,
     1,
@@ -59,7 +59,7 @@ INSERT INTO ionfiltrabagfilters.MasterDefinitions
 VALUES
 (
     'dpt',
-    'DPT',
+    'Differential Pressure Transmitter',
     'DPTEntity',           -- DB table name
     3,
     1,
@@ -82,7 +82,7 @@ INSERT INTO ionfiltrabagfilters.MasterDefinitions
 VALUES
 (
     'dpg',
-    'DPG',
+    'Differential Pressure Gauge',
     'DPGEntity',
     4,
     1,
@@ -105,7 +105,7 @@ INSERT INTO ionfiltrabagfilters.MasterDefinitions
 VALUES
 (
     'dps',
-    'DPS',
+    'Differential Pressure Switch',
     'DPSEntity',
     5,
     1,
@@ -128,7 +128,7 @@ INSERT INTO ionfiltrabagfilters.MasterDefinitions
 VALUES
 (
     'pg',
-    'PG',
+    'Pressure Gauge',
     'PGEntity',
     6,
     1,
@@ -152,7 +152,7 @@ INSERT INTO ionfiltrabagfilters.MasterDefinitions
 VALUES
 (
     'pt',
-    'PT',
+    'Pressure Transmitter',
     'PTEntity',
     7,
     1,
@@ -175,7 +175,7 @@ INSERT INTO ionfiltrabagfilters.MasterDefinitions
 VALUES
 (
     'ps',
-    'PS',
+    'Pressure Switch',
     'PSEntity',
     8,
     1,
@@ -192,7 +192,7 @@ INSERT INTO ionfiltrabagfilters.MasterDefinitions
 VALUES
 (
   'hld',
-  'HLD',
+  'Hopper Level Detector',
   'HLDEntity',
   9,
   1,
@@ -208,7 +208,7 @@ INSERT INTO ionfiltrabagfilters.MasterDefinitions
 VALUES
 (
   'rtd',
-  'RTD',
+  'Resistance Temperature Detector',
   'RTDEntity',
   10,
   1,
@@ -272,7 +272,7 @@ INSERT INTO ionfiltrabagfilters.MasterDefinitions
 VALUES
 (
   'afr',
-  'AFR',
+  'Air Filter Regulator',
   'AFREntity',
   14,
   1,

@@ -490,6 +490,11 @@ CREATE TABLE
         MasterDefinitionId INT,
         MasterKey VARCHAR(100) NOT NULL,
         SelectedRowId INT,
+        Qty DECIMAL(10,2) NULL,
+        Unit VARCHAR(50) NULL,
+        Weight DECIMAL(10,3) NULL,
+        Rate DECIMAL(10,2) NULL,
+        Cost DECIMAL(18,2) NULL,
         CreatedAt DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
         UpdatedAt DATETIME NULL ON UPDATE CURRENT_TIMESTAMP,
         -- One row per (bagfilter, master) combo
@@ -604,7 +609,7 @@ CREATE TABLE ionfiltrabagfilters.PaintingCostConfig (
     UpdatedAt DATETIME NULL ON UPDATE CURRENT_TIMESTAMP
 );
 
-----master data tables
+----master data tables (Bought-Out Items)
 
 CREATE TABLE ionfiltrabagfilters.FilterBag (
     Id INT AUTO_INCREMENT PRIMARY KEY,
@@ -1022,3 +1027,66 @@ CREATE TABLE ionfiltrabagfilters.MasterDefinitions (
     UpdatedAt DATETIME NULL ON UPDATE CURRENT_TIMESTAMP
     );
 
+
+    ---- master table config
+    CREATE TABLE ionfiltrabagfilters.CageMaterialConfig (
+    Id INT AUTO_INCREMENT PRIMARY KEY,
+    Material VARCHAR(255) NOT NULL,
+    Density DECIMAL(10, 4) NOT NULL,
+    CoilCost DECIMAL(10, 2) NOT NULL,
+    TopBottomCost DECIMAL(10, 2) NOT NULL,
+    VenturiCost DECIMAL(10, 2) NOT NULL,
+    RivetCost DECIMAL(10, 2) NOT NULL,
+    CreatedAt DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    UpdatedAt DATETIME NULL ON UPDATE CURRENT_TIMESTAMP,
+    IsDeleted TINYINT(1) NOT NULL DEFAULT 0
+);
+
+CREATE TABLE ionfiltrabagfilters.CageMiscellaneousConfig (
+    Id INT AUTO_INCREMENT PRIMARY KEY,
+    Item VARCHAR(255) NOT NULL,
+    Value DECIMAL(10, 4) NOT NULL,
+    Unit VARCHAR(50) NOT NULL,
+    CreatedAt DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    UpdatedAt DATETIME NULL ON UPDATE CURRENT_TIMESTAMP,
+    IsDeleted TINYINT(1) NOT NULL DEFAULT 0
+);
+
+CREATE TABLE ionfiltrabagfilters.AdminCostConfig (
+    Id INT AUTO_INCREMENT PRIMARY KEY,
+    Item VARCHAR(255) NOT NULL,
+    Value DECIMAL(10, 4) NOT NULL,
+    Unit VARCHAR(50) NOT NULL,
+    CreatedAt DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    UpdatedAt DATETIME NULL ON UPDATE CURRENT_TIMESTAMP,
+    IsDeleted TINYINT(1) NOT NULL DEFAULT 0
+);
+
+CREATE TABLE ionfiltrabagfilters.StandardCageConfig (
+    Id INT AUTO_INCREMENT PRIMARY KEY,
+    CageSpec VARCHAR(500) NOT NULL,
+    WeightKg DECIMAL(10, 2) NOT NULL,
+    RawMaterialCost DECIMAL(10, 2) NOT NULL,
+    FixedFabricationCost DECIMAL(10, 2) NOT NULL,
+    BoughtOutCost DECIMAL(10, 2) NOT NULL,
+    PackingCost DECIMAL(10, 2) NOT NULL,
+    PaintCost DECIMAL(10, 4) NOT NULL,
+    TarpolineCost DECIMAL(10, 2) NOT NULL,
+    FinalCostINR DECIMAL(10, 2) NOT NULL,
+    CreatedAt DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    UpdatedAt DATETIME NULL ON UPDATE CURRENT_TIMESTAMP,
+    IsDeleted TINYINT(1) NOT NULL DEFAULT 0
+);
+
+--------Transportation rate config-----------
+
+CREATE TABLE ionfiltrabagfilters.TransportationRateConfig (
+    Id INT AUTO_INCREMENT PRIMARY KEY,
+    LoadingFrom VARCHAR(100) NOT NULL,
+    DestinationState VARCHAR(100) NOT NULL,
+    RatePerKm_40x10x8 DECIMAL(10, 2) NOT NULL,
+    DistanceKm DECIMAL(10, 2) NULL,
+    CreatedAt DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    UpdatedAt DATETIME NULL ON UPDATE CURRENT_TIMESTAMP,
+    IsDeleted TINYINT(1) NOT NULL DEFAULT 0
+);

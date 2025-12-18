@@ -2999,11 +2999,11 @@ namespace IonFiltra.BagFilters.Application.Services.Bagfilters.BagfilterInputs
 
 
         private async Task<List<BoughtOutItemSelection>>
-    MapBoughtOutItemsBatchAsync(
-    List<BagfilterInputMainDto> dtos,
-    int[] masterIdByIndex,
-    Dictionary<(int, int), BoughtOutItemSelection> existingMap,
-    CancellationToken ct)
+            MapBoughtOutItemsBatchAsync(
+            List<BagfilterInputMainDto> dtos,
+            int[] masterIdByIndex,
+            Dictionary<(int, int), BoughtOutItemSelection> existingMap,
+            CancellationToken ct)
         {
             var masterDefs = await _masterDefinitionsRepository.GetAllActiveAsync();
             var masterDefByKey = masterDefs
@@ -3017,8 +3017,12 @@ namespace IonFiltra.BagFilters.Application.Services.Bagfilters.BagfilterInputs
             var defaultRowIdByMasterDefId = new Dictionary<int, int?>();
 
             // Only bother if there exists at least one dto with empty BoughtOutItems
+            //var anyNeedsDefaults = dtos.Any(d =>
+            //    d.BoughtOutItems == null || d.BoughtOutItems.Count == 0);
+
             var anyNeedsDefaults = dtos.Any(d =>
-                d.BoughtOutItems == null || d.BoughtOutItems.Count == 0);
+                    (d.BagfilterInputId == 0 || d.BagfilterInputId == null) &&
+                    (d.BoughtOutItems == null || d.BoughtOutItems.Count == 0));
 
             if (anyNeedsDefaults)
             {
@@ -3061,10 +3065,20 @@ namespace IonFiltra.BagFilters.Application.Services.Bagfilters.BagfilterInputs
                         if (string.IsNullOrWhiteSpace(def.MasterKey))
                             continue;
 
+                        //effectiveItems.Add(new BoughtOutItemSelectionDto
+                        //{
+                        //    MasterKey = def.MasterKey,
+                        //    SelectedRowId = defaultId
+                        //});
+
                         effectiveItems.Add(new BoughtOutItemSelectionDto
                         {
                             MasterKey = def.MasterKey,
-                            SelectedRowId = defaultId
+                            SelectedRowId = defaultId,
+                            Qty = 1,
+                            Unit = "No's",
+                            Rate = null,   // let frontend derive once
+                            Cost = null
                         });
                     }
 
@@ -3095,6 +3109,15 @@ namespace IonFiltra.BagFilters.Application.Services.Bagfilters.BagfilterInputs
                         MasterDefinitionId = def.Id,
                         MasterKey = item.MasterKey,
                         SelectedRowId = item.SelectedRowId,
+
+                        //new 
+                        Qty = item.Qty ?? existing?.Qty,
+                        Unit = item.Unit ?? existing?.Unit,
+                        Weight = item.Weight ?? existing?.Weight,
+                        Rate = item.Rate ?? existing?.Rate,
+                        Cost = item.Cost ?? existing?.Cost,
+
+
                         CreatedAt = existing?.CreatedAt ?? DateTime.UtcNow,
                         UpdatedAt = existing != null ? DateTime.UtcNow : null
                     };

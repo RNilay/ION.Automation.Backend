@@ -1,3 +1,6 @@
+
+---------------Bought-Out Items Inserts--------------------
+
 INSERT INTO ionfiltrabagfilters.MasterDefinitions
 (
     `MasterKey`,
@@ -676,6 +679,82 @@ VALUES
 );
 
 
+
+----------------------Cage Costing config inserts -------------
+
+INSERT INTO ionfiltrabagfilters.CageMaterialConfig
+(Material, Density, CoilCost, TopBottomCost, VenturiCost, RivetCost)
+VALUES
+('GI', 7850, 61, 60, 70, 1.5),
+('SS304', 7800, 215, 200, 70, 1.5);
+
+
+INSERT INTO ionfiltrabagfilters.CageMiscellaneousConfig
+(Item, Value, Unit)
+VALUES
+('Packing Raw Material', 0.7, 'Kg'),
+('Square Tube for Packing', 60, 'INR'),
+('Tarpoline', 2, 'INR/cage');
+
+INSERT INTO ionfiltrabagfilters.AdminCostConfig
+(Item, Value, Unit)
+VALUES
+('Cage Fabrication Cost', 10, 'INR/kg');
+
+INSERT INTO ionfiltrabagfilters.StandardCageConfig
+(CageSpec, WeightKg, RawMaterialCost, FixedFabricationCost, BoughtOutCost, PackingCost, PaintCost, TarpolineCost, FinalCostINR)
+VALUES
+('Cage 10 wire length: 3580 spacing: 150mm coil dia: 4mm', 4.91, 299.51, 65, 131.5, 42, 0.035, 2, 540),
+('Cage 10 wire length: 3580 spacing: 175mm coil dia: 4mm', 4.42, 269.62, 55, 131.5, 42, 0.035, 2, 500),
+('Cage 10 wire length: 3640 spacing: 150mm coil dia: 4mm', 4.64, 283.04, 65, 131.5, 42, 0.035, 2, 524),
+('Cage 10 wire length: 3640 spacing: 175mm coil dia: 4mm', 4.49, 273.89, 65, 131.5, 42, 0.035, 2, 514),
+
+('Cage 12 wire length: 3580 spacing: 150mm coil dia: 4mm', 5.27, 321.47, 78, 131.5, 42, 0.035, 2, 575),
+('Cage 12 wire length: 3580 spacing: 175mm coil dia: 4mm', 5.12, 312.32, 69, 131.5, 42, 0.035, 2, 557),
+('Cage 12 wire length: 3640 spacing: 150mm coil dia: 4mm', 5.36, 326.96, 78, 131.5, 42, 0.035, 2, 580),
+('Cage 12 wire length: 3640 spacing: 175mm coil dia: 4mm', 5.21, 317.81, 78, 131.5, 42, 0.035, 2, 571),
+
+('Cage 14 wire length: 3580 spacing: 175mm coil dia: 4mm', 5.83, 355.63, 70, 131.5, 42, 0.035, 2, 601),
+('Cage 14 wire length: 3640 spacing: 150mm coil dia: 4mm', 6.08, 370.88, 91, 131.5, 42, 0.035, 2, 637),
+('Cage 14 wire length: 3580 spacing: 150mm coil dia: 4mm', 5.98, 364.78, 91, 131.5, 42, 0.035, 2, 631),
+('Cage 14 wire length: 3640 spacing: 175mm coil dia: 4mm', 5.93, 361.73, 91, 131.5, 42, 0.035, 2, 628);
+
+
+-------------Transportation Rate Config------
+
+INSERT INTO ionfiltrabagfilters.TransportationRateConfig
+(LoadingFrom, DestinationState, RatePerKm_40x10x8, DistanceKm)
+VALUES
+('Pune', 'Andhra Pradesh', 130, 868),
+('Pune', 'Arunachal Pradesh', 100, 3062),
+('Pune', 'Assam', 100, 2708),
+('Pune', 'Bihar', 100, 1717),
+('Pune', 'Chhattisgarh', 98, 996),
+('Pune', 'Dadra & Nagar Haveli', 272),
+('Pune', 'Daman & Diu', 120, 300),
+('Pune', 'Delhi', 104, 1462),
+('Pune', 'Goa', 110, 469),
+('Pune', 'Gujarat', 110, 739),
+('Pune', 'Haryana', 105, 1561),
+('Pune', 'Himachal Pradesh', 100, 1850),
+('Pune', 'Manipur', 100, 3104),
+('Pune', 'Jammu & Kashmir', 120, 2102),
+('Pune', 'Jharkhand', 102, 1663),
+('Pune', 'Karnataka', 125, 521),
+('Pune', 'Kerala', 110, 1310),
+('Pune', 'Madhya Pradesh', 125, 1077),
+('Pune', 'Maharashtra', 115, 388),
+('Pune', 'Meghalaya', 90, 2684),
+('Pune', 'Nagaland', 90, 3118),
+('Pune', 'Odisha', 100, 1445),
+('Pune', 'Puducherry', 110, 1185),
+('Pune', 'Punjab', 110, 1725),
+('Pune', 'Rajasthan', 105, 1258),
+('Pune', 'Sikkim', 100, 2289),
+('Pune', 'Tamil Nadu', 120, 1166),
+('Pune', 'Telangana', 120, 676),
+('Pune', 'Uttarakhand', 120, 1791),
+('Pune', 'Uttar Pradesh', 115, 1547);
 
 
 

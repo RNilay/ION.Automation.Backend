@@ -147,8 +147,14 @@ namespace IonFiltra.BagFilters.API.Controllers.MasterData.BoughtOutItems
                         x.BagfilterMasterId,
                         x.MasterDefinitionId,
                         x.MasterKey,
-                        x.SelectedRowId
+                        x.SelectedRowId,
+                        x.Qty,
+                        x.Unit,
+                        x.Weight,
+                        x.Rate,
+                        x.Cost
                     })
+
                 });
             }
             catch (Exception ex)

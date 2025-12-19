@@ -754,7 +754,39 @@ VALUES
 ('Pune', 'Tamil Nadu', 120, 1166),
 ('Pune', 'Telangana', 120, 676),
 ('Pune', 'Uttarakhand', 120, 1791),
-('Pune', 'Uttar Pradesh', 115, 1547);
+('Pune', 'Uttar Pradesh', 115, 1547),
+
+
+('Katni', 'Andhra Pradesh', 130, 868),
+('Katni', 'Arunachal Pradesh', 100, 3062),
+('Katni', 'Assam', 100, 2708),
+('Katni', 'Bihar', 100, 1717),
+('Katni', 'Chhattisgarh', 98, 996),
+('Katni', 'Dadra & Nagar Haveli',120, 272),
+('Katni', 'Daman & Diu', 120, 300),
+('Katni', 'Delhi', 104, 1462),
+('Katni', 'Goa', 110, 469),
+('Katni', 'Gujarat', 110, 739),
+('Katni', 'Haryana', 105, 1561),
+('Katni', 'Himachal Pradesh', 100, 1850),
+('Katni', 'Manipur', 100, 3104),
+('Katni', 'Jammu & Kashmir', 120, 2102),
+('Katni', 'Jharkhand', 102, 1663),
+('Katni', 'Karnataka', 125, 521),
+('Katni', 'Kerala', 110, 1310),
+('Katni', 'Madhya Pradesh', 125, 1077),
+('Katni', 'Maharashtra', 115, 388),
+('Katni', 'Meghalaya', 90, 2684),
+('Katni', 'Nagaland', 90, 3118),
+('Katni', 'Odisha', 100, 1445),
+('Katni', 'Puducherry', 110, 1185),
+('Katni', 'Punjab', 110, 1725),
+('Katni', 'Rajasthan', 105, 1258),
+('Katni', 'Sikkim', 100, 2289),
+('Katni', 'Tamil Nadu', 120, 1166),
+('Katni', 'Telangana', 120, 676),
+('Katni', 'Uttarakhand', 120, 1791),
+('Katni', 'Uttar Pradesh', 115, 1547);
 
 
 

@@ -730,7 +730,7 @@ VALUES
 ('Pune', 'Assam', 100, 2708),
 ('Pune', 'Bihar', 100, 1717),
 ('Pune', 'Chhattisgarh', 98, 996),
-('Pune', 'Dadra & Nagar Haveli', 272),
+('Pune', 'Dadra & Nagar Haveli',120, 272),
 ('Pune', 'Daman & Diu', 120, 300),
 ('Pune', 'Delhi', 104, 1462),
 ('Pune', 'Goa', 110, 469),

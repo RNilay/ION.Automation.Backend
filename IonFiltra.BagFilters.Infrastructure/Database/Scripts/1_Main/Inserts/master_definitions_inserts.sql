@@ -467,76 +467,76 @@ VALUES
     )
 );
 
-INSERT INTO ionfiltrabagfilters.MasterDefinitions
-(
-    `MasterKey`,
-    `DisplayName`,
-    `ApiRoute`,
-    `SectionOrder`,
-    `IsActive`,
-    `ColumnsJson`
-)
-VALUES
-(
-    'centrifugalFan',
-    'Centrifugal Fan',
-    'CentrifualFan',
-    25,
-    1,
-    JSON_ARRAY(
-        JSON_OBJECT('field', 'make',   'label', 'Make',   'type', 'string'),
-        JSON_OBJECT('field', 'volume', 'label', 'Volume', 'type', 'string'),
-        JSON_OBJECT('field', 'cost',   'label', 'Cost',   'type', 'number')
-    )
-);
-
-INSERT INTO ionfiltrabagfilters.MasterDefinitions
-(
-    `MasterKey`,
-    `DisplayName`,
-    `ApiRoute`,
-    `SectionOrder`,
-    `IsActive`,
-    `ColumnsJson`
-)
-VALUES
-(
-    'screwConveyor',
-    'Screw Conveyor',
-    'ScrewConveyor',
-    26,
-    1,
-    JSON_ARRAY(
-        JSON_OBJECT('field', 'make',   'label', 'Make',   'type', 'string'),
-        JSON_OBJECT('field', 'length', 'label', 'Length', 'type', 'string'),
-        JSON_OBJECT('field', 'width',  'label', 'Width',  'type', 'string'),
-        JSON_OBJECT('field', 'cost',   'label', 'Cost',   'type', 'number')
-    )
-);
-
-INSERT INTO ionfiltrabagfilters.MasterDefinitions
-(
-    `MasterKey`,
-    `DisplayName`,
-    `ApiRoute`,
-    `SectionOrder`,
-    `IsActive`,
-    `ColumnsJson`
-)
-VALUES
-(
-    'dragChainConveyor',
-    'Drag Chain Conveyor',
-    'DragChainConveyor',
-    27,
-    1,
-    JSON_ARRAY(
-        JSON_OBJECT('field', 'make',   'label', 'Make',   'type', 'string'),
-        JSON_OBJECT('field', 'length', 'label', 'Length', 'type', 'string'),
-        JSON_OBJECT('field', 'width',  'label', 'Width',  'type', 'string'),
-        JSON_OBJECT('field', 'cost',   'label', 'Cost',   'type', 'number')
-    )
-);
+--INSERT INTO ionfiltrabagfilters.MasterDefinitions
+--(
+--    `MasterKey`,
+--    `DisplayName`,
+--    `ApiRoute`,
+--    `SectionOrder`,
+--    `IsActive`,
+--    `ColumnsJson`
+--)
+--VALUES
+--(
+--    'centrifugalFan',
+--    'Centrifugal Fan',
+--    'CentrifualFan',
+--    25,
+--    1,
+--    JSON_ARRAY(
+--        JSON_OBJECT('field', 'make',   'label', 'Make',   'type', 'string'),
+--        JSON_OBJECT('field', 'volume', 'label', 'Volume', 'type', 'string'),
+--        JSON_OBJECT('field', 'cost',   'label', 'Cost',   'type', 'number')
+--    )
+--);
+--
+--INSERT INTO ionfiltrabagfilters.MasterDefinitions
+--(
+--    `MasterKey`,
+--    `DisplayName`,
+--    `ApiRoute`,
+--    `SectionOrder`,
+--    `IsActive`,
+--    `ColumnsJson`
+--)
+--VALUES
+--(
+--    'screwConveyor',
+--    'Screw Conveyor',
+--    'ScrewConveyor',
+--    26,
+--    1,
+--    JSON_ARRAY(
+--        JSON_OBJECT('field', 'make',   'label', 'Make',   'type', 'string'),
+--        JSON_OBJECT('field', 'length', 'label', 'Length', 'type', 'string'),
+--        JSON_OBJECT('field', 'width',  'label', 'Width',  'type', 'string'),
+--        JSON_OBJECT('field', 'cost',   'label', 'Cost',   'type', 'number')
+--    )
+--);
+--
+--INSERT INTO ionfiltrabagfilters.MasterDefinitions
+--(
+--    `MasterKey`,
+--    `DisplayName`,
+--    `ApiRoute`,
+--    `SectionOrder`,
+--    `IsActive`,
+--    `ColumnsJson`
+--)
+--VALUES
+--(
+--    'dragChainConveyor',
+--    'Drag Chain Conveyor',
+--    'DragChainConveyor',
+--    27,
+--    1,
+--    JSON_ARRAY(
+--        JSON_OBJECT('field', 'make',   'label', 'Make',   'type', 'string'),
+--        JSON_OBJECT('field', 'length', 'label', 'Length', 'type', 'string'),
+--        JSON_OBJECT('field', 'width',  'label', 'Width',  'type', 'string'),
+--        JSON_OBJECT('field', 'cost',   'label', 'Cost',   'type', 'number')
+--    )
+--);
 
 INSERT INTO ionfiltrabagfilters.MasterDefinitions
 (

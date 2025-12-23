@@ -905,8 +905,6 @@ CREATE TABLE ionfiltrabagfilters.HopperHeatingcontroller (
 CREATE TABLE ionfiltrabagfilters.CentrifualFan(
     Id INT AUTO_INCREMENT PRIMARY KEY,
     Make VARCHAR(255),
-    Volume DECIMAL(10, 2),
-    Cost DECIMAL(10, 2),
     CreatedAt DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
     UpdatedAt DATETIME NULL ON UPDATE CURRENT_TIMESTAMP,
     IsDeleted TINYINT(1) NOT NULL DEFAULT 0,
@@ -914,12 +912,9 @@ CREATE TABLE ionfiltrabagfilters.CentrifualFan(
 );
 
 
-CREATE TABLE ionfiltrabagfilters.ScrewConveyor(
+CREATE TABLE ionfiltrabagfilters.ScrewConveyor (
     Id INT AUTO_INCREMENT PRIMARY KEY,
     Make VARCHAR(255),
-    Length DECIMAL(10, 2),
-    Width DECIMAL(10, 2),
-    Cost DECIMAL(10, 2),
     CreatedAt DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
     UpdatedAt DATETIME NULL ON UPDATE CURRENT_TIMESTAMP,
     IsDeleted TINYINT(1) NOT NULL DEFAULT 0,
@@ -927,17 +922,14 @@ CREATE TABLE ionfiltrabagfilters.ScrewConveyor(
 );
 
 
-CREATE TABLE ionfiltrabagfilters.DragChainConveyor(
+CREATE TABLE ionfiltrabagfilters.DragChainConveyor (
     Id INT AUTO_INCREMENT PRIMARY KEY,
     Make VARCHAR(255),
-    Length DECIMAL(10, 2),
-    Width DECIMAL(10, 2),
-    Cost DECIMAL(10, 2),
     CreatedAt DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
     UpdatedAt DATETIME NULL ON UPDATE CURRENT_TIMESTAMP,
     IsDeleted TINYINT(1) NOT NULL DEFAULT 0,
     IsDefault TINYINT(1) DEFAULT 0
-);
+);  
 
 
 CREATE TABLE ionfiltrabagfilters.MotorisedActuator(
@@ -1015,6 +1007,91 @@ CREATE TABLE ionfiltrabagfilters.TimerEntity(
 );
 
 
+
+-------Tables for dropdown population for make column---------
+
+CREATE TABLE ionfiltrabagfilters.ExpansionJointsInlet (
+    Id INT AUTO_INCREMENT PRIMARY KEY,
+    Make VARCHAR(255),
+    CreatedAt DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    UpdatedAt DATETIME NULL ON UPDATE CURRENT_TIMESTAMP,
+    IsDeleted TINYINT(1) NOT NULL DEFAULT 0,
+    IsDefault TINYINT(1) DEFAULT 0
+);
+
+
+CREATE TABLE ionfiltrabagfilters.ExpansionJointsOutlet (
+    Id INT AUTO_INCREMENT PRIMARY KEY,
+    Make VARCHAR(255),
+    CreatedAt DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    UpdatedAt DATETIME NULL ON UPDATE CURRENT_TIMESTAMP,
+    IsDeleted TINYINT(1) NOT NULL DEFAULT 0,
+    IsDefault TINYINT(1) DEFAULT 0
+);
+
+
+CREATE TABLE ionfiltrabagfilters.ExpansionJointsRAV (
+    Id INT AUTO_INCREMENT PRIMARY KEY,
+    Make VARCHAR(255),
+    CreatedAt DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    UpdatedAt DATETIME NULL ON UPDATE CURRENT_TIMESTAMP,
+    IsDeleted TINYINT(1) NOT NULL DEFAULT 0,
+    IsDefault TINYINT(1) DEFAULT 0
+);
+
+
+CREATE TABLE ionfiltrabagfilters.MetallicExpansionJoints (
+    Id INT AUTO_INCREMENT PRIMARY KEY,
+    Make VARCHAR(255),
+    CreatedAt DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    UpdatedAt DATETIME NULL ON UPDATE CURRENT_TIMESTAMP,
+    IsDeleted TINYINT(1) NOT NULL DEFAULT 0,
+    IsDefault TINYINT(1) DEFAULT 0
+);
+
+
+CREATE TABLE ionfiltrabagfilters.PoppetDamper (
+    Id INT AUTO_INCREMENT PRIMARY KEY,
+    Make VARCHAR(255),
+    CreatedAt DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    UpdatedAt DATETIME NULL ON UPDATE CURRENT_TIMESTAMP,
+    IsDeleted TINYINT(1) NOT NULL DEFAULT 0,
+    IsDefault TINYINT(1) DEFAULT 0
+);
+
+
+CREATE TABLE ionfiltrabagfilters.SuppressionSystem (
+    Id INT AUTO_INCREMENT PRIMARY KEY,
+    Make VARCHAR(255),
+    CreatedAt DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    UpdatedAt DATETIME NULL ON UPDATE CURRENT_TIMESTAMP,
+    IsDeleted TINYINT(1) NOT NULL DEFAULT 0,
+    IsDefault TINYINT(1) DEFAULT 0
+);
+
+
+CREATE TABLE ionfiltrabagfilters.CableTray (
+    Id INT AUTO_INCREMENT PRIMARY KEY,
+    Make VARCHAR(255),
+    CreatedAt DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    UpdatedAt DATETIME NULL ON UPDATE CURRENT_TIMESTAMP,
+    IsDeleted TINYINT(1) NOT NULL DEFAULT 0,
+    IsDefault TINYINT(1) DEFAULT 0
+);
+
+
+CREATE TABLE ionfiltrabagfilters.CompressedAirPiping (
+    Id INT AUTO_INCREMENT PRIMARY KEY,
+    Make VARCHAR(255),
+    CreatedAt DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    UpdatedAt DATETIME NULL ON UPDATE CURRENT_TIMESTAMP,
+    IsDeleted TINYINT(1) NOT NULL DEFAULT 0,
+    IsDefault TINYINT(1) DEFAULT 0
+);
+
+
+-----------Master defination--------
+
 CREATE TABLE ionfiltrabagfilters.MasterDefinitions (
     Id INT AUTO_INCREMENT PRIMARY KEY,
     MasterKey VARCHAR(100) NOT NULL,
@@ -1090,3 +1167,5 @@ CREATE TABLE ionfiltrabagfilters.TransportationRateConfig (
     UpdatedAt DATETIME NULL ON UPDATE CURRENT_TIMESTAMP,
     IsDeleted TINYINT(1) NOT NULL DEFAULT 0
 );
+
+

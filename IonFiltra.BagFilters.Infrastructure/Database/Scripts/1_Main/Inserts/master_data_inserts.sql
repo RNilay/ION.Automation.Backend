@@ -136,22 +136,22 @@ INSERT INTO ionfiltrabagfilters.HopperHeatingPad (Make, Model, Cost, IsDefault) 
 ('', '', 0, 1);
 
 
-INSERT INTO ionfiltrabagfilters.CentrifualFan (Make, Volume, Cost, IsDefault) VALUES 
-('None', 0, 0, 0),
-('Laxmi', 0, 0, 0),
-('Ritz', 0, 0, 1),
-('Venti Olde', 0, 0, 0),
-('CBI', 0, 0, 0);
+INSERT INTO ionfiltrabagfilters.CentrifualFan (Make, IsDefault) VALUES 
+('None', 0),
+('Laxmi', 0),
+('Ritz', 1),
+('Venti Olde', 0),
+('CBI', 0);
 
 
-INSERT INTO ionfiltrabagfilters.ScrewConveyor (Make, Length, Width, Cost, IsDefault) VALUES 
-('None', 0, 0, 0, 0),
-('Scewtech', 0, 0, 0, 1);
+INSERT INTO ionfiltrabagfilters.ScrewConveyor (Make, IsDefault) VALUES 
+('None', 0),
+('Scewtech', 1);
 
 
-INSERT INTO ionfiltrabagfilters.DragChainConveyor (Make, Length, Width, Cost, IsDefault) VALUES 
-('None', 0, 0, 0, 0),
-('Demech', 0, 0, 0, 1);
+INSERT INTO ionfiltrabagfilters.DragChainConveyor (Make, IsDefault) VALUES 
+('None', 0),
+('Demech', 1);
 
 
 INSERT INTO ionfiltrabagfilters.RAVGearedMotor (KW, Make, Cost, IsDefault) VALUES 
@@ -204,3 +204,47 @@ INSERT INTO ionfiltrabagfilters.Thermocouple
 (Make, Model, Cost, IsDefault)
 VALUES
 ('None', ' ', 0, 0);
+
+
+------Insert Query for dropdown population for make column-----------
+
+INSERT INTO ionfiltrabagfilters.ExpansionJointsInlet (Make, IsDefault)
+VALUES
+('MIRANDA', 0),
+('KEBERGMAN', 1);
+
+
+INSERT INTO ionfiltrabagfilters.ExpansionJointsOutlet (Make, IsDefault)
+VALUES
+('MIRANDA', 0),
+('KEBERGMAN', 1);
+
+
+INSERT INTO ionfiltrabagfilters.ExpansionJointsRAV (Make, IsDefault)
+VALUES
+('MIRANDA', 0),
+('KEBERGMAN', 1);
+
+
+INSERT INTO ionfiltrabagfilters.MetallicExpansionJoints (Make, IsDefault)
+VALUES
+('MIRANDA', 0),
+('KEBERGMAN', 1);
+
+
+INSERT INTO ionfiltrabagfilters.PoppetDamper (Make, IsDefault)
+VALUES
+('ION Filtra', 1);
+
+
+INSERT INTO ionfiltrabagfilters.SuppressionSystem (Make, IsDefault)
+VALUES
+('ION Filtra', 1);
+
+
+INSERT INTO ionfiltrabagfilters.CableTray (Make, IsDefault) VALUES 
+('ION Filtra', 1);
+
+
+INSERT INTO ionfiltrabagfilters.CompressedAirPiping (Make, IsDefault) VALUES 
+('Teflon', 1);

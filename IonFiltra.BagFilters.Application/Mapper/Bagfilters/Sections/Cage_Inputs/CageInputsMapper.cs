@@ -17,11 +17,13 @@ namespace IonFiltra.BagFilters.Application.Mappers.Bagfilters.Sections.Cage_Inpu
                 {
                     Cage_Type = entity.Cage_Type,
                     Cage_Sub_Type = entity.Cage_Sub_Type,
+                    Cage_Material = entity.Cage_Material,
                     Cage_Wire_Dia = entity.Cage_Wire_Dia,
                     No_Of_Cage_Wires = entity.No_Of_Cage_Wires,
                     Ring_Spacing = entity.Ring_Spacing,
                     Cage_Diameter = entity.Cage_Diameter,
                     Cage_Length = entity.Cage_Length,
+                    Spare_Cages = entity.Spare_Cages,
                     Cage_Configuration = entity.Cage_Configuration,
                 },
 
@@ -38,11 +40,13 @@ namespace IonFiltra.BagFilters.Application.Mappers.Bagfilters.Sections.Cage_Inpu
                 BagfilterMasterId = dto.BagfilterMasterId,
                 Cage_Type = dto.CageInputs.Cage_Type,
                 Cage_Sub_Type = dto.CageInputs.Cage_Sub_Type,
+                Cage_Material = dto.CageInputs.Cage_Material,
                 Cage_Wire_Dia = dto.CageInputs.Cage_Wire_Dia,
                 No_Of_Cage_Wires = dto.CageInputs.No_Of_Cage_Wires,
                 Ring_Spacing = dto.CageInputs.Ring_Spacing,
                 Cage_Diameter = dto.CageInputs.Cage_Diameter,
                 Cage_Length = dto.CageInputs.Cage_Length,
+                Spare_Cages = dto.CageInputs.Spare_Cages,
                 Cage_Configuration = dto.CageInputs.Cage_Configuration,
 
             };

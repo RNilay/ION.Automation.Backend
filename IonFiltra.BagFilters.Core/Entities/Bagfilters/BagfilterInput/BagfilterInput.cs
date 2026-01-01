@@ -12,6 +12,8 @@ namespace IonFiltra.BagFilters.Core.Entities.Bagfilters.BagfilterInputs
         public BagfilterMaster? BagfilterMaster { get; set; }
 
         public decimal? Process_Volume_M3h { get; set; }
+        public string? Mfg_Plant { get; set; }
+        public string? Destination_State { get; set; }
         public string? Location { get; set; }
         public string? Process_Dust { get; set; }
         public decimal? Process_Dustload_Gmspm3 { get; set; }
@@ -25,11 +27,13 @@ namespace IonFiltra.BagFilters.Core.Entities.Bagfilters.BagfilterInputs
         public string? Offline_Maintainence { get; set; }
         public string? Cage_Type { get; set; }
         public string? Cage_Sub_Type { get; set; }
+        public string? Cage_Material { get; set; }
         public decimal? Cage_Wire_Dia { get; set; }
         public decimal? No_Of_Cage_Wires { get; set; }
         public decimal? Ring_Spacing { get; set; }
         public decimal? Cage_Diameter { get; set; }
         public decimal? Cage_Length { get; set; }
+        public decimal? Spare_Cages { get; set; }
         public string? Cage_Configuration { get; set; }
         public decimal? Filter_Bag_Dia { get; set; }
         public decimal? Fil_Bag_Length { get; set; }

@@ -3,6 +3,8 @@ namespace IonFiltra.BagFilters.Application.DTOs.Bagfilters.Sections.Process_Info
     public class ProcessInfoDto
     {
         public decimal? Process_Volume_M3h { get; set; }
+        public string? Mfg_Plant { get; set; }
+        public string? Destination_State { get; set; }
         public string? Location { get; set; }
         public decimal? ProcessVolumeMin { get; set; }
         public decimal? Process_Acrmax { get; set; }

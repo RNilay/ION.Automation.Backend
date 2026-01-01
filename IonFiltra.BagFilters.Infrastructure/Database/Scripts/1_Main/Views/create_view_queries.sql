@@ -63,6 +63,7 @@ SELECT
     WS.Weight_Of_Maintainence_Pltform,
     WS.Cage_Weight                       AS WeightSummary_Cage_Weight,
     WS.Structure_Weight,
+    WS.Scrap_Holes_Weight,
     WS.Weight_Total                      AS WeightSummary_Weight_Total,
 
     -- ProcessInfo (for that distinct volume)
@@ -72,6 +73,8 @@ SELECT
     PI.Process_Volume_M3h,
     -- NEW: Qty for this Enquiry + Process_Volume_M3h (counts from BagfilterInput)
     COALESCE(VC.Qty, 0)                  AS Qty,
+    PI.Mfg_Plant,
+    PI.Destination_State,
     PI.Location,
     PI.ProcessVolumeMin,
     PI.Process_Acrmax,
@@ -100,11 +103,13 @@ SELECT
     CI.BagfilterMasterId                 AS CageInputs_BagfilterMasterId,
     CI.Cage_Type,
     CI.Cage_Sub_Type,
+    CI.Cage_Material,
     CI.Cage_Wire_Dia,
     CI.No_Of_Cage_Wires,
     CI.Ring_Spacing,
     CI.Cage_Diameter,
     CI.Cage_Length,
+    CI.Spare_Cages,
     CI.Cage_Configuration,
 
     -- BagSelection

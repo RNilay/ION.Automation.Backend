@@ -45,6 +45,8 @@ CREATE TABLE
         BagfilterMasterId INT NOT NULL,
         EnquiryId INT NULL,
         Process_Volume_M3h DECIMAL(10, 2),
+        Mfg_Plant TEXT,
+        Destination_State TEXT,
         Location TEXT,
         Process_Dust TEXT,
         Process_Dustload_Gmspm3 DECIMAL(10, 2),
@@ -58,11 +60,13 @@ CREATE TABLE
         Offline_Maintainence TEXT,
         Cage_Type TEXT,
         Cage_Sub_Type TEXT,
+        Cage_Material TEXT,
         Cage_Wire_Dia DECIMAL(10, 2),
         No_Of_Cage_Wires DECIMAL(10, 2),
         Ring_Spacing DECIMAL(10, 2),
         Cage_Diameter DECIMAL(10, 2),
         Cage_Length DECIMAL(10, 2),
+        Spare_Cages DECIMAL(10, 2),
         Cage_Configuration TEXT,
         Filter_Bag_Dia DECIMAL(10, 2),
         Fil_Bag_Length DECIMAL(10, 2),
@@ -157,7 +161,8 @@ CREATE TABLE ionfiltrabagfilters.WeightSummary (
     Weight_Of_Mid_Landing_Plt DECIMAL(10,2) ,
     Weight_Of_Maintainence_Pltform DECIMAL(10,2) ,
     Cage_Weight DECIMAL(10,2) ,
-    Structure_Weight DECIMAL(10,2) ,
+    Structure_Weight DECIMAL(10,2),
+    Scrap_Holes_Weight DECIMAL(10,2),
     Weight_Total DECIMAL(10,2),
 	CreatedAt DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
     UpdatedAt DATETIME NULL ON UPDATE CURRENT_TIMESTAMP,
@@ -171,6 +176,8 @@ CREATE TABLE
         EnquiryId INT NOT NULL,
         BagfilterMasterId INT NOT NULL,
         Process_Volume_M3h DECIMAL(10, 2),
+        Mfg_Plant TEXT,
+        Destination_State TEXT,
         Location TEXT,
         ProcessVolumeMin DECIMAL(10, 2),
         Process_Acrmax DECIMAL(10, 2),
@@ -205,11 +212,13 @@ CREATE TABLE
         BagfilterMasterId INT NOT NULL,
         Cage_Type TEXT,
         Cage_Sub_Type TEXT,
+        Cage_Material TEXT,
         Cage_Wire_Dia DECIMAL(10, 2),
         No_Of_Cage_Wires DECIMAL(10, 2),
         Ring_Spacing DECIMAL(10, 2),
         Cage_Diameter DECIMAL(10, 2),
         Cage_Length DECIMAL(10, 2),
+        Spare_Cages DECIMAL(10, 2),
         Cage_Configuration TEXT,
         CreatedAt DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
         UpdatedAt DATETIME NULL ON UPDATE CURRENT_TIMESTAMP,
@@ -587,13 +596,14 @@ CREATE TABLE
 
   -----Bill Of Material Rates table
 
-  CREATE TABLE ionfiltrabagfilters.BillOfMaterialRates (
+CREATE TABLE ionfiltrabagfilters.BillOfMaterialRates (
     Id INT AUTO_INCREMENT PRIMARY KEY,
     ItemKey VARCHAR(50) NOT NULL,
     Rate DECIMAL(10,2) NOT NULL,
     Unit VARCHAR(20) NULL,
     CreatedAt DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
-    UpdatedAt DATETIME NULL ON UPDATE CURRENT_TIMESTAMP
+    UpdatedAt DATETIME NULL ON UPDATE CURRENT_TIMESTAMP,
+    IsDeleted TINYINT(1) NOT NULL DEFAULT 0,
 );
 
 CREATE TABLE ionfiltrabagfilters.PaintingCostConfig (
@@ -1006,6 +1016,17 @@ CREATE TABLE ionfiltrabagfilters.TimerEntity(
     IsDefault TINYINT(1) DEFAULT 0
 );
 
+-- DU Bush Bought Out Item
+CREATE TABLE ionfiltrabagfilters.DUBush(
+    Id INT AUTO_INCREMENT PRIMARY KEY,
+    Item VARCHAR(255),
+    Cost DECIMAL(10, 2),
+    CreatedAt DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    UpdatedAt DATETIME NULL ON UPDATE CURRENT_TIMESTAMP,
+    IsDeleted TINYINT(1) NOT NULL DEFAULT 0,
+    IsDefault TINYINT(1) DEFAULT 0
+);
+
 
 
 -------Tables for dropdown population for make column---------
@@ -1168,4 +1189,28 @@ CREATE TABLE ionfiltrabagfilters.TransportationRateConfig (
     IsDeleted TINYINT(1) NOT NULL DEFAULT 0
 );
 
+------Damper cost configs----
+CREATE TABLE ionfiltrabagfilters.DamperCostMiscellaneousConfig (
+    Id INT AUTO_INCREMENT PRIMARY KEY,
+    Item VARCHAR(255) NOT NULL,
+    Value DECIMAL(10, 2) NOT NULL,
+    Unit VARCHAR(50) NOT NULL,
+    CreatedAt DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    UpdatedAt DATETIME NULL ON UPDATE CURRENT_TIMESTAMP,
+    IsDeleted TINYINT(1) NOT NULL DEFAULT 0
+);
+
+CREATE TABLE ionfiltrabagfilters.DamperSizesConfig (
+    Id INT AUTO_INCREMENT PRIMARY KEY,
+    Series VARCHAR(50) NOT NULL,
+    DiameterMm INT NOT NULL,
+    ThicknessFactor DECIMAL(6, 3) NOT NULL,
+    FinishedWeightKg DECIMAL(10, 2) NOT NULL,
+    ScrapWeightKg DECIMAL(10, 2) NOT NULL,
+    SurfaceAreaM2 DECIMAL(10, 2) NOT NULL,
+    PaintingCostPerKg DECIMAL(10, 2) NOT NULL,
+    CreatedAt DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    UpdatedAt DATETIME NULL ON UPDATE CURRENT_TIMESTAMP,
+    IsDeleted TINYINT(1) NOT NULL DEFAULT 0
+);
 

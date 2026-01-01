@@ -137,7 +137,7 @@ namespace IonFiltra.BagFilters.Infrastructure.Repositories.GenericView
                                 var row = new Dictionary<string, object>();
                                 for (var i = 0; i < reader.FieldCount; i++)
                                 {
-                                    var columnName = reader.GetName(i).ToLower();
+                                    var columnName = reader.GetName(i);
                                     var value = await reader.IsDBNullAsync(i) ? null : reader.GetValue(i);
                                     row[columnName] = value;
                                 }

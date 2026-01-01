@@ -184,8 +184,9 @@ INSERT INTO ionfiltrabagfilters.TimerEntity (Make, Model, Cost, IsDefault) VALUE
 ('Manik', 'Microprocessor based', 100, 0),
 ('Manik', 'PLC', 500, 0);
 
-
-
+--DU BUSH Bought Out Item
+INSERT INTO ionfiltrabagfilters.DUBush (Item, Cost, IsDefault) VALUES 
+('DU Bush 20', 150, 0),('DU Bush 35', 290, 1);
 
 
 INSERT INTO ionfiltrabagfilters.MotorisedActuator

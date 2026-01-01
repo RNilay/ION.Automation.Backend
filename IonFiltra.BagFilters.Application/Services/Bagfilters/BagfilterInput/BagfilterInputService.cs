@@ -1561,6 +1561,8 @@ namespace IonFiltra.BagFilters.Application.Services.Bagfilters.BagfilterInputs
             {
                 // Copy core values (you already had these)
                 Process_Volume_M3h = dto.Process_Volume_M3h,
+                Mfg_Plant = string.IsNullOrWhiteSpace(dto.Mfg_Plant) ? null : dto.Mfg_Plant.Trim(),
+                Destination_State = string.IsNullOrWhiteSpace(dto.Destination_State) ? null : dto.Destination_State.Trim(),
                 Location = string.IsNullOrWhiteSpace(dto.Location) ? null : dto.Location.Trim(),
                 Process_Dust = dto.Process_Dust,
                 Process_Dustload_Gmspm3 = dto.Process_Dustload_Gmspm3,
@@ -1574,11 +1576,13 @@ namespace IonFiltra.BagFilters.Application.Services.Bagfilters.BagfilterInputs
                 Offline_Maintainence = dto.Offline_Maintainence,
                 Cage_Type = dto.Cage_Type,
                 Cage_Sub_Type = dto.Cage_Sub_Type,
+                Cage_Material = dto.Cage_Material,
                 Cage_Wire_Dia = dto.Cage_Wire_Dia,
                 No_Of_Cage_Wires = dto.No_Of_Cage_Wires,
                 Ring_Spacing = dto.Ring_Spacing,
                 Cage_Diameter = dto.Cage_Diameter,
                 Cage_Length = dto.Cage_Length,
+                Spare_Cages = dto.Spare_Cages,
                 Cage_Configuration = dto.Cage_Configuration,
                 Filter_Bag_Dia = dto.Filter_Bag_Dia,
                 Fil_Bag_Length = dto.Fil_Bag_Length,
@@ -1718,6 +1722,7 @@ namespace IonFiltra.BagFilters.Application.Services.Bagfilters.BagfilterInputs
                 Weight_Of_Maintainence_Pltform = dto.WeightSummary.Weight_Of_Maintainence_Pltform,
                 Cage_Weight = dto.WeightSummary.Cage_Weight,
                 Structure_Weight = dto.WeightSummary.Structure_Weight,
+                Scrap_Holes_Weight = dto.WeightSummary.Scrap_Holes_Weight,
                 Weight_Total = dto.WeightSummary.Weight_Total,
 
                 CreatedAt = DateTime.UtcNow
@@ -1754,6 +1759,8 @@ namespace IonFiltra.BagFilters.Application.Services.Bagfilters.BagfilterInputs
                 EnquiryId = (int)dto.BagfilterInput.EnquiryId,
                 BagfilterMasterId = bagfilterMasterId,
                 Process_Volume_M3h = input.Process_Volume_M3h,
+                Mfg_Plant = dto.ProcessInfo.Mfg_Plant,
+                Destination_State = dto.ProcessInfo.Destination_State,
                 Location = dto.ProcessInfo.Location,
                 ProcessVolumeMin = input.Process_Vol_M3_Min,
                 Process_Acrmax = input.Process_Acrmax, 
@@ -1805,11 +1812,13 @@ namespace IonFiltra.BagFilters.Application.Services.Bagfilters.BagfilterInputs
                 BagfilterMasterId = bagfilterMasterId,
                 Cage_Type = input.Cage_Type,
                 Cage_Sub_Type = input.Cage_Sub_Type,
+                Cage_Material = input.Cage_Material,
                 Cage_Wire_Dia = input.Cage_Wire_Dia,
                 No_Of_Cage_Wires = input.No_Of_Cage_Wires,
                 Ring_Spacing = input.Ring_Spacing,
                 Cage_Diameter = input.Cage_Diameter,
                 Cage_Length = input.Cage_Length,
+                Spare_Cages = input.Spare_Cages,
                 Cage_Configuration = input.Cage_Configuration,
                 CreatedAt = DateTime.UtcNow
             };
@@ -2336,6 +2345,7 @@ namespace IonFiltra.BagFilters.Application.Services.Bagfilters.BagfilterInputs
                 Weight_Of_Maintainence_Pltform = src.Weight_Of_Maintainence_Pltform,
                 Cage_Weight = src.Cage_Weight,
                 Structure_Weight = src.Structure_Weight,
+                Scrap_Holes_Weight = src.Scrap_Holes_Weight,
                 Weight_Total = src.Weight_Total,
                 // CreatedAt / UpdatedAt handled in repo
             };
@@ -2373,6 +2383,8 @@ namespace IonFiltra.BagFilters.Application.Services.Bagfilters.BagfilterInputs
                 EnquiryId = enquiryId,
 
                 Process_Volume_M3h = src.Process_Volume_M3h,
+                Mfg_Plant = src.Mfg_Plant,
+                Destination_State = src.Destination_State,
                 Location = src.Location,
                 ProcessVolumeMin = src.ProcessVolumeMin,
                 Process_Acrmax = src.Process_Acrmax,
@@ -2431,11 +2443,13 @@ namespace IonFiltra.BagFilters.Application.Services.Bagfilters.BagfilterInputs
 
                 Cage_Type = src.Cage_Type,
                 Cage_Sub_Type = src.Cage_Sub_Type,
+                Cage_Material = src.Cage_Material,
                 Cage_Wire_Dia = src.Cage_Wire_Dia,
                 No_Of_Cage_Wires = src.No_Of_Cage_Wires,
                 Ring_Spacing = src.Ring_Spacing,
                 Cage_Diameter = src.Cage_Diameter,
                 Cage_Length = src.Cage_Length,
+                Spare_Cages = src.Spare_Cages,
                 Cage_Configuration = src.Cage_Configuration,
 
                 // CreatedAt / UpdatedAt handled in repo

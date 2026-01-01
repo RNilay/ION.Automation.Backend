@@ -699,7 +699,8 @@ VALUES
 INSERT INTO ionfiltrabagfilters.AdminCostConfig
 (Item, Value, Unit)
 VALUES
-('Cage Fabrication Cost', 10, 'INR/kg');
+('Cage Fabrication Cost', 10, 'INR/kg'),
+('Scrap Rate', 35, 'INR/kg');
 
 INSERT INTO ionfiltrabagfilters.StandardCageConfig
 (CageSpec, WeightKg, RawMaterialCost, FixedFabricationCost, BoughtOutCost, PackingCost, PaintCost, TarpolineCost, FinalCostINR)
@@ -788,5 +789,56 @@ VALUES
 ('Katni', 'Uttarakhand', 120, 1791),
 ('Katni', 'Uttar Pradesh', 115, 1547);
 
+
+------Damper Cost config
+
+INSERT INTO ionfiltrabagfilters.DamperCostMiscellaneousConfig
+(Item, Value, Unit)
+VALUES
+('Red Oxide', 90, '/L'),
+('Enamel Paint', 150, '/L'),
+('Damper Fab Cost', 30, '/kg'),
+('MS Raw Material', 78, '/kg'),
+('Hardware', 1000, '?');
+
+
+INSERT INTO ionfiltrabagfilters.DamperSizesConfig
+(Series, DiameterMm, ThicknessFactor, FinishedWeightKg, ScrapWeightKg, SurfaceAreaM2, PaintingCostPerKg)
+VALUES
+-- SMALL
+('Small', 100, 1.05, 9, 9.45, 0.33, 8.00),
+('Small', 125, 1.05, 10, 10.5, 0.41, 10.00),
+('Small', 150, 1.05, 12, 12.6, 0.52, 12.00),
+('Small', 200, 1.05, 18, 16.95, 0.73, 18.00),
+('Small', 250, 1.035, 29, 30.015, 1.13, 27.12),
+('Small', 300, 1.035, 36, 37.26, 1.45, 35.00),
+('Small', 350, 1.035, 40, 41.4, 4.87, 117.00),
+('Small', 400, 1.035, 48, 49.68, 5.83, 140.00),
+
+-- MEDIUM
+('Medium', 450, 0.99, 69, 68.31, 2.82, 68.00),
+('Medium', 500, 0.99, 80, 79.2, 3.31, 79.00),
+('Medium', 550, 0.99, 92, 91.08, 3.9, 94.00),
+('Medium', 600, 0.99, 105, 103.95, 4.41, 106.00),
+('Medium', 650, 0.99, 119, 117.81, 5.01, 120.00),
+('Medium', 700, 0.99, 134, 132.66, 5.66, 136.00),
+
+-- LARGE
+('Large', 750, 0.949, 192, 182.21, 7.5, 180),
+('Large', 800, 0.949, 211, 200.24, 8.28, 198.72),
+('Large', 850, 0.949, 230, 218.27, 9.11, 218.64),
+('Large', 900, 0.949, 251, 238.2, 9.99, 239.76),
+('Large', 950, 0.949, 272, 258.13, 10.88, 261.12),
+('Large', 1000, 0.949, 294, 279.01, 11.82, 283.68),
+('Large', 1050, 0.949, 317, 300.83, 12.8, 307.2),
+('Large', 1100, 0.949, 340, 322.66, 13.82, 331.68),
+('Large', 1150, 0.949, 365, 346.39, 14.88, 357.12),
+('Large', 1200, 0.949, 391, 371.06, 15.98, 383.52),
+('Large', 1250, 0.949, 418, 396.68, 17.16, 411.84),
+('Large', 1300, 0.949, 444, 421.36, 18.3, 439.2),
+('Large', 1350, 0.949, 472, 447.93, 19.52, 468.48),
+('Large', 1400, 0.949, 501, 475.45, 20.78, 498.72),
+('Large', 1450, 0.949, 531, 503.92, 22.07, 529.68),
+('Large', 1500, 0.949, 562, 533.34, 23.4, 561.6);
 
 

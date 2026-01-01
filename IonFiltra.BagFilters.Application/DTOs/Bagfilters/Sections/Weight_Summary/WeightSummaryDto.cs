@@ -17,6 +17,7 @@ namespace IonFiltra.BagFilters.Application.DTOs.Bagfilters.Sections.Weight_Summa
         public decimal? Weight_Of_Maintainence_Pltform { get; set; }
         public decimal? Cage_Weight { get; set; }
         public decimal? Structure_Weight { get; set; }
+        public decimal? Scrap_Holes_Weight { get; set; }
         public decimal? Weight_Total { get; set; }
 
     }

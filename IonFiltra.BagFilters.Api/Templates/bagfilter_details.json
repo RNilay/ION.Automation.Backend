@@ -153,6 +153,11 @@
                                     "ValueKey": "Structure_Weight",
                                     "InlineCss": "{#CALC}"
                                 },
+                                {
+                                    "Label": "Scrap Hole Weight (Kg)",
+                                    "ValueKey": "Scrap_Holes_Weight",
+                                    "InlineCss": "{#CALC}"
+                                },
 
                                 // Total row - highlight the VALUE cell only (your rendering code should wrap Value with InlineCss)
                                 {
@@ -184,6 +189,16 @@
                                 {
                                     "Label": "Process Volume (m<sup>3</sup>/hr)",
                                     "ValueKey": "Process_Volume_M3h",
+                                    "InlineCss": "{#USER}"
+                                },
+                                {
+                                    "Label": "ION Filtra Manufacturing Plant",
+                                    "ValueKey": "Mfg_Plant",
+                                    "InlineCss": "{#USER}"
+                                },
+                                {
+                                    "Label": "Client State",
+                                    "ValueKey": "Destination_State",
                                     "InlineCss": "{#USER}"
                                 },
                                 {
@@ -394,6 +409,11 @@
                                     "InlineCss": "{#USER}"
                                 },
                                 {
+                                    "Label": "Cage Material",
+                                    "ValueKey": "Cage_Material",
+                                    "InlineCss": "{#USER}"
+                                },
+                                {
                                     "Label": "Cage Wire Diameter (mm)",
                                     "ValueKey": "Cage_Wire_Dia",
                                     "InlineCss": "{#USER}"
@@ -416,6 +436,11 @@
                                 {
                                     "Label": "Cage Length (mm)",
                                     "ValueKey": "Cage_Length",
+                                    "InlineCss": "{#USER}"
+                                },
+                                {
+                                    "Label": "Spare Cages (%)",
+                                    "ValueKey": "Spare_Cages",
                                     "InlineCss": "{#USER}"
                                 },
                                 {

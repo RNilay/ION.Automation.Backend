@@ -28,6 +28,7 @@ namespace IonFiltra.BagFilters.Application.Mappers.Bagfilters.Sections.Weight_Su
                     Weight_Of_Maintainence_Pltform = entity.Weight_Of_Maintainence_Pltform,
                     Cage_Weight = entity.Cage_Weight,
                     Structure_Weight = entity.Structure_Weight,
+                    Scrap_Holes_Weight = entity.Scrap_Holes_Weight,
                     Weight_Total = entity.Weight_Total,
                 },
 
@@ -55,6 +56,7 @@ namespace IonFiltra.BagFilters.Application.Mappers.Bagfilters.Sections.Weight_Su
                 Weight_Of_Maintainence_Pltform = dto.WeightSummary.Weight_Of_Maintainence_Pltform,
                 Cage_Weight = dto.WeightSummary.Cage_Weight,
                 Structure_Weight = dto.WeightSummary.Structure_Weight,
+                Scrap_Holes_Weight = dto.WeightSummary.Scrap_Holes_Weight,
                 Weight_Total = dto.WeightSummary.Weight_Total,
 
             };

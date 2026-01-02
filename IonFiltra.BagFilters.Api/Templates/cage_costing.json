@@ -1,15 +1,17 @@
 {
-    "Id": 5,
-    "Order": 5,
-    "ReportName": "Bill Of Material",
-    "Title": "Bill Of Material",
-    "EntityDbName": "vw_BillOfMaterialDetails",
+    "Id": 8,
+    "Order": 8,
+    "ReportName": "Cage Costing",
+    "Title": "Cage Costing",
+    "EntityDbName": "vw_CageCostDetails",
     "Logo": "wwwroot/images/company.png",
+
     "Layout": {
         "Columns": 1,
         "ColumnWidths": [ "100%" ],
         "ReportWidth": "210mm"
     },
+
     "Header": {
         "TextRows": [
             "<div style='background-color:#F2F2F2; padding:6px; border:1px solid #000;'>",
@@ -17,6 +19,7 @@
             "</div>"
         ]
     },
+
     "Footer": {
         "TextRows": [ "{Logo}", "Page Footer" ]
     },
@@ -25,9 +28,10 @@
         {
             "Type": "group",
             "RepeatRow": {
-                "SourceKey": "bom_groups",
+                "SourceKey": "cage_groups",
                 "TemplateRowIndex": 0
             },
+
             "ChildRows": [
                 {
                     "Type": "table",
@@ -60,19 +64,11 @@
 
                 {
                     "Type": "table",
-                    "LayoutColumns": [ "", "", "", "", "", "" ],
-                    "ColumnWidths": [ 25, 15, 15, 10, 15, 20 ],
-
+                    "LayoutColumns": [ "", "", "" ],
+                    "ColumnWidths": [ 50, 30, 20 ],
                     "Rows": [
                         {
-                            "RowData": [
-                                "Item",
-                                "Material",
-                                "Weight",
-                                "Units",
-                                "Rate (₹)",
-                                "Cost (₹)"
-                            ],
+                            "RowData": [ "Parameter", "Value", "Unit" ],
                             "RowStyle": {
                                 "FontSize": 12,
                                 "Bold": true,
@@ -80,35 +76,19 @@
                             }
                         },
                         {
-                            "RowData": [
-                                "{Item}",
-                                "{Material}",
-                                "{Weight}",
-                                "{Units}",
-                                "{Rate}",
-                                "{Cost}"
-                            ],
+                            "RowData": [ "{Parameter}", "{Value}", "{Unit}" ],
                             "RowStyle": {
                                 "FontSize": 11
                             }
                         }
                     ],
-
                     "RepeatRow": {
-                        "SourceKey": "BomRows",
+                        "SourceKey": "CageRows",
                         "TemplateRowIndex": 1,
-                        "Columns": [
-                            "Item",
-                            "Material",
-                            "Weight",
-                            "Units",
-                            "Rate",
-                            "Cost"
-                        ]
+                        "Columns": [ "Parameter", "Value", "Unit" ]
                     }
                 }
             ]
         }
     ]
-
 }

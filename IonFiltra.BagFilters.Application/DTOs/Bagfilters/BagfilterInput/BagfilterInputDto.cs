@@ -8,6 +8,7 @@ namespace IonFiltra.BagFilters.Application.DTOs.Bagfilters.BagfilterInputs
     {
         public int? EnquiryId { get; set; }
         public decimal? Process_Volume_M3h { get; set; }
+        public int? Design_Pressure_Mmwc { get; set; }
         public string? Mfg_Plant { get; set; }
         public string? Destination_State { get; set; }
         public string? Location { get; set; }
@@ -92,6 +93,11 @@ namespace IonFiltra.BagFilters.Application.DTOs.Bagfilters.BagfilterInputs
         public decimal? Column_Height { get; set; }
         public decimal? Bag_Per_Row { get; set; } //calculated values
         public decimal? Number_Of_Rows { get; set; } //calculated values
+
+        public string? Is_Damper_Required { get; set; }
+        public string? Damper_Series { get; set; }
+        public decimal? Damper_Diameter { get; set; }
+        public int? Damper_Qty { get; set; }
 
         public string? S3dModel { get; set; }
 

@@ -6,6 +6,7 @@ namespace IonFiltra.BagFilters.Core.Entities.Bagfilters.Sections.Process_Info
         public int EnquiryId { get; set; }
         public int BagfilterMasterId { get; set; }
         public decimal? Process_Volume_M3h { get; set; }
+        public int? Design_Pressure_Mmwc { get; set; }
         public string? Mfg_Plant { get; set; }
         public string? Destination_State { get; set; }
         public string? Location { get; set; }

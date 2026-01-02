@@ -1,4 +1,6 @@
 ﻿using IonFiltra.BagFilters.Application.DTOs.Bagfilters.BagfilterInputs;
+using IonFiltra.BagFilters.Application.DTOs.Bagfilters.Sections.DamperSize;
+using IonFiltra.BagFilters.Application.DTOs.Bagfilters.Sections.EV;
 using IonFiltra.BagFilters.Application.DTOs.BOM.Bill_Of_Material;
 using IonFiltra.BagFilters.Application.DTOs.MasterData.BoughtOutItems;
 using IonFiltra.BagFilters.Application.DTOs.SkyCiv;
@@ -11,6 +13,8 @@ using IonFiltra.BagFilters.Core.Entities.Bagfilters.Sections.Bag_Selection;
 using IonFiltra.BagFilters.Core.Entities.Bagfilters.Sections.Cage_Inputs;
 using IonFiltra.BagFilters.Core.Entities.Bagfilters.Sections.Capsule_Inputs;
 using IonFiltra.BagFilters.Core.Entities.Bagfilters.Sections.Casing_Inputs;
+using IonFiltra.BagFilters.Core.Entities.Bagfilters.Sections.DamperSize;
+using IonFiltra.BagFilters.Core.Entities.Bagfilters.Sections.EV;
 using IonFiltra.BagFilters.Core.Entities.Bagfilters.Sections.Hopper_Trough;
 using IonFiltra.BagFilters.Core.Entities.Bagfilters.Sections.Painting;
 using IonFiltra.BagFilters.Core.Entities.Bagfilters.Sections.Process_Info;
@@ -34,6 +38,8 @@ using IonFiltra.BagFilters.Core.Interfaces.Repositories.Bagfilters.Sections.Bag_
 using IonFiltra.BagFilters.Core.Interfaces.Repositories.Bagfilters.Sections.Cage_Inputs;
 using IonFiltra.BagFilters.Core.Interfaces.Repositories.Bagfilters.Sections.Capsule_Inputs;
 using IonFiltra.BagFilters.Core.Interfaces.Repositories.Bagfilters.Sections.Casing_Inputs;
+using IonFiltra.BagFilters.Core.Interfaces.Repositories.Bagfilters.Sections.DamperSize;
+using IonFiltra.BagFilters.Core.Interfaces.Repositories.Bagfilters.Sections.EV;
 using IonFiltra.BagFilters.Core.Interfaces.Repositories.Bagfilters.Sections.Hopper_Trough;
 using IonFiltra.BagFilters.Core.Interfaces.Repositories.Bagfilters.Sections.Painting;
 using IonFiltra.BagFilters.Core.Interfaces.Repositories.Bagfilters.Sections.Process_Info;
@@ -93,6 +99,8 @@ namespace IonFiltra.BagFilters.Application.Services.Bagfilters.BagfilterInputs
         private readonly IDamperCostEntityRepository _damperCostRepository;
 
         private readonly ICageCostEntityRepository _cageCostRepository;
+        private readonly IDamperSizeInputsRepository _damperSizeInputsRepository;
+        private readonly IExplosionVentEntityRepository _explosionVentEntityRepository;
 
         public BagfilterInputService(
             IBagfilterInputRepository repository,
@@ -118,7 +126,9 @@ namespace IonFiltra.BagFilters.Application.Services.Bagfilters.BagfilterInputs
             IGenericViewRepository genericViewRepository,
             ITransportationCostEntityRepository transportationCostEntityRepository,
             IDamperCostEntityRepository damperCostRepository,
-            ICageCostEntityRepository cageCostEntityRepository
+            ICageCostEntityRepository cageCostEntityRepository,
+            IDamperSizeInputsRepository damperSizeInputsRepository,
+            IExplosionVentEntityRepository explosionVentEntityRepository
         )
         {
             _repository = repository;
@@ -147,6 +157,8 @@ namespace IonFiltra.BagFilters.Application.Services.Bagfilters.BagfilterInputs
             _transportationCostRepository = transportationCostEntityRepository;
             _damperCostRepository = damperCostRepository;
             _cageCostRepository = cageCostEntityRepository;
+            _damperSizeInputsRepository = damperSizeInputsRepository;
+            _explosionVentEntityRepository = explosionVentEntityRepository;
 
 
 
@@ -509,6 +521,32 @@ namespace IonFiltra.BagFilters.Application.Services.Bagfilters.BagfilterInputs
             mapEntity: (dto, masterId, existing) => MapPaintingCost(dto, masterId, existing),
             upsertRange: (entities, token) => _paintingCostRepository.UpsertRangeAsync(entities, token),
             ct);
+
+            await BatchUpsertChildAsync<DamperSizeInputs>(
+            dtos,
+            masterIdByIndex,
+            hasChildDto: dto => dto.DamperSizeInputs != null,
+            getExistingByMasterIds: (masterIds, token) =>
+                _damperSizeInputsRepository.GetByMasterIdsAsync(masterIds, token),
+            mapEntity: (dto, masterId, existing) =>
+                MapDamperSizeInputs(dto, masterId, existing),
+            upsertRange: (entities, token) =>
+                _damperSizeInputsRepository.UpsertRangeAsync(entities, token),
+            ct);
+
+            await BatchUpsertChildAsync<ExplosionVentEntity>(
+            dtos,
+            masterIdByIndex,
+            hasChildDto: dto => dto.ExplosionVent != null,
+            getExistingByMasterIds: (masterIds, token) =>
+                _explosionVentEntityRepository.GetByMasterIdsAsync(masterIds, token),
+            mapEntity: (dto, masterId, existing) =>
+                MapExplosionVentEntity(dto, masterId, existing),
+            upsertRange: (entities, token) =>
+                _explosionVentEntityRepository.UpsertRangeAsync(entities, token),
+            ct);
+
+
 
             // === Batched BillOfMaterial
 
@@ -1302,6 +1340,29 @@ namespace IonFiltra.BagFilters.Application.Services.Bagfilters.BagfilterInputs
             upsertRange: (entities, token) => _paintingCostRepository.UpsertRangeAsync(entities, token),
             ct);
 
+            await BatchUpsertChildAsync<DamperSizeInputs>(
+           dtos,
+           masterIdByIndex,
+           hasChildDto: dto => dto.DamperSizeInputs != null,
+           getExistingByMasterIds: (masterIds, token) =>
+               _damperSizeInputsRepository.GetByMasterIdsAsync(masterIds, token),
+           mapEntity: (dto, masterId, existing) =>
+               MapDamperSizeInputs(dto, masterId, existing),
+           upsertRange: (entities, token) =>
+               _damperSizeInputsRepository.UpsertRangeAsync(entities, token),
+           ct);
+
+            await BatchUpsertChildAsync<ExplosionVentEntity>(
+            dtos,
+            masterIdByIndex,
+            hasChildDto: dto => dto.ExplosionVent != null,
+            getExistingByMasterIds: (masterIds, token) =>
+                _explosionVentEntityRepository.GetByMasterIdsAsync(masterIds, token),
+            mapEntity: (dto, masterId, existing) =>
+                MapExplosionVentEntity(dto, masterId, existing),
+            upsertRange: (entities, token) =>
+                _explosionVentEntityRepository.UpsertRangeAsync(entities, token),
+            ct);
 
             // === Batched BillOfMaterial replace BEFORE SkyCiv ===
 
@@ -1678,6 +1739,7 @@ namespace IonFiltra.BagFilters.Application.Services.Bagfilters.BagfilterInputs
             {
                 // Copy core values (you already had these)
                 Process_Volume_M3h = dto.Process_Volume_M3h,
+                Design_Pressure_Mmwc = dto.Design_Pressure_Mmwc,
                 Mfg_Plant = string.IsNullOrWhiteSpace(dto.Mfg_Plant) ? null : dto.Mfg_Plant.Trim(),
                 Destination_State = string.IsNullOrWhiteSpace(dto.Destination_State) ? null : dto.Destination_State.Trim(),
                 Location = string.IsNullOrWhiteSpace(dto.Location) ? null : dto.Location.Trim(),
@@ -1762,6 +1824,10 @@ namespace IonFiltra.BagFilters.Application.Services.Bagfilters.BagfilterInputs
                 // computed values (you already had)
                 Bag_Per_Row = dto.Bag_Per_Row,
                 Number_Of_Rows = dto.Number_Of_Rows,
+                Is_Damper_Required = dto.Is_Damper_Required,
+                Damper_Series = dto.Damper_Series,
+                Damper_Diameter = dto.Damper_Diameter,
+                Damper_Qty = dto.Damper_Qty,
 
                 // NEW: EnquiryId - used to exclude same enquiry matches
                 EnquiryId = dto.EnquiryId,
@@ -1876,6 +1942,7 @@ namespace IonFiltra.BagFilters.Application.Services.Bagfilters.BagfilterInputs
                 EnquiryId = (int)dto.BagfilterInput.EnquiryId,
                 BagfilterMasterId = bagfilterMasterId,
                 Process_Volume_M3h = input.Process_Volume_M3h,
+                Design_Pressure_Mmwc = input.Design_Pressure_Mmwc,
                 Mfg_Plant = dto.ProcessInfo.Mfg_Plant,
                 Destination_State = dto.ProcessInfo.Destination_State,
                 Location = dto.ProcessInfo.Location,
@@ -2500,6 +2567,7 @@ namespace IonFiltra.BagFilters.Application.Services.Bagfilters.BagfilterInputs
                 EnquiryId = enquiryId,
 
                 Process_Volume_M3h = src.Process_Volume_M3h,
+                Design_Pressure_Mmwc = src.Design_Pressure_Mmwc,
                 Mfg_Plant = src.Mfg_Plant,
                 Destination_State = src.Destination_State,
                 Location = src.Location,
@@ -3446,6 +3514,83 @@ namespace IonFiltra.BagFilters.Application.Services.Bagfilters.BagfilterInputs
                 return null;
             }
         }
+
+        private DamperSizeInputs MapDamperSizeInputs(
+    BagfilterInputMainDto dto,
+    int bagfilterMasterId,
+    DamperSizeInputs existing = null)
+        {
+            if (dto == null || dto.DamperSizeInputs == null)
+                return null;
+
+            var src = dto.DamperSizeInputs;
+
+            // Resolve EnquiryId (same precedence as BagSelection)
+            var enquiryId =
+                (int?)dto.BagfilterInput.EnquiryId ??
+                existing?.EnquiryId ??
+                0;
+
+            var entity = new DamperSizeInputs
+            {
+                BagfilterMasterId = bagfilterMasterId,
+                EnquiryId = enquiryId,
+
+                Is_Damper_Required = src.Is_Damper_Required,
+                Damper_Series = src.Damper_Series,
+                Damper_Diameter = src.Damper_Diameter,
+                Damper_Qty = src.Damper_Qty,
+
+                // CreatedAt / UpdatedAt handled in repo
+            };
+
+            if (existing != null)
+            {
+                entity.Id = existing.Id;
+                entity.CreatedAt = existing.CreatedAt;
+            }
+
+            return entity;
+        }
+
+
+        private ExplosionVentEntity MapExplosionVentEntity(
+    BagfilterInputMainDto dto,
+    int bagfilterMasterId,
+    ExplosionVentEntity existing = null)
+        {
+            if (dto == null || dto.ExplosionVent == null)
+                return null;
+
+            var src = dto.ExplosionVent;
+
+            // Resolve EnquiryId (same pattern)
+            var enquiryId =
+                (int?)dto.BagfilterInput.EnquiryId ??
+                existing?.EnquiryId ??
+                0;
+
+            var entity = new ExplosionVentEntity
+            {
+                BagfilterMasterId = bagfilterMasterId,
+                EnquiryId = enquiryId,
+
+                Explosion_Vent_Design_Pressure = src.Explosion_Vent_Design_Pressure,
+                Explosion_Vent_Quantity = src.Explosion_Vent_Quantity,
+                Explosion_Vent_Size = src.Explosion_Vent_Size,
+
+                // CreatedAt / UpdatedAt handled in repo
+            };
+
+            if (existing != null)
+            {
+                entity.Id = existing.Id;
+                entity.CreatedAt = existing.CreatedAt;
+            }
+
+            return entity;
+        }
+
 
 
 

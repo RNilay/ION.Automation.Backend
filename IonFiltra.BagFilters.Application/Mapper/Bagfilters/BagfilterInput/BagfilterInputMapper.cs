@@ -17,6 +17,7 @@ namespace IonFiltra.BagFilters.Application.Mappers.Bagfilters.BagfilterInputs
                 {
                     EnquiryId = entity.EnquiryId,
                     Process_Volume_M3h = entity.Process_Volume_M3h,
+                    Design_Pressure_Mmwc = entity.Design_Pressure_Mmwc,
                     Mfg_Plant = entity.Mfg_Plant,
                     Destination_State = entity.Destination_State,
                     Location = entity.Location,
@@ -99,6 +100,10 @@ namespace IonFiltra.BagFilters.Application.Mappers.Bagfilters.BagfilterInputs
                     Column_Height = entity.Column_Height,
                     Bag_Per_Row = entity.Bag_Per_Row, //calculated
                     Number_Of_Rows = entity.Number_Of_Rows, //calculated
+                    Is_Damper_Required = entity.Is_Damper_Required,
+                    Damper_Series = entity.Damper_Series,
+                    Damper_Diameter = entity.Damper_Diameter,
+                    Damper_Qty = entity.Damper_Qty,
                     //S3dModel = entity.S3dModel,
                 },
 
@@ -114,6 +119,7 @@ namespace IonFiltra.BagFilters.Application.Mappers.Bagfilters.BagfilterInputs
                 BagfilterMasterId = dto.BagfilterMasterId,
                 EnquiryId = dto.BagfilterInput.EnquiryId,
                 Process_Volume_M3h = dto.BagfilterInput.Process_Volume_M3h,
+                Design_Pressure_Mmwc = dto.BagfilterInput.Design_Pressure_Mmwc,
                 Mfg_Plant = dto.BagfilterInput.Mfg_Plant,
                 Destination_State = dto.BagfilterInput.Destination_State,
                 Location = dto.BagfilterInput.Location,
@@ -196,6 +202,10 @@ namespace IonFiltra.BagFilters.Application.Mappers.Bagfilters.BagfilterInputs
                 Column_Height = dto.BagfilterInput.Column_Height,
                 Bag_Per_Row = dto.BagfilterInput.Bag_Per_Row, //calculated
                 Number_Of_Rows = dto.BagfilterInput.Number_Of_Rows, //calculated
+                Is_Damper_Required = dto.BagfilterInput.Is_Damper_Required,
+                Damper_Series = dto.BagfilterInput.Damper_Series,
+                Damper_Diameter = dto.BagfilterInput.Damper_Diameter,
+                Damper_Qty = dto.BagfilterInput.Damper_Qty,
                 S3dModel = dto.BagfilterInput.S3dModel,
             };
         }

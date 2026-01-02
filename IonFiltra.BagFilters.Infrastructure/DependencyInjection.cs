@@ -15,6 +15,8 @@ using IonFiltra.BagFilters.Application.Services.Bagfilters.Sections.Bag_Selectio
 using IonFiltra.BagFilters.Application.Services.Bagfilters.Sections.Cage_Inputs;
 using IonFiltra.BagFilters.Application.Services.Bagfilters.Sections.Capsule_Inputs;
 using IonFiltra.BagFilters.Application.Services.Bagfilters.Sections.Casing_Inputs;
+using IonFiltra.BagFilters.Application.Services.Bagfilters.Sections.DamperSize;
+using IonFiltra.BagFilters.Application.Services.Bagfilters.Sections.EV;
 using IonFiltra.BagFilters.Application.Services.Bagfilters.Sections.Hopper_Trough;
 using IonFiltra.BagFilters.Application.Services.Bagfilters.Sections.Painting;
 using IonFiltra.BagFilters.Application.Services.Bagfilters.Sections.Process_Info;
@@ -52,6 +54,8 @@ using IonFiltra.BagFilters.Core.Interfaces.Repositories.Bagfilters.Sections.Bag_
 using IonFiltra.BagFilters.Core.Interfaces.Repositories.Bagfilters.Sections.Cage_Inputs;
 using IonFiltra.BagFilters.Core.Interfaces.Repositories.Bagfilters.Sections.Capsule_Inputs;
 using IonFiltra.BagFilters.Core.Interfaces.Repositories.Bagfilters.Sections.Casing_Inputs;
+using IonFiltra.BagFilters.Core.Interfaces.Repositories.Bagfilters.Sections.DamperSize;
+using IonFiltra.BagFilters.Core.Interfaces.Repositories.Bagfilters.Sections.EV;
 using IonFiltra.BagFilters.Core.Interfaces.Repositories.Bagfilters.Sections.Hopper_Trough;
 using IonFiltra.BagFilters.Core.Interfaces.Repositories.Bagfilters.Sections.Painting;
 using IonFiltra.BagFilters.Core.Interfaces.Repositories.Bagfilters.Sections.Process_Info;
@@ -84,6 +88,8 @@ using IonFiltra.BagFilters.Infrastructure.Repositories.Bagfilters.Sections.Bag_S
 using IonFiltra.BagFilters.Infrastructure.Repositories.Bagfilters.Sections.Cage_Inputs;
 using IonFiltra.BagFilters.Infrastructure.Repositories.Bagfilters.Sections.Capsule_Inputs;
 using IonFiltra.BagFilters.Infrastructure.Repositories.Bagfilters.Sections.Casing_Inputs;
+using IonFiltra.BagFilters.Infrastructure.Repositories.Bagfilters.Sections.DamperSize;
+using IonFiltra.BagFilters.Infrastructure.Repositories.Bagfilters.Sections.EV;
 using IonFiltra.BagFilters.Infrastructure.Repositories.Bagfilters.Sections.Hopper_Trough;
 using IonFiltra.BagFilters.Infrastructure.Repositories.Bagfilters.Sections.Painting;
 using IonFiltra.BagFilters.Infrastructure.Repositories.Bagfilters.Sections.Process_Info;
@@ -240,6 +246,12 @@ namespace IonFiltra.BagFilters.Infrastructure
 
             services.AddScoped<ICageCostEntityService, CageCostEntityService>();
             services.AddScoped<ICageCostEntityRepository, CageCostEntityRepository>();
+
+            services.AddScoped<IDamperSizeInputsService, DamperSizeInputsService>();
+            services.AddScoped<IDamperSizeInputsRepository, DamperSizeInputsRepository>();
+
+            services.AddScoped<IExplosionVentEntityService, ExplosionVentEntityService>();
+            services.AddScoped<IExplosionVentEntityRepository, ExplosionVentEntityRepository>();
 
             return services;
         }

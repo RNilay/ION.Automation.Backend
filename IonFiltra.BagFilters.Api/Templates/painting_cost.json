@@ -63,14 +63,14 @@
                     "LayoutColumns": [
                         "",
                         "Item",
-                        "INR/Ltr",
+                        "₹/Ltr",
                         "Sq.M per Ltr for 20 Micron Thk.",
                         "No. of coats",
                         "Material Cost per Sq.M",
                         "Total Material Cost per Sq. M",
-                        "Labour Charges INR/kg",
+                        "Labour Charges ₹/kg",
                         "Labour Unit",
-                        "Total Cost (Material+Labour) INR"
+                        "Total Cost (Material+Labour) ₹"
                     ],
                     "ColumnWidths": [ 4, 3, 2, 2, 2, 2, 2, 2, 2, 4 ],
 
@@ -79,14 +79,14 @@
                             "RowData": [
                                 "",
                                 "Item",
-                                "INR/Ltr",
+                                "₹/Ltr",
                                 "Sq.M per Ltr for 20 Micron Thk.",
                                 "No. of coats",
                                 "Material Cost per Sq.M",
                                 "Total Material Cost per Sq. M",
-                                "Labour Charges INR/kg",
+                                "Labour Charges ₹/kg",
                                 "Labour Unit",
-                                "Total Cost (Material+Labour) INR"
+                                "Total Cost (Material+Labour) ₹"
                             ],
                             "RowStyle": {
                                 "FontSize": 11,

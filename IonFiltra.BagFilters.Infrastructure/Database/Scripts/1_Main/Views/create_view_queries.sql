@@ -71,6 +71,7 @@ SELECT
     PI.EnquiryId                         AS ProcessInfo_EnquiryId,
     PI.BagfilterMasterId                 AS ProcessInfo_BagfilterMasterId,
     PI.Process_Volume_M3h,
+    PI.Design_Pressure_Mmwc,
     -- NEW: Qty for this Enquiry + Process_Volume_M3h (counts from BagfilterInput)
     COALESCE(VC.Qty, 0)                  AS Qty,
     PI.Mfg_Plant,
@@ -660,3 +661,55 @@ ORDER BY
     dv.Process_Volume_M3h,
     dv.BagfilterMasterId,
     dc.Id;
+
+    ---cage cost view---
+    CREATE OR REPLACE VIEW ionfiltrabagfilters.vw_CageCostDetails AS
+WITH PiBm AS (
+    SELECT
+        e.Id AS EnquiryId,
+        bm.BagfilterMasterId,
+        pi.Process_Volume_M3h,
+        e.RequiredBagFilters AS Enquiry_RequiredBagFilters,
+        ROW_NUMBER() OVER (
+            PARTITION BY e.Id, pi.Process_Volume_M3h
+            ORDER BY bm.BagfilterMasterId
+        ) AS RnPerVolume
+    FROM ionfiltrabagfilters.ProcessInfo pi
+    JOIN ionfiltrabagfilters.BagfilterMaster bm
+      ON bm.BagfilterMasterId = pi.BagfilterMasterId
+     AND bm.EnquiryId = pi.EnquiryId
+    JOIN ionfiltrabagfilters.Enquiry e
+      ON e.Id = pi.EnquiryId
+    WHERE pi.Process_Volume_M3h IS NOT NULL
+),
+DistinctVolumes AS (
+    SELECT
+        EnquiryId,
+        BagfilterMasterId,
+        Process_Volume_M3h,
+        Enquiry_RequiredBagFilters,
+        ROW_NUMBER() OVER (
+            PARTITION BY EnquiryId
+            ORDER BY Process_Volume_M3h, BagfilterMasterId
+        ) AS Qty
+    FROM PiBm
+    WHERE RnPerVolume = 1
+)
+SELECT
+    dv.EnquiryId,
+    dv.BagfilterMasterId,
+    dv.Process_Volume_M3h,
+    dv.Enquiry_RequiredBagFilters,
+    dv.Qty,
+    cc.Parameter,
+    cc.Value,
+    cc.Unit
+FROM DistinctVolumes dv
+JOIN ionfiltrabagfilters.CageCostEntity cc
+  ON cc.EnquiryId = dv.EnquiryId
+ AND cc.BagfilterMasterId = dv.BagfilterMasterId
+ORDER BY
+    dv.EnquiryId,
+    dv.Process_Volume_M3h,
+    dv.BagfilterMasterId,
+    cc.Id;

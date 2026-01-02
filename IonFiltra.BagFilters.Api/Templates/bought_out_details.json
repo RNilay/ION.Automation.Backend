@@ -1,15 +1,17 @@
 {
-    "Id": 5,
-    "Order": 5,
-    "ReportName": "Painting Cost",
-    "Title": "Painting Cost",
-    "EntityDbName": "vw_PaintingCostDetails",
+    "Id": 9,
+    "Order": 9,
+    "ReportName": "Bought Out Details",
+    "Title": "Bought Out Details",
+    "EntityDbName": "vw_BoughtOutDetails",
     "Logo": "wwwroot/images/company.png",
+
     "Layout": {
         "Columns": 1,
         "ColumnWidths": [ "100%" ],
         "ReportWidth": "210mm"
     },
+
     "Header": {
         "TextRows": [
             "<div style='background-color:#F2F2F2; padding:6px; border:1px solid #000;'>",
@@ -17,6 +19,7 @@
             "</div>"
         ]
     },
+
     "Footer": {
         "TextRows": [ "{Logo}", "Page Footer" ]
     },
@@ -25,14 +28,16 @@
         {
             "Type": "group",
             "RepeatRow": {
-                "SourceKey": "painting_groups",
+                "SourceKey": "boughtout_groups",
                 "TemplateRowIndex": 0
             },
+
             "ChildRows": [
                 {
                     "Type": "table",
                     "LayoutColumns": [ "", "" ],
                     "ColumnWidths": [ 70, 30 ],
+
                     "Rows": [
                         {
                             "RowData": [
@@ -48,7 +53,7 @@
                         {
                             "RowData": [
                                 "{Process_Volume_M3h}",
-                                "{Qty} of {Enquiry_RequiredBagFilters}"
+                                "{VolumeQty} of {Enquiry_RequiredBagFilters}"
                             ],
                             "RowStyle": {
                                 "FontSize": 11,
@@ -60,73 +65,53 @@
 
                 {
                     "Type": "table",
-                    "LayoutColumns": [
-                        "",
-                        "Item",
-                        "₹/Ltr",
-                        "Sq.M per Ltr for 20 Micron Thk.",
-                        "No. of coats",
-                        "Material Cost per Sq.M",
-                        "Total Material Cost per Sq. M",
-                        "Labour Charges ₹/kg",
-                        "Labour Unit",
-                        "Total Cost (Material+Labour) ₹"
-                    ],
-                    "ColumnWidths": [ 4, 3, 2, 2, 2, 2, 2, 2, 2, 4 ],
+                    "LayoutColumns": [ "", "", "", "", "", "", "" ],
+                    "ColumnWidths": [ 20, 15, 25, 10, 10, 10, 10 ],
 
                     "Rows": [
                         {
                             "RowData": [
-                                "",
                                 "Item",
-                                "₹/Ltr",
-                                "Sq.M per Ltr for 20 Micron Thk.",
-                                "No. of coats",
-                                "Material Cost per Sq.M",
-                                "Total Material Cost per Sq. M",
-                                "Labour Charges ₹/kg",
-                                "Labour Unit",
-                                "Total Cost (Material+Labour) ₹"
+                                "Make",
+                                "Material",
+                                "Qty",
+                                "Units",
+                                "Rate (?)",
+                                "Cost (?)"
                             ],
                             "RowStyle": {
-                                "FontSize": 11,
+                                "FontSize": 12,
                                 "Bold": true,
-                                "InlineCss": "background-color:#7392E8; font-weight:bolder; color:#ffffff;"
+                                "InlineCss": "background-color:#4b2ca0; color:#ffffff; font-weight:bolder;"
                             }
                         },
                         {
                             "RowData": [
-                                "",
-                                "",
-                                "",
-                                "",
-                                "",
-                                "",
-                                "",
-                                "",
-                                "",
-                                ""
+                                "{Item}",
+                                "{Make}",
+                                "{Material}",
+                                "{ItemQty}",
+                                "{Units}",
+                                "{Rate}",
+                                "{Cost}"
                             ],
                             "RowStyle": {
-                                "FontSize": 10
+                                "FontSize": 11
                             }
                         }
                     ],
 
                     "RepeatRow": {
-                        "SourceKey": "PaintingRows",
+                        "SourceKey": "BoughtOutRows",
                         "TemplateRowIndex": 1,
                         "Columns": [
-                            "section",
-                            "item",
-                            "inrPerLtr",
-                            "sqmPerLtr",
-                            "coats",
-                            "materialCostPerSqm",
-                            "totalMaterialCostPerSqm",
-                            "labourRate",
-                            "labourUnit",
-                            "totalCost"
+                            "Item",
+                            "Make",
+                            "Material",
+                            "ItemQty",
+                            "Units",
+                            "Rate",
+                            "Cost"
                         ]
                     }
                 }

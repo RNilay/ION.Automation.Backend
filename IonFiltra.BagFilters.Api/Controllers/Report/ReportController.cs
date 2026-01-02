@@ -290,6 +290,58 @@ namespace IonFiltra.BagFilters.Api.Controllers.Report
 
                         rowValues["cage_groups"] = cageGroups;
                     }
+                    else if (
+    string.Equals(template.EntityDbName, "vw_BoughtOutDetails",
+                  StringComparison.OrdinalIgnoreCase)
+    || string.Equals(template.Title, "Bought Out Details",
+                     StringComparison.OrdinalIgnoreCase)
+)
+                    {
+                        var boughtOutGroups = listData
+                            .GroupBy(d => d["Process_Volume_M3h"])
+                            .Select(g =>
+                            {
+                                var first = g.First();
+
+                                var groupDict = new Dictionary<string, object>();
+
+                                // Header fields (MUST match template placeholders)
+                                if (first.TryGetValue("EnquiryId", out var enq))
+                                    groupDict["EnquiryId"] = enq;
+
+                                if (first.TryGetValue("BagfilterMasterId", out var bm))
+                                    groupDict["BagfilterMasterId"] = bm;
+
+                                if (first.TryGetValue("Process_Volume_M3h", out var pv))
+                                    groupDict["Process_Volume_M3h"] = pv;
+
+                                if (first.TryGetValue("VolumeQty", out var vqty))
+                                    groupDict["VolumeQty"] = vqty;
+
+                                if (first.TryGetValue("Enquiry_RequiredBagFilters", out var rb))
+                                    groupDict["Enquiry_RequiredBagFilters"] = rb;
+
+                                // 🚨 THIS IS THE IMPORTANT PART
+                                groupDict["BoughtOutRows"] = g
+                                    .Select(r => new Dictionary<string, object>
+                                    {
+                                        ["Item"] = r.GetValueOrDefault("Item"),
+                                        ["Make"] = r.GetValueOrDefault("Make"),
+                                        ["Material"] = r.GetValueOrDefault("Material"),
+                                        ["ItemQty"] = r.GetValueOrDefault("ItemQty"),
+                                        ["Units"] = r.GetValueOrDefault("Units"),
+                                        ["Rate"] = r.GetValueOrDefault("Rate"),
+                                        ["Cost"] = r.GetValueOrDefault("Cost")
+                                    })
+                                    .ToList();
+
+                                return groupDict;
+                            })
+                            .ToList();
+
+                        rowValues["boughtout_groups"] = boughtOutGroups;
+                    }
+
 
                     else if (string.Equals(template.EntityDbName, "vw_PaintingCostDetails",
                                       StringComparison.OrdinalIgnoreCase) || string.Equals(template.Title, "Painting Cost", StringComparison.OrdinalIgnoreCase))

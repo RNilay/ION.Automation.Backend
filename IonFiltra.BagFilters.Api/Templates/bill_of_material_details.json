@@ -1,6 +1,6 @@
 {
-    "Id": 5,
-    "Order": 5,
+    "Id": 4,
+    "Order": 4,
     "ReportName": "Bill Of Material",
     "Title": "Bill Of Material",
     "EntityDbName": "vw_BillOfMaterialDetails",

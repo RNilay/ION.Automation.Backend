@@ -22,7 +22,7 @@ namespace IonFiltra.BagFilters.Application.Services.Report
         private readonly string _templatesFolder;
         private readonly ILogger<ReportService> _logger;
         private static readonly Regex PlaceholderRegex = new(@"\{.*?\}", RegexOptions.Compiled);
-
+        private const string MissingValuePlaceholder = "-";
         public ReportService(ILogger<ReportService> logger)
         {
             // Templates folder relative to content root
@@ -86,7 +86,7 @@ namespace IonFiltra.BagFilters.Application.Services.Report
 
         static string FormatValue(object? val)
         {
-            if (val == null) return "N/A";
+            if (val == null) return MissingValuePlaceholder;
             return val switch
             {
                 double d => d.ToString("0.##"),
@@ -117,7 +117,7 @@ namespace IonFiltra.BagFilters.Application.Services.Report
                     if (item.TryGetValue(inner, out var val) && val != null)
                         text = text.Replace(m.Value, FormatValue(val));
                     else
-                        text = text.Replace(m.Value, "N/A");
+                        text = text.Replace(m.Value, MissingValuePlaceholder);
                 }
                 return text;
             }
@@ -179,7 +179,7 @@ namespace IonFiltra.BagFilters.Application.Services.Report
                             else
                             {
                                 // normal label/value
-                                var valueStr = "N/A";
+                                var valueStr = MissingValuePlaceholder;
                                 if (!string.IsNullOrEmpty(block.ValueKey) && item.TryGetValue(block.ValueKey, out var v) && v != null)
                                     valueStr = FormatValue(v);
 
@@ -341,6 +341,7 @@ namespace IonFiltra.BagFilters.Application.Services.Report
 
                     bool isDamperCost = reportTemplate.ReportName?.Equals("Damper Cost", StringComparison.OrdinalIgnoreCase) == true;
                     bool isCageCosting = reportTemplate.ReportName?.Equals("Cage Costing", StringComparison.OrdinalIgnoreCase) == true;
+                    bool isBoughtOutDetails = reportTemplate.ReportName?.Equals("Bought Out Details", StringComparison.OrdinalIgnoreCase) == true;
 
                     // For each record in the source list, render the group's ChildRows (in order)
                     for (int idx = 0; idx < sourceList.Count; idx++)
@@ -480,6 +481,42 @@ namespace IonFiltra.BagFilters.Application.Services.Report
                                         newRowsList.Add(expandedTable);
                                     }
                                 }
+                                else if (isBoughtOutDetails
+         && clonedChild.RepeatRow != null
+         && string.Equals(
+             clonedChild.RepeatRow.SourceKey,
+             "BoughtOutRows",
+             StringComparison.OrdinalIgnoreCase))
+                                {
+                                    var nestedRepeat = clonedChild.RepeatRow;
+
+                                    if (record.TryGetValue(nestedRepeat.SourceKey, out var nestedObj)
+                                        && nestedObj != null)
+                                    {
+                                        var nestedList = ConvertToListOfDicts(nestedObj);
+
+                                        var expandedRows = ExpandNestedRepeatTable(
+                                            clonedChild,
+                                            nestedRepeat,
+                                            nestedList
+                                        );
+
+                                        var expandedTable = DeepClone(clonedChild);
+                                        expandedTable.Rows = expandedRows;
+                                        expandedTable.RepeatRow = null; // 🔴 critical
+
+                                        newRowsList.Add(expandedTable);
+                                    }
+                                    else
+                                    {
+                                        // fallback (should never happen if view + controller are correct)
+                                        var expandedTable = DeepClone(clonedChild);
+                                        expandedTable.Rows = ExpandTableTemplateForItem(clonedChild, record);
+                                        expandedTable.RepeatRow = null;
+                                        newRowsList.Add(expandedTable);
+                                    }
+                                }
+
 
                                 // --- 1c) Painting Cost: nested RepeatRow using record["PaintingRows"] ---
                                 else if (isPaintingCost
@@ -670,7 +707,7 @@ namespace IonFiltra.BagFilters.Application.Services.Report
                                 }
                                 else
                                 {
-                                    var valueStr = "N/A";
+                                    var valueStr = MissingValuePlaceholder;
                                     if (!string.IsNullOrEmpty(block.ValueKey) && item.TryGetValue(block.ValueKey, out var v) && v != null)
                                         valueStr = FormatValue(v);
 
@@ -758,7 +795,7 @@ namespace IonFiltra.BagFilters.Application.Services.Report
                                 else
                                 {
                                     // For Painting Cost we want "-" instead of "N/A"
-                                    var fallback = isPaintingCost ? "-" : "N/A";
+                                    var fallback = isPaintingCost ? "-" : MissingValuePlaceholder;
                                     newRow.RowData.Add(fallback);
                                 }
                             }
@@ -941,7 +978,7 @@ namespace IonFiltra.BagFilters.Application.Services.Report
                     }
                     else
                     {
-                        newRow.RowData.Add("N/A");
+                        newRow.RowData.Add(MissingValuePlaceholder);
                     }
                 }
 
@@ -1236,7 +1273,7 @@ namespace IonFiltra.BagFilters.Application.Services.Report
                     if (inner.StartsWith("formula:", StringComparison.OrdinalIgnoreCase))
                     {
                         // If you have a formula evaluator, hook here. For now fallback:
-                        text = text.Replace(placeholder, "N/A");
+                        text = text.Replace(placeholder, MissingValuePlaceholder);
                         continue;
                     }
 
@@ -1263,7 +1300,7 @@ namespace IonFiltra.BagFilters.Application.Services.Report
                 catch (Exception ex)
                 {
                     _logger?.LogWarning(ex, "Error evaluating placeholder {Placeholder} in {Input}", match.Value, input);
-                    text = text.Replace(match.Value, "N/A");
+                    text = text.Replace(match.Value, MissingValuePlaceholder);
                 }
             }
 
@@ -1274,7 +1311,7 @@ namespace IonFiltra.BagFilters.Application.Services.Report
         {
             if (inputValues != null && inputValues.TryGetValue(variableName, out var value))
             {
-                if (value == null) return "N/A";
+                if (value == null) return MissingValuePlaceholder;
 
                 return value switch
                 {
@@ -1290,7 +1327,7 @@ namespace IonFiltra.BagFilters.Application.Services.Report
 
             // fallback: not found
             _logger?.LogDebug("Variable '{VarName}' missing in supplied values", variableName);
-            return "N/A";
+            return MissingValuePlaceholder;
         }
 
     }

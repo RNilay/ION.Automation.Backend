@@ -289,7 +289,18 @@ SELECT
 	PA.Outside_Area_Roof_Door_M2,
 	PA.Outside_Area_Tube_Sheet_Mm2,
 	PA.Outside_Area_Tube_Sheet_M2,
-	PA.Outside_Area_Total_M2
+	PA.Outside_Area_Total_M2,
+    
+    -- damper size
+    DSI.Is_Damper_Required,
+    DSI.Damper_Series,
+    DSI.Damper_Diameter,
+    DSI.Damper_Qty,
+    
+    -- Explosion Vent
+    EV.Explosion_Vent_Design_Pressure,
+    EV.Explosion_Vent_Quantity,
+    EV.Explosion_Vent_Size
 
 FROM DistinctPI D
 -- join Enquiry so we keep Enquiry fields
@@ -366,8 +377,15 @@ LEFT JOIN ionfiltrabagfilters.RoofDoor RD
     
 LEFT JOIN ionfiltrabagfilters.paintingArea PA
     ON PA.BagfilterMasterId = BM.BagfilterMasterId
-    AND PA.EnquiryId = D.EnquiryId;
-GO
+    AND PA.EnquiryId = D.EnquiryId
+    
+LEFT JOIN ionfiltrabagfilters.DamperSizeInputs DSI
+    ON DSI.BagfilterMasterId = BM.BagfilterMasterId
+    AND DSI.EnquiryId = D.EnquiryId
+
+LEFT JOIN ionfiltrabagfilters.ExplosionVentEntity EV
+    ON EV.BagfilterMasterId = BM.BagfilterMasterId
+    AND EV.EnquiryId = D.EnquiryId;
 
 
 
@@ -713,3 +731,198 @@ ORDER BY
     dv.Process_Volume_M3h,
     dv.BagfilterMasterId,
     cc.Id;
+
+
+    -------bought out details view
+
+    CREATE OR REPLACE VIEW ionfiltrabagfilters.vw_BoughtOutDetails AS
+WITH PiBm AS (
+    SELECT
+        e.Id AS EnquiryId,
+        bm.BagfilterMasterId,
+        pi.Process_Volume_M3h,
+        e.RequiredBagFilters AS Enquiry_RequiredBagFilters,
+        ROW_NUMBER() OVER (
+            PARTITION BY e.Id, pi.Process_Volume_M3h
+            ORDER BY bm.BagfilterMasterId
+        ) AS RnPerVolume
+    FROM ionfiltrabagfilters.ProcessInfo pi
+    JOIN ionfiltrabagfilters.BagfilterMaster bm
+      ON bm.BagfilterMasterId = pi.BagfilterMasterId
+     AND bm.EnquiryId = pi.EnquiryId
+    JOIN ionfiltrabagfilters.Enquiry e
+      ON e.Id = pi.EnquiryId
+    WHERE pi.Process_Volume_M3h IS NOT NULL
+),
+DistinctVolumes AS (
+    SELECT
+        EnquiryId,
+        BagfilterMasterId,
+        Process_Volume_M3h,
+        Enquiry_RequiredBagFilters,
+        ROW_NUMBER() OVER (
+            PARTITION BY EnquiryId
+            ORDER BY Process_Volume_M3h, BagfilterMasterId
+        ) AS Qty
+    FROM PiBm
+    WHERE RnPerVolume = 1
+)
+SELECT
+    dv.EnquiryId,
+    dv.BagfilterMasterId,
+    dv.Process_Volume_M3h,
+    dv.Enquiry_RequiredBagFilters,
+    dv.Qty AS VolumeQty,
+
+    -- UI columns
+    md.DisplayName AS Item,
+
+    /* ===========================
+       MAKE (resolved dynamically)
+       =========================== */
+    COALESCE(
+        fb.Make,
+        sv.Make,
+        dpt.Make,
+        dpg.Make,
+        dps.Make,
+        pg.Make,
+        pt.Make,
+        ps.Make,
+        hld.Make,
+        rtd.Make,
+        utm.Make,
+        ev.Make,
+        fh.Make,
+        afr.Make,
+        proxy.Make,
+        prox.Make,
+        cable.Make,
+        zss.Make,
+        jb.Make,
+        vib.Make,
+        tc.Make,
+        th.Make,
+        hhp.Make,
+        hhc.Make,
+        ma.Make,
+        rav.Make,
+        hw.Item,      -- Hardware has Item instead of Make
+        lt.Make,
+        timer.Make
+    ) AS Make,
+
+    /* ===========================
+       MATERIAL (only few masters)
+       =========================== */
+    COALESCE(
+        fb.Material,
+        sstub.Material
+    ) AS Material,
+
+    bo.Qty AS ItemQty,
+    bo.Unit AS Units,
+    bo.Rate,
+    bo.Cost
+
+FROM DistinctVolumes dv
+JOIN ionfiltrabagfilters.BoughtOutItemSelection bo
+  ON bo.EnquiryId = dv.EnquiryId
+ AND bo.BagfilterMasterId = dv.BagfilterMasterId
+
+JOIN ionfiltrabagfilters.MasterDefinitions md
+  ON md.Id = bo.MasterDefinitionId
+
+/* ===========================
+   MASTER TABLE JOINS
+   =========================== */
+
+LEFT JOIN ionfiltrabagfilters.FilterBag fb
+  ON md.MasterKey = 'filterBag' AND fb.Id = bo.SelectedRowId
+
+LEFT JOIN ionfiltrabagfilters.SolenoidValve sv
+  ON md.MasterKey = 'solenoidValve' AND sv.Id = bo.SelectedRowId
+
+LEFT JOIN ionfiltrabagfilters.DPTEntity dpt
+  ON md.MasterKey = 'dpt' AND dpt.Id = bo.SelectedRowId
+
+LEFT JOIN ionfiltrabagfilters.DPGEntity dpg
+  ON md.MasterKey = 'dpg' AND dpg.Id = bo.SelectedRowId
+
+LEFT JOIN ionfiltrabagfilters.DPSEntity dps
+  ON md.MasterKey = 'dps' AND dps.Id = bo.SelectedRowId
+
+LEFT JOIN ionfiltrabagfilters.PGEntity pg
+  ON md.MasterKey = 'pg' AND pg.Id = bo.SelectedRowId
+
+LEFT JOIN ionfiltrabagfilters.PTEntity pt
+  ON md.MasterKey = 'pt' AND pt.Id = bo.SelectedRowId
+
+LEFT JOIN ionfiltrabagfilters.PSEntity ps
+  ON md.MasterKey = 'ps' AND ps.Id = bo.SelectedRowId
+
+LEFT JOIN ionfiltrabagfilters.HLDEntity hld
+  ON md.MasterKey = 'hld' AND hld.Id = bo.SelectedRowId
+
+LEFT JOIN ionfiltrabagfilters.RTDEntity rtd
+  ON md.MasterKey = 'rtd' AND rtd.Id = bo.SelectedRowId
+
+LEFT JOIN ionfiltrabagfilters.UTubeManometer utm
+  ON md.MasterKey = 'utubeManometer' AND utm.Id = bo.SelectedRowId
+
+LEFT JOIN ionfiltrabagfilters.ExplosionVent ev
+  ON md.MasterKey = 'explosionVent' AND ev.Id = bo.SelectedRowId
+
+LEFT JOIN ionfiltrabagfilters.FieldHooter fh
+  ON md.MasterKey = 'fieldHooter' AND fh.Id = bo.SelectedRowId
+
+LEFT JOIN ionfiltrabagfilters.AFREntity afr
+  ON md.MasterKey = 'afr' AND afr.Id = bo.SelectedRowId
+
+LEFT JOIN ionfiltrabagfilters.ProxyPulser proxy
+  ON md.MasterKey = 'proxyPulser' AND proxy.Id = bo.SelectedRowId
+
+LEFT JOIN ionfiltrabagfilters.ProxymitySwitch prox
+  ON md.MasterKey = 'proximitySwitch' AND prox.Id = bo.SelectedRowId
+
+LEFT JOIN ionfiltrabagfilters.CableEntity cable
+  ON md.MasterKey = 'cable' AND cable.Id = bo.SelectedRowId
+
+LEFT JOIN ionfiltrabagfilters.ZssController zss
+  ON md.MasterKey = 'zssController' AND zss.Id = bo.SelectedRowId
+
+LEFT JOIN ionfiltrabagfilters.JunctionBox jb
+  ON md.MasterKey = 'junctionBox' AND jb.Id = bo.SelectedRowId
+
+LEFT JOIN ionfiltrabagfilters.VibrationTransmitter vib
+  ON md.MasterKey = 'vibrationTransmitter' AND vib.Id = bo.SelectedRowId
+
+LEFT JOIN ionfiltrabagfilters.Thermocouple tc
+  ON md.MasterKey = 'thermocouple' AND tc.Id = bo.SelectedRowId
+
+LEFT JOIN ionfiltrabagfilters.Thermostat th
+  ON md.MasterKey = 'thermostat' AND th.Id = bo.SelectedRowId
+
+LEFT JOIN ionfiltrabagfilters.HopperHeatingPad hhp
+  ON md.MasterKey = 'hopperHeatingPad' AND hhp.Id = bo.SelectedRowId
+
+LEFT JOIN ionfiltrabagfilters.HopperHeatingcontroller hhc
+  ON md.MasterKey = 'hopperHeatingController' AND hhc.Id = bo.SelectedRowId
+
+LEFT JOIN ionfiltrabagfilters.MotorisedActuator ma
+  ON md.MasterKey = 'motorisedActuator' AND ma.Id = bo.SelectedRowId
+
+LEFT JOIN ionfiltrabagfilters.RAVGearedMotor rav
+  ON md.MasterKey = 'ravGearedMotor' AND rav.Id = bo.SelectedRowId
+
+LEFT JOIN ionfiltrabagfilters.HardwareEntity hw
+  ON md.MasterKey = 'hardware' AND hw.Id = bo.SelectedRowId
+
+LEFT JOIN ionfiltrabagfilters.SStubing sstub
+  ON md.MasterKey = 'sstubing' AND sstub.Id = bo.SelectedRowId
+
+LEFT JOIN ionfiltrabagfilters.LTMotor lt
+  ON md.MasterKey = 'ltMotor' AND lt.Id = bo.SelectedRowId
+
+LEFT JOIN ionfiltrabagfilters.TimerEntity timer
+  ON md.MasterKey = 'timer' AND timer.Id = bo.SelectedRowId;

@@ -1,4 +1,4 @@
-
+﻿
 ---------------Bought-Out Items Inserts--------------------
 
 INSERT INTO ionfiltrabagfilters.MasterDefinitions
@@ -693,14 +693,14 @@ INSERT INTO ionfiltrabagfilters.CageMiscellaneousConfig
 (Item, Value, Unit)
 VALUES
 ('Packing Raw Material', 0.7, 'Kg'),
-('Square Tube for Packing', 60, 'INR'),
-('Tarpoline', 2, 'INR/cage');
+('Square Tube for Packing', 60, '₹'),
+('Tarpoline', 2, '₹/cage');
 
 INSERT INTO ionfiltrabagfilters.AdminCostConfig
 (Item, Value, Unit)
 VALUES
-('Cage Fabrication Cost', 10, 'INR/kg'),
-('Scrap Rate', 35, 'INR/kg');
+('Cage Fabrication Cost', 10, '₹/kg'),
+('Scrap Rate', 35, '₹/kg');
 
 INSERT INTO ionfiltrabagfilters.StandardCageConfig
 (CageSpec, WeightKg, RawMaterialCost, FixedFabricationCost, BoughtOutCost, PackingCost, PaintCost, TarpolineCost, FinalCostINR)
@@ -795,11 +795,11 @@ VALUES
 INSERT INTO ionfiltrabagfilters.DamperCostMiscellaneousConfig
 (Item, Value, Unit)
 VALUES
-('Red Oxide', 90, '?/L'),
-('Enamel Paint', 150, '?/L'),
-('Damper Fab Cost', 30, '?/kg'),
-('MS Raw Material', 78, '?/kg'),
-('Hardware', 1000, '?');
+('Red Oxide', 90, '₹/L'),
+('Enamel Paint', 150, '₹/L'),
+('Damper Fab Cost', 30, '₹/kg'),
+('MS Raw Material', 78, '₹/kg'),
+('Hardware', 1000, '₹');
 
 
 INSERT INTO ionfiltrabagfilters.DamperSizesConfig
@@ -845,27 +845,27 @@ VALUES
 INSERT INTO ionfiltrabagfilters.ExplosionVentConfig
 (ProcessVolumeM3hr, KST, PmaxMmwc, VentQuantity, VentSize)
 VALUES
-(1500,  'ST1', 1500, 1, '500 x 500 mm'),
-(3000,  'ST1', 1500, 1, '600 x 600 mm'),
-(5000,  'ST1', 1500, 1, '600 x 600 mm'),
-(5500,  'ST1', 1500, 1, '586 x 920 mm'),
-(6000,  'ST1', 1500, 1, '586 x 920 mm'),
-(6500,  'ST1', 1500, 2, '586 x 920 mm'),
-(7500,  'ST1', 1500, 2, '586 x 920 mm'),
-(8000,  'ST1', 1500, 2, '586 x 920 mm'),
-(10000, 'ST1', 1500, 2, '586 x 920 mm'),
-(12500, 'ST1', 1500, 3, '586 x 920 mm'),
-(15000, 'ST1', 1500, 3, '586 x 920 mm'),
-(15500, 'ST1', 1500, 3, '586 x 920 mm'),
-(18000, 'ST1', 1500, 3, '586 x 920 mm'),
-(20000, 'ST1', 1500, 3, '586 x 920 mm'),
-(22000, 'ST1', 1500, 4, '586 x 920 mm'),
-(25000, 'ST1', 1500, 4, '586 x 920 mm'),
-(30000, 'ST1', 1500, 4, '586 x 920 mm'),
-(35000, 'ST1', 1500, 4, '586 x 920 mm'),
-(45000, 'ST1', 1500, 4, '586 x 920 mm'),
-(60000, 'ST1', 1500, 5, '586 x 920 mm'),
-(70000, 'ST1', 1500, 5, '586 x 920 mm'),
-(125000,'ST1', 1500, 6, '586 x 920 mm');
+(1500,  'ST1', 1500, 1, '500 x 500'),
+(3000,  'ST1', 1500, 1, '600 x 600'),
+(5000,  'ST1', 1500, 1, '600 x 600'),
+(5500,  'ST1', 1500, 1, '586 x 920'),
+(6000,  'ST1', 1500, 1, '586 x 920'),
+(6500,  'ST1', 1500, 2, '586 x 920'),
+(7500,  'ST1', 1500, 2, '586 x 920'),
+(8000,  'ST1', 1500, 2, '586 x 920'),
+(10000, 'ST1', 1500, 2, '586 x 920'),
+(12500, 'ST1', 1500, 3, '586 x 920'),
+(15000, 'ST1', 1500, 3, '586 x 920'),
+(15500, 'ST1', 1500, 3, '586 x 920'),
+(18000, 'ST1', 1500, 3, '586 x 920'),
+(20000, 'ST1', 1500, 3, '586 x 920'),
+(22000, 'ST1', 1500, 4, '586 x 920'),
+(25000, 'ST1', 1500, 4, '586 x 920'),
+(30000, 'ST1', 1500, 4, '586 x 920'),
+(35000, 'ST1', 1500, 4, '586 x 920'),
+(45000, 'ST1', 1500, 4, '586 x 920'),
+(60000, 'ST1', 1500, 5, '586 x 920'),
+(70000, 'ST1', 1500, 5, '586 x 920'),
+(125000,'ST1', 1500, 6, '586 x 920');
 
 

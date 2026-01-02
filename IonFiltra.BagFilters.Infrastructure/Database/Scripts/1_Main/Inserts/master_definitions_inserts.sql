@@ -1,4 +1,4 @@
-
+﻿
 ---------------Bought-Out Items Inserts--------------------
 
 INSERT INTO ionfiltrabagfilters.MasterDefinitions
@@ -693,14 +693,14 @@ INSERT INTO ionfiltrabagfilters.CageMiscellaneousConfig
 (Item, Value, Unit)
 VALUES
 ('Packing Raw Material', 0.7, 'Kg'),
-('Square Tube for Packing', 60, 'INR'),
-('Tarpoline', 2, 'INR/cage');
+('Square Tube for Packing', 60, '₹'),
+('Tarpoline', 2, '₹/cage');
 
 INSERT INTO ionfiltrabagfilters.AdminCostConfig
 (Item, Value, Unit)
 VALUES
-('Cage Fabrication Cost', 10, 'INR/kg'),
-('Scrap Rate', 35, 'INR/kg');
+('Cage Fabrication Cost', 10, '₹/kg'),
+('Scrap Rate', 35, '₹/kg');
 
 INSERT INTO ionfiltrabagfilters.StandardCageConfig
 (CageSpec, WeightKg, RawMaterialCost, FixedFabricationCost, BoughtOutCost, PackingCost, PaintCost, TarpolineCost, FinalCostINR)
@@ -795,11 +795,11 @@ VALUES
 INSERT INTO ionfiltrabagfilters.DamperCostMiscellaneousConfig
 (Item, Value, Unit)
 VALUES
-('Red Oxide', 90, '?/L'),
-('Enamel Paint', 150, '?/L'),
-('Damper Fab Cost', 30, '?/kg'),
-('MS Raw Material', 78, '?/kg'),
-('Hardware', 1000, '?');
+('Red Oxide', 90, '₹/L'),
+('Enamel Paint', 150, '₹/L'),
+('Damper Fab Cost', 30, '₹/kg'),
+('MS Raw Material', 78, '₹/kg'),
+('Hardware', 1000, '₹');
 
 
 INSERT INTO ionfiltrabagfilters.DamperSizesConfig

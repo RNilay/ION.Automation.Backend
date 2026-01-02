@@ -23,6 +23,7 @@ using IonFiltra.BagFilters.Application.Services.Bagfilters.Sections.Structure_In
 using IonFiltra.BagFilters.Application.Services.Bagfilters.Sections.Support_Structure;
 using IonFiltra.BagFilters.Application.Services.Bagfilters.Sections.Weight_Summary;
 using IonFiltra.BagFilters.Application.Services.BOM.Bill_Of_Material;
+using IonFiltra.BagFilters.Application.Services.BOM.Cage_Cost;
 using IonFiltra.BagFilters.Application.Services.BOM.Damper_Cost;
 using IonFiltra.BagFilters.Application.Services.BOM.Painting_Cost;
 using IonFiltra.BagFilters.Application.Services.BOM.PaintingRates;
@@ -59,6 +60,7 @@ using IonFiltra.BagFilters.Core.Interfaces.Repositories.Bagfilters.Sections.Stru
 using IonFiltra.BagFilters.Core.Interfaces.Repositories.Bagfilters.Sections.Support_Structure;
 using IonFiltra.BagFilters.Core.Interfaces.Repositories.Bagfilters.Sections.Weight_Summary;
 using IonFiltra.BagFilters.Core.Interfaces.Repositories.BOM.Bill_Of_Material;
+using IonFiltra.BagFilters.Core.Interfaces.Repositories.BOM.Cage_Cost;
 using IonFiltra.BagFilters.Core.Interfaces.Repositories.BOM.Damper_Cost;
 using IonFiltra.BagFilters.Core.Interfaces.Repositories.BOM.Painting_Cost;
 using IonFiltra.BagFilters.Core.Interfaces.Repositories.BOM.PaintingRates;
@@ -90,6 +92,7 @@ using IonFiltra.BagFilters.Infrastructure.Repositories.Bagfilters.Sections.Struc
 using IonFiltra.BagFilters.Infrastructure.Repositories.Bagfilters.Sections.Support_Structure;
 using IonFiltra.BagFilters.Infrastructure.Repositories.Bagfilters.Sections.Weight_Summary;
 using IonFiltra.BagFilters.Infrastructure.Repositories.BOM.Bill_Of_Material;
+using IonFiltra.BagFilters.Infrastructure.Repositories.BOM.Cage_Cost;
 using IonFiltra.BagFilters.Infrastructure.Repositories.BOM.Damper_Cost;
 using IonFiltra.BagFilters.Infrastructure.Repositories.BOM.Painting_Cost;
 using IonFiltra.BagFilters.Infrastructure.Repositories.BOM.PaintingRates;
@@ -234,6 +237,9 @@ namespace IonFiltra.BagFilters.Infrastructure
 
             services.AddScoped<IDamperCostEntityService, DamperCostEntityService>();
             services.AddScoped<IDamperCostEntityRepository, DamperCostEntityRepository>();
+
+            services.AddScoped<ICageCostEntityService, CageCostEntityService>();
+            services.AddScoped<ICageCostEntityRepository, CageCostEntityRepository>();
 
             return services;
         }

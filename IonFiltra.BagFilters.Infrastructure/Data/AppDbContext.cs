@@ -17,6 +17,7 @@ using IonFiltra.BagFilters.Core.Entities.Bagfilters.Sections.Structure_Inputs;
 using IonFiltra.BagFilters.Core.Entities.Bagfilters.Sections.Support_Structure;
 using IonFiltra.BagFilters.Core.Entities.Bagfilters.Sections.Weight_Summary;
 using IonFiltra.BagFilters.Core.Entities.BOM.Bill_Of_Material;
+using IonFiltra.BagFilters.Core.Entities.BOM.Cage_Cost;
 using IonFiltra.BagFilters.Core.Entities.BOM.Damper_Cost;
 using IonFiltra.BagFilters.Core.Entities.BOM.Painting_Cost;
 using IonFiltra.BagFilters.Core.Entities.BOM.PaintingRates;
@@ -102,6 +103,8 @@ namespace IonFiltra.BagFilters.Infrastructure.Data
         public DbSet<TransportationCostEntity> TransportationCostEntitys { get; set; }
 
         public DbSet<DamperCostEntity> DamperCostEntitys { get; set; }
+
+        public DbSet<CageCostEntity> CageCostEntitys { get; set; }
 
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)
@@ -314,6 +317,13 @@ namespace IonFiltra.BagFilters.Infrastructure.Data
             modelBuilder.Entity<DamperCostEntity>(entity =>
             {
                 entity.ToTable("DamperCostEntity", GlobalConstants.IONFILTRA_SCHEMA);
+                entity.HasKey(u => u.Id);
+                entity.Property(u => u.EnquiryId).IsRequired();
+            });
+
+            modelBuilder.Entity<CageCostEntity>(entity =>
+            {
+                entity.ToTable("CageCostEntity", GlobalConstants.IONFILTRA_SCHEMA);
                 entity.HasKey(u => u.Id);
                 entity.Property(u => u.EnquiryId).IsRequired();
             });

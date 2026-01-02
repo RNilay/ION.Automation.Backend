@@ -19,6 +19,7 @@ using IonFiltra.BagFilters.Core.Entities.Bagfilters.Sections.Structure_Inputs;
 using IonFiltra.BagFilters.Core.Entities.Bagfilters.Sections.Support_Structure;
 using IonFiltra.BagFilters.Core.Entities.Bagfilters.Sections.Weight_Summary;
 using IonFiltra.BagFilters.Core.Entities.BOM.Bill_Of_Material;
+using IonFiltra.BagFilters.Core.Entities.BOM.Cage_Cost;
 using IonFiltra.BagFilters.Core.Entities.BOM.Damper_Cost;
 using IonFiltra.BagFilters.Core.Entities.BOM.Painting_Cost;
 using IonFiltra.BagFilters.Core.Entities.BOM.Transp_Cost;
@@ -41,6 +42,7 @@ using IonFiltra.BagFilters.Core.Interfaces.Repositories.Bagfilters.Sections.Stru
 using IonFiltra.BagFilters.Core.Interfaces.Repositories.Bagfilters.Sections.Support_Structure;
 using IonFiltra.BagFilters.Core.Interfaces.Repositories.Bagfilters.Sections.Weight_Summary;
 using IonFiltra.BagFilters.Core.Interfaces.Repositories.BOM.Bill_Of_Material;
+using IonFiltra.BagFilters.Core.Interfaces.Repositories.BOM.Cage_Cost;
 using IonFiltra.BagFilters.Core.Interfaces.Repositories.BOM.Damper_Cost;
 using IonFiltra.BagFilters.Core.Interfaces.Repositories.BOM.Painting_Cost;
 using IonFiltra.BagFilters.Core.Interfaces.Repositories.BOM.Transp_Cost;
@@ -90,6 +92,8 @@ namespace IonFiltra.BagFilters.Application.Services.Bagfilters.BagfilterInputs
 
         private readonly IDamperCostEntityRepository _damperCostRepository;
 
+        private readonly ICageCostEntityRepository _cageCostRepository;
+
         public BagfilterInputService(
             IBagfilterInputRepository repository,
             IBagfilterMasterRepository masterRepository,
@@ -113,7 +117,8 @@ namespace IonFiltra.BagFilters.Application.Services.Bagfilters.BagfilterInputs
             IMasterDefinitionsRepository masterDefinitionsRepository,
             IGenericViewRepository genericViewRepository,
             ITransportationCostEntityRepository transportationCostEntityRepository,
-            IDamperCostEntityRepository damperCostRepository
+            IDamperCostEntityRepository damperCostRepository,
+            ICageCostEntityRepository cageCostEntityRepository
         )
         {
             _repository = repository;
@@ -141,6 +146,7 @@ namespace IonFiltra.BagFilters.Application.Services.Bagfilters.BagfilterInputs
             _genericViewRepository = genericViewRepository;
             _transportationCostRepository = transportationCostEntityRepository;
             _damperCostRepository = damperCostRepository;
+            _cageCostRepository = cageCostEntityRepository;
 
 
 
@@ -632,6 +638,41 @@ namespace IonFiltra.BagFilters.Application.Services.Bagfilters.BagfilterInputs
             {
                 await _damperCostRepository
                     .ReplaceForMastersAsync(damperDataByMaster, ct);
+            }
+
+
+            // === Batched DamperCost ===
+
+            var cageDataByMaster = new Dictionary<int, List<CageCostEntity>>();
+
+            for (int i = 0; i < dtos.Count; i++)
+            {
+                var dto = dtos[i];
+
+                if (dto.CageCost == null || dto.CageCost.Count == 0)
+                    continue;
+
+                var masterId = masterIdByIndex[i];
+                if (masterId <= 0)
+                    continue;
+
+                var mappedRows = MapCageCostCollection(dto, masterId);
+                if (mappedRows.Count == 0)
+                    continue;
+
+                if (!cageDataByMaster.TryGetValue(masterId, out var list))
+                {
+                    list = new List<CageCostEntity>();
+                    cageDataByMaster[masterId] = list;
+                }
+
+                list.AddRange(mappedRows);
+            }
+
+            if (cageDataByMaster.Count > 0)
+            {
+                await _cageCostRepository
+                    .ReplaceForMastersAsync(cageDataByMaster, ct);
             }
 
             //8)
@@ -3272,6 +3313,40 @@ namespace IonFiltra.BagFilters.Application.Services.Bagfilters.BagfilterInputs
                     continue;
 
                 list.Add(new DamperCostEntity
+                {
+                    EnquiryId = enquiryId,
+                    BagfilterMasterId = masterId,
+                    Parameter = row.Parameter.Trim(),
+                    Value = row.Value,
+                    Unit = row.Unit,
+                    CreatedAt = DateTime.UtcNow
+                });
+            }
+
+            return list;
+        }
+
+
+        private List<CageCostEntity> MapCageCostCollection(
+        BagfilterInputMainDto dto,
+        int masterId)
+        {
+            var list = new List<CageCostEntity>();
+
+            if (dto.CageCost == null)
+                return list;
+
+            var enquiryId =
+                (int?)dto.BagfilterInput?.EnquiryId ??
+                dto.BagfilterMaster?.EnquiryId ??
+                0;
+
+            foreach (var row in dto.CageCost)
+            {
+                if (string.IsNullOrWhiteSpace(row.Parameter))
+                    continue;
+
+                list.Add(new CageCostEntity
                 {
                     EnquiryId = enquiryId,
                     BagfilterMasterId = masterId,

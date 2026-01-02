@@ -192,6 +192,11 @@
                                     "InlineCss": "{#USER}"
                                 },
                                 {
+                                    "Label": "Design Pressure (mmWC)",
+                                    "ValueKey": "Design_Pressure_Mmwc",
+                                    "InlineCss": "{#USER}"
+                                },
+                                {
                                     "Label": "ION Filtra Manufacturing Plant",
                                     "ValueKey": "Mfg_Plant",
                                     "InlineCss": "{#USER}"
@@ -1035,8 +1040,58 @@
                                     "Label": "Total Weight / Compartment (kg)",
                                     "ValueKey": "RoofDoor_Tot_Weight_Per_Compartment",
                                     "InlineCss": "{#CALC}"
-                                }
+                                },
 
+                                {
+                                    "Label": "Damper Size Inputs",
+                                    "ValueKey": null,
+                                    "IsHeader": true,
+                                    "InlineCss": "background-color:#92D050; font-weight:bold;",
+                                    "ColSpan": 2
+                                },
+                                {
+                                    "Label": "Is Damper Required?",
+                                    "ValueKey": "Is_Damper_Required",
+                                    "InlineCss": "{#USER}"
+                                },
+                                {
+                                    "Label": "Damper Series",
+                                    "ValueKey": "Damper_Series",
+                                    "InlineCss": "{#USER}"
+                                },
+                                {
+                                    "Label": "Damper Diameter (mm)",
+                                    "ValueKey": "Damper_Diameter",
+                                    "InlineCss": "{#USER}"
+                                },
+                                {
+                                    "Label": "Damper Quantity (No's)",
+                                    "ValueKey": "Damper_Qty",
+                                    "InlineCss": "{#USER}"
+                                },
+
+                                {
+                                    "Label": "Explosion Vent",
+                                    "ValueKey": null,
+                                    "IsHeader": true,
+                                    "InlineCss": "background-color:#92D050; font-weight:bold;",
+                                    "ColSpan": 2
+                                },
+                                {
+                                    "Label": "Design Pressure (mmWC)",
+                                    "ValueKey": "Explosion_Vent_Design_Pressure",
+                                    "InlineCss": "{#USER}"
+                                },
+                                {
+                                    "Label": "Vent Quantity (No's')",
+                                    "ValueKey": "Explosion_Vent_Quantity",
+                                    "InlineCss": "{#USER}"
+                                },
+                                {
+                                    "Label": "Vent Size",
+                                    "ValueKey": "Explosion_Vent_Size",
+                                    "InlineCss": "{#USER}"
+                                }
 
                             ]
                         },

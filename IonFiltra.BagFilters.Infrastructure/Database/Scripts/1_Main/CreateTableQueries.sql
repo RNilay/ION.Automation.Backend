@@ -45,6 +45,7 @@ CREATE TABLE
         BagfilterMasterId INT NOT NULL,
         EnquiryId INT NULL,
         Process_Volume_M3h DECIMAL(10, 2),
+        Design_Pressure_Mmwc INT,
         Mfg_Plant TEXT,
         Destination_State TEXT,
         Location TEXT,
@@ -127,6 +128,10 @@ CREATE TABLE
         Column_Height DECIMAL(10, 2),
         Bag_Per_Row DECIMAL(10, 2),
         Number_Of_Rows DECIMAL(10, 2),
+        Is_Damper_Required VARCHAR(50),
+        Damper_Series VARCHAR(100),
+        Damper_Diameter DECIMAL(10, 2),
+        Damper_Qty INT,
         IsMatched BOOLEAN NOT NULL DEFAULT 0,
         MatchedBagfilterInputId INT NULL,
         MatchedBagfilterMasterId INT NULL,
@@ -176,6 +181,7 @@ CREATE TABLE
         EnquiryId INT NOT NULL,
         BagfilterMasterId INT NOT NULL,
         Process_Volume_M3h DECIMAL(10, 2),
+        Design_Pressure_Mmwc INT,
         Mfg_Plant TEXT,
         Destination_State TEXT,
         Location TEXT,
@@ -1270,3 +1276,32 @@ CREATE TABLE ionfiltrabagfilters.ExplosionVentConfig (
     UpdatedAt DATETIME NULL ON UPDATE CURRENT_TIMESTAMP,
     IsDeleted TINYINT(1) NOT NULL DEFAULT 0
 );
+
+CREATE TABLE
+    ionfiltrabagfilters.DamperSizeInputs (
+        Id INT AUTO_INCREMENT PRIMARY KEY,
+        EnquiryId INT NOT NULL,
+        BagfilterMasterId INT NOT NULL,
+        Is_Damper_Required TEXT,
+        Damper_Series TEXT,
+        Damper_Diameter DECIMAL(10, 2),
+        Damper_Qty INT,
+        CreatedAt DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+        UpdatedAt DATETIME NULL ON UPDATE CURRENT_TIMESTAMP,
+        FOREIGN KEY (EnquiryId) REFERENCES ionfiltrabagfilters.Enquiry (Id) ON DELETE CASCADE,
+        FOREIGN KEY (BagfilterMasterId) REFERENCES ionfiltrabagfilters.BagfilterMaster (BagfilterMasterId) ON DELETE CASCADE
+    );
+
+    CREATE TABLE
+    ionfiltrabagfilters.ExplosionVentEntity (
+        Id INT AUTO_INCREMENT PRIMARY KEY,
+        EnquiryId INT NOT NULL,
+        BagfilterMasterId INT NOT NULL,
+        Explosion_Vent_Design_Pressure DECIMAL(10, 2),
+        Explosion_Vent_Quantity INT,
+        Explosion_Vent_Size TEXT,
+        CreatedAt DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+        UpdatedAt DATETIME NULL ON UPDATE CURRENT_TIMESTAMP,
+        FOREIGN KEY (EnquiryId) REFERENCES ionfiltrabagfilters.Enquiry (Id) ON DELETE CASCADE,
+        FOREIGN KEY (BagfilterMasterId) REFERENCES ionfiltrabagfilters.BagfilterMaster (BagfilterMasterId) ON DELETE CASCADE
+    );

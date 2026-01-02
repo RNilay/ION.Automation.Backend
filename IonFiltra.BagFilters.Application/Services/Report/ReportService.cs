@@ -340,8 +340,7 @@ namespace IonFiltra.BagFilters.Application.Services.Report
                         reportTemplate.ReportName?.Equals("Transportation Cost", StringComparison.OrdinalIgnoreCase) == true;
 
                     bool isDamperCost = reportTemplate.ReportName?.Equals("Damper Cost", StringComparison.OrdinalIgnoreCase) == true;
-
-
+                    bool isCageCosting = reportTemplate.ReportName?.Equals("Cage Costing", StringComparison.OrdinalIgnoreCase) == true;
 
                     // For each record in the source list, render the group's ChildRows (in order)
                     for (int idx = 0; idx < sourceList.Count; idx++)
@@ -434,6 +433,32 @@ namespace IonFiltra.BagFilters.Application.Services.Report
                                  && string.Equals(clonedChild.RepeatRow.SourceKey,
                                                   "DamperRows",
                                                   StringComparison.OrdinalIgnoreCase))
+                                {
+                                    var nestedRepeat = clonedChild.RepeatRow;
+
+                                    if (record.TryGetValue(nestedRepeat.SourceKey, out var nestedObj)
+                                        && nestedObj != null)
+                                    {
+                                        var nestedList = ConvertToListOfDicts(nestedObj);
+
+                                        var expandedRows = ExpandNestedRepeatTable(
+                                            clonedChild,
+                                            nestedRepeat,
+                                            nestedList
+                                        );
+
+                                        var expandedTable = DeepClone(clonedChild);
+                                        expandedTable.Rows = expandedRows;
+                                        expandedTable.RepeatRow = null;
+
+                                        newRowsList.Add(expandedTable);
+                                    }
+                                }
+                                else if (isCageCosting
+                                 && clonedChild.RepeatRow != null
+                                 && string.Equals(clonedChild.RepeatRow.SourceKey,
+                                                  "CageRows",
+                                      StringComparison.OrdinalIgnoreCase))
                                 {
                                     var nestedRepeat = clonedChild.RepeatRow;
 

@@ -9,6 +9,8 @@ using IonFiltra.BagFilters.Core.Entities.Bagfilters.Sections.Bag_Selection;
 using IonFiltra.BagFilters.Core.Entities.Bagfilters.Sections.Cage_Inputs;
 using IonFiltra.BagFilters.Core.Entities.Bagfilters.Sections.Capsule_Inputs;
 using IonFiltra.BagFilters.Core.Entities.Bagfilters.Sections.Casing_Inputs;
+using IonFiltra.BagFilters.Core.Entities.Bagfilters.Sections.DamperSize;
+using IonFiltra.BagFilters.Core.Entities.Bagfilters.Sections.EV;
 using IonFiltra.BagFilters.Core.Entities.Bagfilters.Sections.Hopper_Trough;
 using IonFiltra.BagFilters.Core.Entities.Bagfilters.Sections.Painting;
 using IonFiltra.BagFilters.Core.Entities.Bagfilters.Sections.Process_Info;
@@ -105,6 +107,9 @@ namespace IonFiltra.BagFilters.Infrastructure.Data
         public DbSet<DamperCostEntity> DamperCostEntitys { get; set; }
 
         public DbSet<CageCostEntity> CageCostEntitys { get; set; }
+
+        public DbSet<DamperSizeInputs> DamperSizeInputss { get; set; }
+        public DbSet<ExplosionVentEntity> ExplosionVentEntitys { get; set; }
 
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)
@@ -324,6 +329,20 @@ namespace IonFiltra.BagFilters.Infrastructure.Data
             modelBuilder.Entity<CageCostEntity>(entity =>
             {
                 entity.ToTable("CageCostEntity", GlobalConstants.IONFILTRA_SCHEMA);
+                entity.HasKey(u => u.Id);
+                entity.Property(u => u.EnquiryId).IsRequired();
+            });
+
+            modelBuilder.Entity<DamperSizeInputs>(entity =>
+            {
+                entity.ToTable("DamperSizeInputs", GlobalConstants.IONFILTRA_SCHEMA);
+                entity.HasKey(u => u.Id);
+                entity.Property(u => u.EnquiryId).IsRequired();
+            });
+
+            modelBuilder.Entity<ExplosionVentEntity>(entity =>
+            {
+                entity.ToTable("ExplosionVentEntity", GlobalConstants.IONFILTRA_SCHEMA);
                 entity.HasKey(u => u.Id);
                 entity.Property(u => u.EnquiryId).IsRequired();
             });

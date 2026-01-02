@@ -255,6 +255,42 @@ namespace IonFiltra.BagFilters.Api.Controllers.Report
 
                         rowValues["damper_groups"] = damperGroups;
                     }
+                    else if (
+                    string.Equals(template.EntityDbName, "vw_CageCostDetails",
+                                  StringComparison.OrdinalIgnoreCase)
+                    || string.Equals(template.Title, "Cage Costing",
+                                     StringComparison.OrdinalIgnoreCase)
+)
+                    {
+                        var cageGroups = listData
+                            .GroupBy(d => d["Process_Volume_M3h"])
+                            .Select(g =>
+                            {
+                                var first = g.First();
+                                var groupDict = new Dictionary<string, object>();
+
+                                groupDict["EnquiryId"] = first["EnquiryId"];
+                                groupDict["BagfilterMasterId"] = first["BagfilterMasterId"];
+                                groupDict["Process_Volume_M3h"] = first["Process_Volume_M3h"];
+                                groupDict["Qty"] = first["Qty"];
+                                groupDict["Enquiry_RequiredBagFilters"] = first["Enquiry_RequiredBagFilters"];
+
+                                groupDict["CageRows"] = g
+                                    .Select(r => new Dictionary<string, object>
+                                    {
+                                        ["Parameter"] = r["Parameter"],
+                                        ["Value"] = r["Value"],
+                                        ["Unit"] = r["Unit"]
+                                    })
+                                    .ToList();
+
+                                return groupDict;
+                            })
+                            .ToList();
+
+                        rowValues["cage_groups"] = cageGroups;
+                    }
+
                     else if (string.Equals(template.EntityDbName, "vw_PaintingCostDetails",
                                       StringComparison.OrdinalIgnoreCase) || string.Equals(template.Title, "Painting Cost", StringComparison.OrdinalIgnoreCase))
                     {

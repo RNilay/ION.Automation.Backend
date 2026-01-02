@@ -4,6 +4,8 @@ using IonFiltra.BagFilters.Application.DTOs.Bagfilters.Sections.Bag_Selection;
 using IonFiltra.BagFilters.Application.DTOs.Bagfilters.Sections.Cage_Inputs;
 using IonFiltra.BagFilters.Application.DTOs.Bagfilters.Sections.Capsule_Inputs;
 using IonFiltra.BagFilters.Application.DTOs.Bagfilters.Sections.Casing_Inputs;
+using IonFiltra.BagFilters.Application.DTOs.Bagfilters.Sections.DamperSize;
+using IonFiltra.BagFilters.Application.DTOs.Bagfilters.Sections.EV;
 using IonFiltra.BagFilters.Application.DTOs.Bagfilters.Sections.Hopper_Trough;
 using IonFiltra.BagFilters.Application.DTOs.Bagfilters.Sections.Painting;
 using IonFiltra.BagFilters.Application.DTOs.Bagfilters.Sections.Process_Info;
@@ -57,5 +59,8 @@ namespace IonFiltra.BagFilters.Application.DTOs.Bagfilters.BagfilterInputs
 
         public List<CageCostEntityDto> CageCost { get; set; }
         = new List<CageCostEntityDto>();
+
+        public DamperSizeInputsDto? DamperSizeInputs { get; set; }
+        public ExplosionVentEntityDto? ExplosionVent { get; set; }
     }
 }

@@ -16,6 +16,7 @@ namespace IonFiltra.BagFilters.Application.Mappers.Bagfilters.Sections.Process_I
                 ProcessInfo = new ProcessInfoDto
                 {
                     Process_Volume_M3h = entity.Process_Volume_M3h,
+                    Design_Pressure_Mmwc = entity.Design_Pressure_Mmwc,
                     Mfg_Plant = entity.Mfg_Plant,
                     Destination_State = entity.Destination_State,
                     Location = entity.Location,
@@ -53,6 +54,7 @@ namespace IonFiltra.BagFilters.Application.Mappers.Bagfilters.Sections.Process_I
                 EnquiryId = dto.EnquiryId,
                 BagfilterMasterId = dto.BagfilterMasterId,
                 Process_Volume_M3h = dto.ProcessInfo.Process_Volume_M3h,
+                Design_Pressure_Mmwc = dto.ProcessInfo.Design_Pressure_Mmwc,
                 Mfg_Plant = dto.ProcessInfo.Mfg_Plant,
                 Destination_State = dto.ProcessInfo.Destination_State,
                 Location = dto.ProcessInfo.Location,

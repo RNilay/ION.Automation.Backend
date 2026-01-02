@@ -519,6 +519,22 @@ CREATE TABLE ionfiltrabagfilters.DamperCostEntity (
     FOREIGN KEY (BagfilterMasterId) REFERENCES ionfiltrabagfilters.bagfiltermaster(BagfilterMasterId) ON DELETE CASCADE
 );
 
+------------Cage Cost-------------
+CREATE TABLE ionfiltrabagfilters.CageCostEntity (
+    Id               INT AUTO_INCREMENT PRIMARY KEY,
+    EnquiryId INT NOT NULL,
+    BagfilterMasterId INT NOT NULL,
+    Parameter        VARCHAR(200) NOT NULL,
+    Value            VARCHAR(50)  NULL,
+    Unit             VARCHAR(20)  NULL,
+    CreatedAt        DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    UpdatedAt        DATETIME NULL ON UPDATE CURRENT_TIMESTAMP,
+    FOREIGN KEY (EnquiryId) REFERENCES ionfiltrabagfilters.Enquiry(Id) ON DELETE CASCADE,
+    FOREIGN KEY (BagfilterMasterId) REFERENCES ionfiltrabagfilters.bagfiltermaster(BagfilterMasterId) ON DELETE CASCADE
+);
+
+-----------------
+
 CREATE TABLE
     ionfiltrabagfilters.BoughtOutItemSelection (
         Id INT AUTO_INCREMENT PRIMARY KEY,

@@ -23,9 +23,11 @@ using IonFiltra.BagFilters.Application.Services.Bagfilters.Sections.Structure_In
 using IonFiltra.BagFilters.Application.Services.Bagfilters.Sections.Support_Structure;
 using IonFiltra.BagFilters.Application.Services.Bagfilters.Sections.Weight_Summary;
 using IonFiltra.BagFilters.Application.Services.BOM.Bill_Of_Material;
+using IonFiltra.BagFilters.Application.Services.BOM.Damper_Cost;
 using IonFiltra.BagFilters.Application.Services.BOM.Painting_Cost;
 using IonFiltra.BagFilters.Application.Services.BOM.PaintingRates;
 using IonFiltra.BagFilters.Application.Services.BOM.Rates;
+using IonFiltra.BagFilters.Application.Services.BOM.Transp_Cost;
 using IonFiltra.BagFilters.Application.Services.EnquiryService;
 using IonFiltra.BagFilters.Application.Services.GenericView;
 using IonFiltra.BagFilters.Application.Services.MasterData.BoughtOutItems;
@@ -57,9 +59,11 @@ using IonFiltra.BagFilters.Core.Interfaces.Repositories.Bagfilters.Sections.Stru
 using IonFiltra.BagFilters.Core.Interfaces.Repositories.Bagfilters.Sections.Support_Structure;
 using IonFiltra.BagFilters.Core.Interfaces.Repositories.Bagfilters.Sections.Weight_Summary;
 using IonFiltra.BagFilters.Core.Interfaces.Repositories.BOM.Bill_Of_Material;
+using IonFiltra.BagFilters.Core.Interfaces.Repositories.BOM.Damper_Cost;
 using IonFiltra.BagFilters.Core.Interfaces.Repositories.BOM.Painting_Cost;
 using IonFiltra.BagFilters.Core.Interfaces.Repositories.BOM.PaintingRates;
 using IonFiltra.BagFilters.Core.Interfaces.Repositories.BOM.Rates;
+using IonFiltra.BagFilters.Core.Interfaces.Repositories.BOM.Transp_Cost;
 using IonFiltra.BagFilters.Core.Interfaces.Repositories.MasterData.BoughtOutItems;
 using IonFiltra.BagFilters.Core.Interfaces.Repositories.MasterData.DPTData;
 using IonFiltra.BagFilters.Core.Interfaces.Repositories.MasterData.FilterBagData;
@@ -86,9 +90,11 @@ using IonFiltra.BagFilters.Infrastructure.Repositories.Bagfilters.Sections.Struc
 using IonFiltra.BagFilters.Infrastructure.Repositories.Bagfilters.Sections.Support_Structure;
 using IonFiltra.BagFilters.Infrastructure.Repositories.Bagfilters.Sections.Weight_Summary;
 using IonFiltra.BagFilters.Infrastructure.Repositories.BOM.Bill_Of_Material;
+using IonFiltra.BagFilters.Infrastructure.Repositories.BOM.Damper_Cost;
 using IonFiltra.BagFilters.Infrastructure.Repositories.BOM.Painting_Cost;
 using IonFiltra.BagFilters.Infrastructure.Repositories.BOM.PaintingRates;
 using IonFiltra.BagFilters.Infrastructure.Repositories.BOM.Rates;
+using IonFiltra.BagFilters.Infrastructure.Repositories.BOM.Transp_Cost;
 using IonFiltra.BagFilters.Infrastructure.Repositories.GenericView;
 using IonFiltra.BagFilters.Infrastructure.Repositories.MasterData.BoughtOutItems;
 using IonFiltra.BagFilters.Infrastructure.Repositories.MasterData.DPTData;
@@ -222,6 +228,12 @@ namespace IonFiltra.BagFilters.Infrastructure
 
             services.AddScoped<IDPTEntityService, DPTEntityService>();
             services.AddScoped<IDPTEntityRepository, DPTEntityRepository>();
+
+            services.AddScoped<ITransportationCostEntityService, TransportationCostEntityService>();
+            services.AddScoped<ITransportationCostEntityRepository, TransportationCostEntityRepository>();
+
+            services.AddScoped<IDamperCostEntityService, DamperCostEntityService>();
+            services.AddScoped<IDamperCostEntityRepository, DamperCostEntityRepository>();
 
             return services;
         }

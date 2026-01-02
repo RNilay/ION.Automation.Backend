@@ -546,3 +546,117 @@ ORDER BY
     dv.EnquiryId,
     dv.Process_Volume_M3h,
     dv.BagfilterMasterId;
+
+    -----transportation cost view--:
+
+    
+CREATE OR REPLACE VIEW ionfiltrabagfilters.vw_TransportationCostDetails AS
+WITH PiBm AS (
+    SELECT
+        e.Id                 AS EnquiryId,
+        bm.BagfilterMasterId AS BagfilterMasterId,
+        pi.Process_Volume_M3h,
+        e.RequiredBagFilters AS Enquiry_RequiredBagFilters,
+
+        -- choose a single BagfilterMaster per (Enquiry, Process_Volume_M3h)
+        ROW_NUMBER() OVER (
+            PARTITION BY e.Id, pi.Process_Volume_M3h
+            ORDER BY bm.BagfilterMasterId
+        ) AS RnPerVolume
+    FROM ionfiltrabagfilters.ProcessInfo pi
+    JOIN ionfiltrabagfilters.BagfilterMaster bm
+          ON bm.BagfilterMasterId = pi.BagfilterMasterId
+         AND bm.EnquiryId          = pi.EnquiryId
+    JOIN ionfiltrabagfilters.Enquiry e
+          ON e.Id = pi.EnquiryId
+    WHERE pi.Process_Volume_M3h IS NOT NULL
+),
+DistinctVolumes AS (
+    SELECT
+        EnquiryId,
+        BagfilterMasterId,
+        Process_Volume_M3h,
+        Enquiry_RequiredBagFilters,
+
+        -- Qty = running number of distinct process volumes per enquiry
+        ROW_NUMBER() OVER (
+            PARTITION BY EnquiryId
+            ORDER BY Process_Volume_M3h, BagfilterMasterId
+        ) AS Qty
+    FROM PiBm
+    WHERE RnPerVolume = 1
+)
+SELECT
+    dv.EnquiryId,
+    dv.BagfilterMasterId,
+    dv.Process_Volume_M3h,
+    dv.Enquiry_RequiredBagFilters,
+    dv.Qty,
+
+    -- Transportation Cost rows
+    tc.Parameter,
+    tc.Value,
+    tc.Unit
+FROM DistinctVolumes dv
+JOIN ionfiltrabagfilters.TransportationCostEntity tc
+      ON tc.EnquiryId         = dv.EnquiryId
+     AND tc.BagfilterMasterId = dv.BagfilterMasterId
+ORDER BY
+    dv.EnquiryId,
+    dv.Process_Volume_M3h,
+    dv.BagfilterMasterId,
+    tc.Id;
+
+
+    ---damper cost view
+
+    CREATE OR REPLACE VIEW ionfiltrabagfilters.vw_DamperCostDetails AS
+WITH PiBm AS (
+    SELECT
+        e.Id AS EnquiryId,
+        bm.BagfilterMasterId,
+        pi.Process_Volume_M3h,
+        e.RequiredBagFilters AS Enquiry_RequiredBagFilters,
+        ROW_NUMBER() OVER (
+            PARTITION BY e.Id, pi.Process_Volume_M3h
+            ORDER BY bm.BagfilterMasterId
+        ) AS RnPerVolume
+    FROM ionfiltrabagfilters.ProcessInfo pi
+    JOIN ionfiltrabagfilters.BagfilterMaster bm
+      ON bm.BagfilterMasterId = pi.BagfilterMasterId
+     AND bm.EnquiryId = pi.EnquiryId
+    JOIN ionfiltrabagfilters.Enquiry e
+      ON e.Id = pi.EnquiryId
+    WHERE pi.Process_Volume_M3h IS NOT NULL
+),
+DistinctVolumes AS (
+    SELECT
+        EnquiryId,
+        BagfilterMasterId,
+        Process_Volume_M3h,
+        Enquiry_RequiredBagFilters,
+        ROW_NUMBER() OVER (
+            PARTITION BY EnquiryId
+            ORDER BY Process_Volume_M3h, BagfilterMasterId
+        ) AS Qty
+    FROM PiBm
+    WHERE RnPerVolume = 1
+)
+SELECT
+    dv.EnquiryId,
+    dv.BagfilterMasterId,
+    dv.Process_Volume_M3h,
+    dv.Enquiry_RequiredBagFilters,
+    dv.Qty,
+    dc.Parameter,
+    dc.Value,
+    dc.Unit
+FROM DistinctVolumes dv
+JOIN ionfiltrabagfilters.DamperCostEntity dc
+  ON dc.EnquiryId = dv.EnquiryId
+ AND dc.BagfilterMasterId = dv.BagfilterMasterId
+ORDER BY
+    dv.EnquiryId,
+    dv.Process_Volume_M3h,
+    dv.BagfilterMasterId,
+    dc.Id;

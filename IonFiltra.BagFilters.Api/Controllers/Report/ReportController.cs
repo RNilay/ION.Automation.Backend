@@ -69,24 +69,7 @@ namespace IonFiltra.BagFilters.Api.Controllers.Report
                     { "Id", request.EnquiryId },
                 };
 
-                //// 3) Common params for data views (bagfiltermaster, vw_* etc.)
-                //Dictionary<string, object> BuildDataParams()
-                //{
-                //    var p = new Dictionary<string, object>
-                //    {
-                //        ["EnquiryId"] = request.EnquiryId
-                //    };
-
-                //    if (request.ProcessVolumeM3h.HasValue)
-                //    {
-                //        // name it exactly as your SQL/view expects
-                //        p["Process_Volume_M3h"] = request.ProcessVolumeM3h.Value;
-                //        // if your view expects process_volume_m3h instead:
-                //        // p["process_volume_m3h"] = request.ProcessVolumeM3h.Value;
-                //    }
-
-                //    return p;
-                //}
+              
 
                 // For each template load data - you said use "enquiry" as table name for now
                 foreach (var template in templates)
@@ -128,6 +111,20 @@ namespace IonFiltra.BagFilters.Api.Controllers.Report
                         foreach (var kvp in listData[0])
                             rowValues[kvp.Key] = kvp.Value;
                     }
+
+                    //var rowValues = new Dictionary<string, object>();
+
+                    //bool isGroupedTemplate =
+                    //    template.EntityDbName.Equals("vw_BillOfMaterialDetails", StringComparison.OrdinalIgnoreCase)
+                    //    || template.EntityDbName.Equals("vw_TransportationCostDetails", StringComparison.OrdinalIgnoreCase)
+                    //    || template.EntityDbName.Equals("vw_PaintingCostDetails", StringComparison.OrdinalIgnoreCase);
+
+                    //if (!isGroupedTemplate && listData.Count > 0)
+                    //{
+                    //    foreach (var kvp in listData[0])
+                    //        rowValues[kvp.Key] = kvp.Value;
+                    //}
+
 
                     var masterDataList = bagfilterMasterData?.Result.ToList() ?? new List<Dictionary<string, object>>();
                     // Merge master data
@@ -177,18 +174,91 @@ namespace IonFiltra.BagFilters.Api.Controllers.Report
                         // this is what the group in the template will iterate
                         rowValues["bom_groups"] = bomGroups;
                     }
+                    else if (
+                    string.Equals(template.EntityDbName, "vw_TransportationCostDetails",
+                                  StringComparison.OrdinalIgnoreCase)
+                    || string.Equals(template.Title, "Transportation Cost", StringComparison.OrdinalIgnoreCase)
+)
+                    {
+                        var transportGroups = listData
+                            .GroupBy(d => d["Process_Volume_M3h"])
+                            .Select(g =>
+                            {
+                                var first = g.First();
+
+                                var groupDict = new Dictionary<string, object>();
+
+                                // Header fields (MUST match template placeholders)
+                                if (first.TryGetValue("EnquiryId", out var enq))
+                                    groupDict["EnquiryId"] = enq;
+
+                                if (first.TryGetValue("BagfilterMasterId", out var bm))
+                                    groupDict["BagfilterMasterId"] = bm;
+
+                                if (first.TryGetValue("Process_Volume_M3h", out var pv))
+                                    groupDict["Process_Volume_M3h"] = pv;
+
+                                if (first.TryGetValue("Qty", out var qty))
+                                    groupDict["Qty"] = qty;
+
+                                if (first.TryGetValue("Enquiry_RequiredBagFilters", out var rb))
+                                    groupDict["Enquiry_RequiredBagFilters"] = rb;
+
+                                // 🚨 THIS IS THE KEY PART
+                                groupDict["TransportationRows"] = g
+                                    .Select(r => new Dictionary<string, object>
+                                    {
+                                        ["Parameter"] = r.GetValueOrDefault("Parameter"),
+                                        ["Value"] = r.GetValueOrDefault("Value"),
+                                        ["Unit"] = r.GetValueOrDefault("Unit")
+                                    })
+                                    .ToList();
+
+                                return groupDict;
+                            })
+                            .ToList();
+
+                        rowValues["transport_groups"] = transportGroups;
+                    }
+                    else if (
+                        string.Equals(template.EntityDbName, "vw_DamperCostDetails",
+                                      StringComparison.OrdinalIgnoreCase)
+                        || string.Equals(template.Title, "Damper Cost",
+                                         StringComparison.OrdinalIgnoreCase))
+
+                    {
+                        var damperGroups = listData
+                            .GroupBy(d => d["Process_Volume_M3h"])
+                            .Select(g =>
+                            {
+                                var first = g.First();
+                                var groupDict = new Dictionary<string, object>();
+
+                                groupDict["EnquiryId"] = first["EnquiryId"];
+                                groupDict["BagfilterMasterId"] = first["BagfilterMasterId"];
+                                groupDict["Process_Volume_M3h"] = first["Process_Volume_M3h"];
+                                groupDict["Qty"] = first["Qty"];
+                                groupDict["Enquiry_RequiredBagFilters"] = first["Enquiry_RequiredBagFilters"];
+
+                                groupDict["DamperRows"] = g
+                                    .Select(r => new Dictionary<string, object>
+                                    {
+                                        ["Parameter"] = r["Parameter"],
+                                        ["Value"] = r["Value"],
+                                        ["Unit"] = r["Unit"]
+                                    })
+                                    .ToList();
+
+                                return groupDict;
+                            })
+                            .ToList();
+
+                        rowValues["damper_groups"] = damperGroups;
+                    }
                     else if (string.Equals(template.EntityDbName, "vw_PaintingCostDetails",
                                       StringComparison.OrdinalIgnoreCase) || string.Equals(template.Title, "Painting Cost", StringComparison.OrdinalIgnoreCase))
                     {
-                        //var paintingJson = listData[0]["PaintingTableJson"]?.ToString();
-                        //if (!string.IsNullOrWhiteSpace(paintingJson))
-                        //{
-                        //    var list = JsonSerializer.Deserialize<List<Dictionary<string, object>>>(paintingJson);
-                        //    if (list != null)
-                        //    {
-                        //        rowValues["list_values"] = list; // matches SourceKey in painting_cost.json
-                        //    }
-                        //}
+                       
 
                         var paintingGroups = new List<Dictionary<string, object>>();
 

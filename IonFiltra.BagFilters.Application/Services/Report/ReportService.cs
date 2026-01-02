@@ -336,6 +336,12 @@ namespace IonFiltra.BagFilters.Application.Services.Report
                     bool isPaintingCost =
                         reportTemplate.ReportName?.Equals("Painting Cost", StringComparison.OrdinalIgnoreCase) == true;
 
+                    bool isTransportationCost =
+                        reportTemplate.ReportName?.Equals("Transportation Cost", StringComparison.OrdinalIgnoreCase) == true;
+
+                    bool isDamperCost = reportTemplate.ReportName?.Equals("Damper Cost", StringComparison.OrdinalIgnoreCase) == true;
+
+
 
                     // For each record in the source list, render the group's ChildRows (in order)
                     for (int idx = 0; idx < sourceList.Count; idx++)
@@ -390,7 +396,67 @@ namespace IonFiltra.BagFilters.Application.Services.Report
                                         expandedTable.RepeatRow = null;
                                         newRowsList.Add(expandedTable);
                                     }
-                                }// --- 1c) Painting Cost: nested RepeatRow using record["PaintingRows"] ---
+                                }
+                                else if (isTransportationCost && clonedChild.RepeatRow != null && string.Equals(clonedChild.RepeatRow.SourceKey,
+                                                      "TransportationRows",
+                                                      StringComparison.OrdinalIgnoreCase))
+                                {
+                                    var nestedRepeat = clonedChild.RepeatRow;
+
+                                    if (record.TryGetValue(nestedRepeat.SourceKey, out var nestedObj)
+                                        && nestedObj != null)
+                                    {
+                                        var nestedList = ConvertToListOfDicts(nestedObj);
+
+                                        var expandedRows = ExpandNestedRepeatTable(
+                                            clonedChild,
+                                            nestedRepeat,
+                                            nestedList
+                                        );
+
+                                        var expandedTable = DeepClone(clonedChild);
+                                        expandedTable.Rows = expandedRows;
+                                        expandedTable.RepeatRow = null; // 🔴 critical
+
+                                        newRowsList.Add(expandedTable);
+                                    }
+                                    else
+                                    {
+                                        // fallback (should not normally happen)
+                                        var expandedTable = DeepClone(clonedChild);
+                                        expandedTable.Rows = ExpandTableTemplateForItem(clonedChild, record);
+                                        expandedTable.RepeatRow = null;
+                                        newRowsList.Add(expandedTable);
+                                    }
+                                }
+                                else if (isDamperCost
+                                 && clonedChild.RepeatRow != null
+                                 && string.Equals(clonedChild.RepeatRow.SourceKey,
+                                                  "DamperRows",
+                                                  StringComparison.OrdinalIgnoreCase))
+                                {
+                                    var nestedRepeat = clonedChild.RepeatRow;
+
+                                    if (record.TryGetValue(nestedRepeat.SourceKey, out var nestedObj)
+                                        && nestedObj != null)
+                                    {
+                                        var nestedList = ConvertToListOfDicts(nestedObj);
+
+                                        var expandedRows = ExpandNestedRepeatTable(
+                                            clonedChild,
+                                            nestedRepeat,
+                                            nestedList
+                                        );
+
+                                        var expandedTable = DeepClone(clonedChild);
+                                        expandedTable.Rows = expandedRows;
+                                        expandedTable.RepeatRow = null;
+
+                                        newRowsList.Add(expandedTable);
+                                    }
+                                }
+
+                                // --- 1c) Painting Cost: nested RepeatRow using record["PaintingRows"] ---
                                 else if (isPaintingCost
                                          && clonedChild.RepeatRow != null
                                          && string.Equals(clonedChild.RepeatRow.SourceKey, "PaintingRows",

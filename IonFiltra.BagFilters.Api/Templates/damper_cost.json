@@ -1,0 +1,94 @@
+{
+    "Id": 7,
+    "Order": 7,
+    "ReportName": "Damper Cost",
+    "Title": "Damper Cost",
+    "EntityDbName": "vw_DamperCostDetails",
+    "Logo": "wwwroot/images/company.png",
+
+    "Layout": {
+        "Columns": 1,
+        "ColumnWidths": [ "100%" ],
+        "ReportWidth": "210mm"
+    },
+
+    "Header": {
+        "TextRows": [
+            "<div style='background-color:#F2F2F2; padding:6px; border:1px solid #000;'>",
+            "<table style='width:100%; font-size:12px;'><tr><th style='text-align:left'>{Title}</th><th style='text-align:right'>{Date}</th></tr></table>",
+            "</div>"
+        ]
+    },
+
+    "Footer": {
+        "TextRows": [ "{Logo}", "Page Footer" ]
+    },
+
+    "Rows": [
+        {
+            "Type": "group",
+            "RepeatRow": {
+                "SourceKey": "damper_groups",
+                "TemplateRowIndex": 0
+            },
+
+            "ChildRows": [
+                {
+                    "Type": "table",
+                    "LayoutColumns": [ "", "" ],
+                    "ColumnWidths": [ 70, 30 ],
+                    "Rows": [
+                        {
+                            "RowData": [
+                                "Process Volume (m<sup>3</sup>/hr)",
+                                "Qty (Nos.)"
+                            ],
+                            "RowStyle": {
+                                "FontSize": 12,
+                                "Bold": true,
+                                "InlineCss": "background-color:#008fd8; font-weight:bolder; color:#ffffff;"
+                            }
+                        },
+                        {
+                            "RowData": [
+                                "{Process_Volume_M3h}",
+                                "{Qty} of {Enquiry_RequiredBagFilters}"
+                            ],
+                            "RowStyle": {
+                                "FontSize": 11,
+                                "InlineCss": "font-weight:bold;"
+                            }
+                        }
+                    ]
+                },
+
+                {
+                    "Type": "table",
+                    "LayoutColumns": [ "", "", "" ],
+                    "ColumnWidths": [ 50, 30, 20 ],
+                    "Rows": [
+                        {
+                            "RowData": [ "Parameter", "Value", "Unit" ],
+                            "RowStyle": {
+                                "FontSize": 12,
+                                "Bold": true,
+                                "InlineCss": "background-color:#4b2ca0; color:#ffffff; font-weight:bolder;"
+                            }
+                        },
+                        {
+                            "RowData": [ "{Parameter}", "{Value}", "{Unit}" ],
+                            "RowStyle": {
+                                "FontSize": 11
+                            }
+                        }
+                    ],
+                    "RepeatRow": {
+                        "SourceKey": "DamperRows",
+                        "TemplateRowIndex": 1,
+                        "Columns": [ "Parameter", "Value", "Unit" ]
+                    }
+                }
+            ]
+        }
+    ]
+}

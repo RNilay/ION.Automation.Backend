@@ -491,6 +491,34 @@ CREATE TABLE
         FOREIGN KEY (BagfilterMasterId) REFERENCES ionfiltrabagfilters.bagfiltermaster(BagfilterMasterId) ON DELETE CASCADE
     );
 
+     ---------Transportation cost-----------
+    CREATE TABLE ionfiltrabagfilters.TransportationCostEntity (
+    Id               INT AUTO_INCREMENT PRIMARY KEY,
+    EnquiryId INT NOT NULL,
+    BagfilterMasterId INT NOT NULL,
+    Parameter        VARCHAR(150) NOT NULL,
+    Value            VARCHAR(50)  NULL,
+    Unit             VARCHAR(20)  NULL,
+    CreatedAt        DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    UpdatedAt        DATETIME NULL ON UPDATE CURRENT_TIMESTAMP,
+    FOREIGN KEY (EnquiryId) REFERENCES ionfiltrabagfilters.Enquiry(Id) ON DELETE CASCADE,
+    FOREIGN KEY (BagfilterMasterId) REFERENCES ionfiltrabagfilters.bagfiltermaster(BagfilterMasterId) ON DELETE CASCADE
+);
+
+----------------Damper Cost-----------------
+CREATE TABLE ionfiltrabagfilters.DamperCostEntity (
+    Id               INT AUTO_INCREMENT PRIMARY KEY,
+    EnquiryId INT NOT NULL,
+    BagfilterMasterId INT NOT NULL,
+    Parameter        VARCHAR(150) NOT NULL,
+    Value            VARCHAR(50)  NULL,
+    Unit             VARCHAR(20)  NULL,
+    CreatedAt        DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    UpdatedAt        DATETIME NULL ON UPDATE CURRENT_TIMESTAMP,
+    FOREIGN KEY (EnquiryId) REFERENCES ionfiltrabagfilters.Enquiry(Id) ON DELETE CASCADE,
+    FOREIGN KEY (BagfilterMasterId) REFERENCES ionfiltrabagfilters.bagfiltermaster(BagfilterMasterId) ON DELETE CASCADE
+);
+
 CREATE TABLE
     ionfiltrabagfilters.BoughtOutItemSelection (
         Id INT AUTO_INCREMENT PRIMARY KEY,
@@ -1214,3 +1242,15 @@ CREATE TABLE ionfiltrabagfilters.DamperSizesConfig (
     IsDeleted TINYINT(1) NOT NULL DEFAULT 0
 );
 
+----Explosion Vent Config--
+CREATE TABLE ionfiltrabagfilters.ExplosionVentConfig (
+    Id INT AUTO_INCREMENT PRIMARY KEY,
+    ProcessVolumeM3hr INT NOT NULL,
+    KST VARCHAR(10) NOT NULL,
+    PmaxMmwc INT NOT NULL,
+    VentQuantity INT NOT NULL,
+    VentSize VARCHAR(50) NOT NULL,
+    CreatedAt DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    UpdatedAt DATETIME NULL ON UPDATE CURRENT_TIMESTAMP,
+    IsDeleted TINYINT(1) NOT NULL DEFAULT 0
+);

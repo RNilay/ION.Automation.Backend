@@ -17,9 +17,11 @@ using IonFiltra.BagFilters.Core.Entities.Bagfilters.Sections.Structure_Inputs;
 using IonFiltra.BagFilters.Core.Entities.Bagfilters.Sections.Support_Structure;
 using IonFiltra.BagFilters.Core.Entities.Bagfilters.Sections.Weight_Summary;
 using IonFiltra.BagFilters.Core.Entities.BOM.Bill_Of_Material;
+using IonFiltra.BagFilters.Core.Entities.BOM.Damper_Cost;
 using IonFiltra.BagFilters.Core.Entities.BOM.Painting_Cost;
 using IonFiltra.BagFilters.Core.Entities.BOM.PaintingRates;
 using IonFiltra.BagFilters.Core.Entities.BOM.Rates;
+using IonFiltra.BagFilters.Core.Entities.BOM.Transp_Cost;
 using IonFiltra.BagFilters.Core.Entities.EnquiryEntity;
 using IonFiltra.BagFilters.Core.Entities.MasterData.BoughtOutItems;
 using IonFiltra.BagFilters.Core.Entities.MasterData.DPTData;
@@ -96,6 +98,11 @@ namespace IonFiltra.BagFilters.Infrastructure.Data
         public DbSet<SolenoidValve> SolenoidValves { get; set; }
 
         public DbSet<DPTEntity> DPTEntitys { get; set; }
+
+        public DbSet<TransportationCostEntity> TransportationCostEntitys { get; set; }
+
+        public DbSet<DamperCostEntity> DamperCostEntitys { get; set; }
+
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
@@ -295,6 +302,20 @@ namespace IonFiltra.BagFilters.Infrastructure.Data
             {
                 entity.ToTable("DPTEntity", GlobalConstants.IONFILTRA_SCHEMA);
                 entity.HasKey(u => u.Id);
+            });
+
+            modelBuilder.Entity<TransportationCostEntity>(entity =>
+            {
+                entity.ToTable("TransportationCostEntity", GlobalConstants.IONFILTRA_SCHEMA);
+                entity.HasKey(u => u.Id);
+                entity.Property(u => u.EnquiryId).IsRequired();
+            });
+
+            modelBuilder.Entity<DamperCostEntity>(entity =>
+            {
+                entity.ToTable("DamperCostEntity", GlobalConstants.IONFILTRA_SCHEMA);
+                entity.HasKey(u => u.Id);
+                entity.Property(u => u.EnquiryId).IsRequired();
             });
         }
     }

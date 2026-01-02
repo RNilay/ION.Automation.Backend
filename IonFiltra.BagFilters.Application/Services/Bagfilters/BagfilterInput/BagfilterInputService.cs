@@ -1,13 +1,10 @@
-﻿using System.Globalization;
-using System.Linq;
-using IonFiltra.BagFilters.Application.DTOs.Bagfilters.BagfilterInputs;
+﻿using IonFiltra.BagFilters.Application.DTOs.Bagfilters.BagfilterInputs;
 using IonFiltra.BagFilters.Application.DTOs.BOM.Bill_Of_Material;
 using IonFiltra.BagFilters.Application.DTOs.MasterData.BoughtOutItems;
 using IonFiltra.BagFilters.Application.DTOs.SkyCiv;
 using IonFiltra.BagFilters.Application.Interfaces;
 using IonFiltra.BagFilters.Application.Mappers.Bagfilters.BagfilterInputs;
 using IonFiltra.BagFilters.Core.Entities.Bagfilters.BagfilterInputs;
-
 using IonFiltra.BagFilters.Core.Entities.Bagfilters.BagfilterMasterEntity;
 using IonFiltra.BagFilters.Core.Entities.Bagfilters.Sections.Access_Group;
 using IonFiltra.BagFilters.Core.Entities.Bagfilters.Sections.Bag_Selection;
@@ -22,7 +19,9 @@ using IonFiltra.BagFilters.Core.Entities.Bagfilters.Sections.Structure_Inputs;
 using IonFiltra.BagFilters.Core.Entities.Bagfilters.Sections.Support_Structure;
 using IonFiltra.BagFilters.Core.Entities.Bagfilters.Sections.Weight_Summary;
 using IonFiltra.BagFilters.Core.Entities.BOM.Bill_Of_Material;
+using IonFiltra.BagFilters.Core.Entities.BOM.Damper_Cost;
 using IonFiltra.BagFilters.Core.Entities.BOM.Painting_Cost;
+using IonFiltra.BagFilters.Core.Entities.BOM.Transp_Cost;
 using IonFiltra.BagFilters.Core.Entities.EnquiryEntity;
 using IonFiltra.BagFilters.Core.Entities.MasterData.BoughtOutItems;
 using IonFiltra.BagFilters.Core.Interfaces.Bagfilters.BagfilterMasters;
@@ -42,12 +41,17 @@ using IonFiltra.BagFilters.Core.Interfaces.Repositories.Bagfilters.Sections.Stru
 using IonFiltra.BagFilters.Core.Interfaces.Repositories.Bagfilters.Sections.Support_Structure;
 using IonFiltra.BagFilters.Core.Interfaces.Repositories.Bagfilters.Sections.Weight_Summary;
 using IonFiltra.BagFilters.Core.Interfaces.Repositories.BOM.Bill_Of_Material;
+using IonFiltra.BagFilters.Core.Interfaces.Repositories.BOM.Damper_Cost;
 using IonFiltra.BagFilters.Core.Interfaces.Repositories.BOM.Painting_Cost;
+using IonFiltra.BagFilters.Core.Interfaces.Repositories.BOM.Transp_Cost;
 using IonFiltra.BagFilters.Core.Interfaces.Repositories.MasterData.BoughtOutItems;
 using IonFiltra.BagFilters.Core.Interfaces.SkyCiv;
 using Microsoft.Extensions.Logging;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
+using System.Collections.Generic;
+using System.Globalization;
+using System.Linq;
 
 namespace IonFiltra.BagFilters.Application.Services.Bagfilters.BagfilterInputs
 {
@@ -82,7 +86,9 @@ namespace IonFiltra.BagFilters.Application.Services.Bagfilters.BagfilterInputs
 
         private readonly IGenericViewRepository _genericViewRepository;
 
+        private readonly ITransportationCostEntityRepository _transportationCostRepository;
 
+        private readonly IDamperCostEntityRepository _damperCostRepository;
 
         public BagfilterInputService(
             IBagfilterInputRepository repository,
@@ -105,7 +111,9 @@ namespace IonFiltra.BagFilters.Application.Services.Bagfilters.BagfilterInputs
             IPaintingCostRepository paintingCostRepository,
             IBoughtOutItemSelectionRepository boughtOutRepo,
             IMasterDefinitionsRepository masterDefinitionsRepository,
-            IGenericViewRepository genericViewRepository
+            IGenericViewRepository genericViewRepository,
+            ITransportationCostEntityRepository transportationCostEntityRepository,
+            IDamperCostEntityRepository damperCostRepository
         )
         {
             _repository = repository;
@@ -131,6 +139,8 @@ namespace IonFiltra.BagFilters.Application.Services.Bagfilters.BagfilterInputs
             _boughtOutRepo = boughtOutRepo;
             _masterDefinitionsRepository = masterDefinitionsRepository;
             _genericViewRepository = genericViewRepository;
+            _transportationCostRepository = transportationCostEntityRepository;
+            _damperCostRepository = damperCostRepository;
 
 
 
@@ -556,7 +566,73 @@ namespace IonFiltra.BagFilters.Application.Services.Bagfilters.BagfilterInputs
                 }
             }
 
+            // === Batched TransportationCost ===
 
+            var transportDataByMaster = new Dictionary<int, List<TransportationCostEntity>>();
+
+            for (int i = 0; i < dtos.Count; i++)
+            {
+                var dto = dtos[i];
+
+                if (dto.TransportationCost == null || dto.TransportationCost.Count == 0)
+                    continue;
+
+                var masterId = masterIdByIndex[i];
+                if (masterId <= 0)
+                    continue;
+
+                var mappedRows = MapTransportationCostCollection(dto, masterId);
+                if (mappedRows.Count == 0)
+                    continue;
+
+                if (!transportDataByMaster.TryGetValue(masterId, out var list))
+                {
+                    list = new List<TransportationCostEntity>();
+                    transportDataByMaster[masterId] = list;
+                }
+
+                list.AddRange(mappedRows);
+            }
+
+            if (transportDataByMaster.Count > 0)
+            {
+                await _transportationCostRepository
+                    .ReplaceForMastersAsync(transportDataByMaster, ct);
+            }
+
+            // === Batched DamperCost ===
+
+            var damperDataByMaster = new Dictionary<int, List<DamperCostEntity>>();
+
+            for (int i = 0; i < dtos.Count; i++)
+            {
+                var dto = dtos[i];
+
+                if (dto.DamperCost == null || dto.DamperCost.Count == 0)
+                    continue;
+
+                var masterId = masterIdByIndex[i];
+                if (masterId <= 0)
+                    continue;
+
+                var mappedRows = MapDamperCostCollection(dto, masterId);
+                if (mappedRows.Count == 0)
+                    continue;
+
+                if (!damperDataByMaster.TryGetValue(masterId, out var list))
+                {
+                    list = new List<DamperCostEntity>();
+                    damperDataByMaster[masterId] = list;
+                }
+
+                list.AddRange(mappedRows);
+            }
+
+            if (damperDataByMaster.Count > 0)
+            {
+                await _damperCostRepository
+                    .ReplaceForMastersAsync(damperDataByMaster, ct);
+            }
 
             //8)
             var matchesList = groupKeysList.Select(k => groupMatchMap[k]).ToList();
@@ -2978,8 +3054,8 @@ namespace IonFiltra.BagFilters.Application.Services.Bagfilters.BagfilterInputs
         }
 
         private List<BillOfMaterial> MapBillOfMaterialCollection(
-    BagfilterInputMainDto dto,
-    int bagfilterMasterId)
+        BagfilterInputMainDto dto,
+        int bagfilterMasterId)
         {
             // interpret: if list is null or empty, caller decides semantics (ignore / clear)
             if (dto == null || dto.BillOfMaterial == null || dto.BillOfMaterial.Count == 0)
@@ -3143,7 +3219,71 @@ namespace IonFiltra.BagFilters.Application.Services.Bagfilters.BagfilterInputs
             return result;
         }
 
+        private List<TransportationCostEntity> MapTransportationCostCollection(
+    BagfilterInputMainDto dto,
+    int masterId)
+        {
+            var list = new List<TransportationCostEntity>();
 
+            if (dto.TransportationCost == null)
+                return list;
+
+            var enquiryId =
+                (int?)dto.BagfilterInput?.EnquiryId ??
+                dto.BagfilterMaster?.EnquiryId ??
+                0;
+
+            foreach (var row in dto.TransportationCost)
+            {
+                if (string.IsNullOrWhiteSpace(row.Parameter))
+                    continue;
+
+                list.Add(new TransportationCostEntity
+                {
+                    EnquiryId = enquiryId,
+                    BagfilterMasterId = masterId,
+                    Parameter = row.Parameter.Trim(),
+                    Value = row.Value,
+                    Unit = row.Unit,
+                    CreatedAt = DateTime.UtcNow
+                });
+            }
+
+            return list;
+        }
+
+        private List<DamperCostEntity> MapDamperCostCollection(
+ BagfilterInputMainDto dto,
+ int masterId)
+        {
+            var list = new List<DamperCostEntity>();
+
+            if (dto.DamperCost == null)
+                return list;
+
+            var enquiryId =
+                (int?)dto.BagfilterInput?.EnquiryId ??
+                dto.BagfilterMaster?.EnquiryId ??
+                0;
+
+            foreach (var row in dto.DamperCost)
+            {
+                if (string.IsNullOrWhiteSpace(row.Parameter))
+                    continue;
+
+                list.Add(new DamperCostEntity
+                {
+                    EnquiryId = enquiryId,
+                    BagfilterMasterId = masterId,
+                    Parameter = row.Parameter.Trim(),
+                    Value = row.Value,
+                    Unit = row.Unit,
+                    CreatedAt = DateTime.UtcNow
+                });
+            }
+
+            return list;
+        }
 
 
         /// <summary>

@@ -12,7 +12,9 @@ using IonFiltra.BagFilters.Application.DTOs.Bagfilters.Sections.Structure_Inputs
 using IonFiltra.BagFilters.Application.DTOs.Bagfilters.Sections.Support_Structure;
 using IonFiltra.BagFilters.Application.DTOs.Bagfilters.Sections.Weight_Summary;
 using IonFiltra.BagFilters.Application.DTOs.BOM.Bill_Of_Material;
+using IonFiltra.BagFilters.Application.DTOs.BOM.Damper_Cost;
 using IonFiltra.BagFilters.Application.DTOs.BOM.Painting_Cost;
+using IonFiltra.BagFilters.Application.DTOs.BOM.Transp_Cost;
 using IonFiltra.BagFilters.Application.DTOs.MasterData.BoughtOutItems;
 
 namespace IonFiltra.BagFilters.Application.DTOs.Bagfilters.BagfilterInputs
@@ -46,6 +48,10 @@ namespace IonFiltra.BagFilters.Application.DTOs.Bagfilters.BagfilterInputs
         public List<BoughtOutItemSelectionDto>? BoughtOutItems { get; set; }
          = new List<BoughtOutItemSelectionDto>();
 
+        public List<TransportationCostEntityDto> TransportationCost { get; set; }
+        = new List<TransportationCostEntityDto>();
 
+        public List<DamperCostEntityDto> DamperCost { get; set; }
+        = new List<DamperCostEntityDto>();
     }
 }

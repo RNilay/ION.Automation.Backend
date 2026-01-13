@@ -1426,7 +1426,108 @@ namespace IonFiltra.BagFilters.Application.Services.Bagfilters.BagfilterInputs
                 }
             }
 
+            // === Batched TransportationCost ===
 
+            var transportDataByMaster = new Dictionary<int, List<TransportationCostEntity>>();
+
+            for (int i = 0; i < dtos.Count; i++)
+            {
+                var dto = dtos[i];
+
+                if (dto.TransportationCost == null || dto.TransportationCost.Count == 0)
+                    continue;
+
+                var masterId = masterIdByIndex[i];
+                if (masterId <= 0)
+                    continue;
+
+                var mappedRows = MapTransportationCostCollection(dto, masterId);
+                if (mappedRows.Count == 0)
+                    continue;
+
+                if (!transportDataByMaster.TryGetValue(masterId, out var list))
+                {
+                    list = new List<TransportationCostEntity>();
+                    transportDataByMaster[masterId] = list;
+                }
+
+                list.AddRange(mappedRows);
+            }
+
+            if (transportDataByMaster.Count > 0)
+            {
+                await _transportationCostRepository
+                    .ReplaceForMastersAsync(transportDataByMaster, ct);
+            }
+
+            // === Batched DamperCost ===
+
+            var damperDataByMaster = new Dictionary<int, List<DamperCostEntity>>();
+
+            for (int i = 0; i < dtos.Count; i++)
+            {
+                var dto = dtos[i];
+
+                if (dto.DamperCost == null || dto.DamperCost.Count == 0)
+                    continue;
+
+                var masterId = masterIdByIndex[i];
+                if (masterId <= 0)
+                    continue;
+
+                var mappedRows = MapDamperCostCollection(dto, masterId);
+                if (mappedRows.Count == 0)
+                    continue;
+
+                if (!damperDataByMaster.TryGetValue(masterId, out var list))
+                {
+                    list = new List<DamperCostEntity>();
+                    damperDataByMaster[masterId] = list;
+                }
+
+                list.AddRange(mappedRows);
+            }
+
+            if (damperDataByMaster.Count > 0)
+            {
+                await _damperCostRepository
+                    .ReplaceForMastersAsync(damperDataByMaster, ct);
+            }
+
+
+            // === Batched DamperCost ===
+
+            var cageDataByMaster = new Dictionary<int, List<CageCostEntity>>();
+
+            for (int i = 0; i < dtos.Count; i++)
+            {
+                var dto = dtos[i];
+
+                if (dto.CageCost == null || dto.CageCost.Count == 0)
+                    continue;
+
+                var masterId = masterIdByIndex[i];
+                if (masterId <= 0)
+                    continue;
+
+                var mappedRows = MapCageCostCollection(dto, masterId);
+                if (mappedRows.Count == 0)
+                    continue;
+
+                if (!cageDataByMaster.TryGetValue(masterId, out var list))
+                {
+                    list = new List<CageCostEntity>();
+                    cageDataByMaster[masterId] = list;
+                }
+
+                list.AddRange(mappedRows);
+            }
+
+            if (cageDataByMaster.Count > 0)
+            {
+                await _cageCostRepository
+                    .ReplaceForMastersAsync(cageDataByMaster, ct);
+            }
 
 
             // Step G: SkyCiv analysis

@@ -25,6 +25,12 @@ namespace IonFiltra.BagFilters.Application.Mappers.Bagfilters.Sections.Cage_Inpu
                     Cage_Length = entity.Cage_Length,
                     Spare_Cages = entity.Spare_Cages,
                     Cage_Configuration = entity.Cage_Configuration,
+                    No_Of_Rings = entity.No_Of_Rings,
+                    Tot_Wire_Length = entity.Tot_Wire_Length,
+                    Weight_Of_Cage_Wires = entity.Weight_Of_Cage_Wires,
+                    Weight_Of_Cage_Rings = entity.Weight_Of_Cage_Rings,
+                    Weight_Of_One_Cage = entity.Weight_Of_One_Cage,
+                    Cage_Weight = entity.Cage_Weight,
                 },
 
             };
@@ -48,7 +54,12 @@ namespace IonFiltra.BagFilters.Application.Mappers.Bagfilters.Sections.Cage_Inpu
                 Cage_Length = dto.CageInputs.Cage_Length,
                 Spare_Cages = dto.CageInputs.Spare_Cages,
                 Cage_Configuration = dto.CageInputs.Cage_Configuration,
-
+                No_Of_Rings = dto.CageInputs.No_Of_Rings,
+                Tot_Wire_Length = dto.CageInputs.Tot_Wire_Length,
+                Weight_Of_Cage_Wires = dto.CageInputs.Weight_Of_Cage_Wires,
+                Weight_Of_Cage_Rings = dto.CageInputs.Weight_Of_Cage_Rings,
+                Weight_Of_One_Cage = dto.CageInputs.Weight_Of_One_Cage,
+                Cage_Weight = dto.CageInputs.Cage_Weight,
             };
         }
     }

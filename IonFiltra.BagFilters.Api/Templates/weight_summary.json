@@ -1,7 +1,7 @@
 {
-    "Id": 3,
-    "Order": 3,
-    "ReportName": "WeightSummary",
+    "Id": 2,
+    "Order": 2,
+    "ReportName": "Weight Summary",
     "Title": "Weight Summary",
     "Logo": "wwwroot/images/company.png",
     "EntityDbName": "vw_WeightSummary",

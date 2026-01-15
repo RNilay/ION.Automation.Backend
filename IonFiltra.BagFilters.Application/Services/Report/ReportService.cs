@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.Linq;
 using System.Linq.Expressions;
 using System.Text;
@@ -7,7 +8,7 @@ using System.Text.Json;
 using System.Text.RegularExpressions;
 using System.Threading.Tasks;
 using IonFiltra.BagFilters.Application.DTOs.Report;
-
+using IonFiltra.BagFilters.Application.Interfaces.GenericView;
 using IonFiltra.BagFilters.Application.Interfaces.Report;
 
 using Microsoft.Extensions.Logging;
@@ -23,11 +24,13 @@ namespace IonFiltra.BagFilters.Application.Services.Report
         private readonly ILogger<ReportService> _logger;
         private static readonly Regex PlaceholderRegex = new(@"\{.*?\}", RegexOptions.Compiled);
         private const string MissingValuePlaceholder = "-";
-        public ReportService(ILogger<ReportService> logger)
+        private readonly IGenericViewService _viewService;
+        public ReportService(ILogger<ReportService> logger, IGenericViewService viewService)
         {
             // Templates folder relative to content root
             _templatesFolder = Path.Combine(Directory.GetCurrentDirectory(), "Templates");
             _logger = logger;
+            _viewService = viewService;
         }
 
 
@@ -140,10 +143,21 @@ namespace IonFiltra.BagFilters.Application.Services.Report
                     // If tr is a BLOCK template
                     if (tr?.RowData != null && tr.RowData.Count > 0 && tr.RowData[0] == "__BLOCK__" && tr.BlockRows != null)
                     {
+                        bool isBagFilterDetails =
+                            reportTemplate.ReportName.Equals(
+                                "Bag Filter Details",
+                                StringComparison.OrdinalIgnoreCase);
+
                         // Expand block rows into TableRow entries using the single item
                         foreach (var block in tr.BlockRows)
                         {
                             if (block == null) continue;
+                            if (isBagFilterDetails &&
+                                block.VisibleWhen != null &&
+                                !EvaluateVisibleWhen(item, block.VisibleWhen))
+                            {
+                                continue; // 🔥 skip invisible rows
+                            }
 
                             // Header-like block
                             if (block.IsHeader)
@@ -567,7 +581,7 @@ namespace IonFiltra.BagFilters.Application.Services.Report
                                                 else
                                                 {
                                                     // Painting Cost: show "-" instead of "N/A"
-                                                    newRow.RowData.Add("-");
+                                                    newRow.RowData.Add(MissingValuePlaceholder);
                                                 }
                                             }
 
@@ -579,12 +593,12 @@ namespace IonFiltra.BagFilters.Application.Services.Report
 
                                             if (string.Equals(rowType, "material", StringComparison.OrdinalIgnoreCase))
                                             {
-                                                rowStyle.InlineCss = "background-color:#c7fad6;";
+                                                rowStyle.InlineCss = "background-color:#ffffff;";
                                             }
                                             else if (string.Equals(rowType, "subtotal", StringComparison.OrdinalIgnoreCase) ||
                                                      string.Equals(rowType, "footer", StringComparison.OrdinalIgnoreCase))
                                             {
-                                                rowStyle.InlineCss = "background-color:#f7d8e9;font-weight:bold;";
+                                                rowStyle.InlineCss = "background-color:#ffffff;font-weight:bold;";
                                             }
 
                                             newRow.RowStyle = rowStyle;
@@ -1136,12 +1150,28 @@ namespace IonFiltra.BagFilters.Application.Services.Report
         /// Values dictionaries should contain the keys used inside placeholders.
         /// </summary>
         public async Task<ReportTemplateModelDto> PrepareTemplateWithValuesAsync(
-            ReportTemplateModelDto template,
+            ReportTemplateModelDto templateArgs,
             Dictionary<string, object> rowValues,
             Dictionary<string, object> headerValues)
         {
             rowValues ??= new Dictionary<string, object>();
             headerValues ??= new Dictionary<string, object>();
+
+            ReportTemplateModelDto template = new ReportTemplateModelDto() {
+                Id = templateArgs.Id,
+                Order = templateArgs.Order,
+                ReportName = templateArgs.ReportName,
+                Title = templateArgs.Title,
+                Header = templateArgs.Header,
+                Footer = templateArgs.Footer,
+                Rows = templateArgs.Rows,
+                Logo = templateArgs.Logo,
+                Layout = templateArgs.Layout,
+                Styles = templateArgs.Styles,
+                EntityDbName = templateArgs.EntityDbName,
+
+
+            };
 
             // 1. Header placeholders
             await ProcessHeaderPlaceholdersAsync(template, headerValues);
@@ -1329,6 +1359,454 @@ namespace IonFiltra.BagFilters.Application.Services.Report
             _logger?.LogDebug("Variable '{VarName}' missing in supplied values", variableName);
             return MissingValuePlaceholder;
         }
+
+
+
+        public async Task<EvaluatedReportTemplateDto> EvaluateTemplateAsync(
+             ReportTemplateModelDto template,
+             double? processVolume, int enquiryId, HashSet<string> nonVolumeDependentReports, List<Dictionary<string, object>> headerDict,
+    List<Dictionary<string, object>> bagfilterMasterData)
+        {
+            // -----------------------------
+            // Build parameters
+            // -----------------------------
+            var dataParams = new Dictionary<string, object>
+            {
+                ["EnquiryId"] = enquiryId
+            };
+
+            var masterParams = new Dictionary<string, object>
+            {
+                ["EnquiryId"] = enquiryId
+            };
+
+            // // 👉 Only Bagfilter Details gets the extra Process_Volume
+            //bool isBagfilterDetails =
+            //    template.ReportName?.Equals("Bag Filter Details", StringComparison.OrdinalIgnoreCase) == true
+            //    || template.Order == 2
+            //    || template.EntityDbName?.Equals("vw_BagfilterDetails", StringComparison.OrdinalIgnoreCase) == true;
+
+            //if (isBagfilterDetails && request.ProcessVolumeM3h.HasValue)
+            //{
+            //    dataParams["Process_Volume_M3h"] = request.ProcessVolumeM3h.Value;
+            //}
+
+            // IMPORTANT: processVolume comes from orchestration now
+            if (processVolume.HasValue && !nonVolumeDependentReports.Contains(template.Title))
+            {
+                dataParams["Process_Volume_M3h"] = processVolume.Value;
+            }
+
+            // -----------------------------
+            // Fetch data (FIXED async usage)
+            // -----------------------------
+
+            var reportInputData =
+                await _viewService.GetViewDataWithParam(template.EntityDbName, dataParams);
+
+            var headerValues =
+                headerDict.FirstOrDefault() ?? new Dictionary<string, object>();
+
+            var listData =
+                reportInputData ?? new List<Dictionary<string, object>>();
+
+            if (processVolume.HasValue
+            && !nonVolumeDependentReports.Contains(template.Title))
+            {
+                listData = listData
+                    .Where(d =>
+                        d.TryGetValue("Process_Volume_M3h", out var pv) &&
+                        pv != null &&
+                        Convert.ToDouble(pv) == processVolume.Value)
+                    .ToList();
+            }
+
+            // -----------------------------
+            // Build row values (UNCHANGED)
+            // -----------------------------
+            var rowValues = new Dictionary<string, object>();
+
+            if (listData.Count > 0)
+            {
+                foreach (var kvp in listData[0])
+                    rowValues[kvp.Key] = kvp.Value;
+            }
+
+            var masterDataList =
+                bagfilterMasterData ?? new List<Dictionary<string, object>>();
+
+            if (masterDataList.Count > 0)
+            {
+                foreach (var kvp in masterDataList[0])
+                    rowValues[kvp.Key] = kvp.Value;
+            }
+
+            // -----------------------------
+            // TEMPLATE-SPECIFIC LOGIC
+            // (COPIED AS-IS)
+            // -----------------------------
+
+            if (string.Equals(template.EntityDbName, "vw_BillOfMaterialDetails",
+                              StringComparison.OrdinalIgnoreCase) || string.Equals(template.Title, "Bill Of Material", StringComparison.OrdinalIgnoreCase))
+            {
+                // group BOM rows by BagfilterMasterId (and/or Process_Volume_M3h)
+                var bomGroups = listData
+                    .GroupBy(d => d["Process_Volume_M3h"])
+                    .Select(g =>
+                    {
+                        var first = g.First();
+
+                        var groupDict = new Dictionary<string, object>();
+
+                        // carry over keys we need on header table
+                        if (first.TryGetValue("EnquiryId", out var enq)) groupDict["EnquiryId"] = enq;
+                        if (first.TryGetValue("BagfilterMasterId", out var bm)) groupDict["BagfilterMasterId"] = bm;
+                        if (first.TryGetValue("Process_Volume_M3h", out var pv)) groupDict["Process_Volume_M3h"] = pv;
+                        if (first.TryGetValue("Qty", out var qty)) groupDict["Qty"] = qty;
+                        if (first.TryGetValue("Enquiry_RequiredBagFilters", out var rb))
+                            groupDict["Enquiry_RequiredBagFilters"] = rb;
+                        if (first.TryGetValue("Item", out var item)) groupDict["Item"] = item;
+                        if (first.TryGetValue("Material", out var material)) groupDict["Material"] = material;
+                        if (first.TryGetValue("Weight", out var weight)) groupDict["Weight"] = weight;
+                        if (first.TryGetValue("Units", out var units)) groupDict["Units"] = units;
+                        if (first.TryGetValue("Rate", out var rate)) groupDict["Rate"] = rate;
+                        if (first.TryGetValue("Cost", out var cost)) groupDict["Cost"] = cost;
+
+                        // put ALL rows for this group into BomRows
+                        groupDict["BomRows"] = g.ToList();
+
+                        return groupDict;
+                    })
+                    .ToList();
+
+                // this is what the group in the template will iterate
+                rowValues["bom_groups"] = bomGroups;
+            }
+            else if (
+            string.Equals(template.EntityDbName, "vw_TransportationCostDetails",
+                          StringComparison.OrdinalIgnoreCase)
+            || string.Equals(template.Title, "Transportation Cost", StringComparison.OrdinalIgnoreCase)
+)
+            {
+                var transportGroups = listData
+                    .GroupBy(d => d["Process_Volume_M3h"])
+                    .Select(g =>
+                    {
+                        var first = g.First();
+
+                        var groupDict = new Dictionary<string, object>();
+
+                        // Header fields (MUST match template placeholders)
+                        if (first.TryGetValue("EnquiryId", out var enq))
+                            groupDict["EnquiryId"] = enq;
+
+                        if (first.TryGetValue("BagfilterMasterId", out var bm))
+                            groupDict["BagfilterMasterId"] = bm;
+
+                        if (first.TryGetValue("Process_Volume_M3h", out var pv))
+                            groupDict["Process_Volume_M3h"] = pv;
+
+                        if (first.TryGetValue("Qty", out var qty))
+                            groupDict["Qty"] = qty;
+
+                        if (first.TryGetValue("Enquiry_RequiredBagFilters", out var rb))
+                            groupDict["Enquiry_RequiredBagFilters"] = rb;
+
+                        // 🚨 THIS IS THE KEY PART
+                        groupDict["TransportationRows"] = g
+                            .Select(r => new Dictionary<string, object>
+                            {
+                                ["Parameter"] = r.GetValueOrDefault("Parameter"),
+                                ["Value"] = r.GetValueOrDefault("Value"),
+                                ["Unit"] = r.GetValueOrDefault("Unit")
+                            })
+                            .ToList();
+
+                        return groupDict;
+                    })
+                    .ToList();
+
+                rowValues["transport_groups"] = transportGroups;
+            }
+            else if (
+                string.Equals(template.EntityDbName, "vw_DamperCostDetails",
+                              StringComparison.OrdinalIgnoreCase)
+                || string.Equals(template.Title, "Damper Cost",
+                                 StringComparison.OrdinalIgnoreCase))
+
+            {
+                var damperGroups = listData
+                    .GroupBy(d => d["Process_Volume_M3h"])
+                    .Select(g =>
+                    {
+                        var first = g.First();
+                        var groupDict = new Dictionary<string, object>();
+
+                        groupDict["EnquiryId"] = first["EnquiryId"];
+                        groupDict["BagfilterMasterId"] = first["BagfilterMasterId"];
+                        groupDict["Process_Volume_M3h"] = first["Process_Volume_M3h"];
+                        groupDict["Qty"] = first["Qty"];
+                        groupDict["Enquiry_RequiredBagFilters"] = first["Enquiry_RequiredBagFilters"];
+
+                        groupDict["DamperRows"] = g
+                            .Select(r => new Dictionary<string, object>
+                            {
+                                ["Parameter"] = r["Parameter"],
+                                ["Value"] = r["Value"],
+                                ["Unit"] = r["Unit"]
+                            })
+                            .ToList();
+
+                        return groupDict;
+                    })
+                    .ToList();
+
+                rowValues["damper_groups"] = damperGroups;
+            }
+            else if (
+            string.Equals(template.EntityDbName, "vw_CageCostDetails",
+                          StringComparison.OrdinalIgnoreCase)
+            || string.Equals(template.Title, "Cage Costing",
+                             StringComparison.OrdinalIgnoreCase)
+)
+            {
+                var cageGroups = listData
+                    .GroupBy(d => d["Process_Volume_M3h"])
+                    .Select(g =>
+                    {
+                        var first = g.First();
+                        var groupDict = new Dictionary<string, object>();
+
+                        groupDict["EnquiryId"] = first["EnquiryId"];
+                        groupDict["BagfilterMasterId"] = first["BagfilterMasterId"];
+                        groupDict["Process_Volume_M3h"] = first["Process_Volume_M3h"];
+                        groupDict["Qty"] = first["Qty"];
+                        groupDict["Enquiry_RequiredBagFilters"] = first["Enquiry_RequiredBagFilters"];
+
+                        groupDict["CageRows"] = g
+                            .Select(r => new Dictionary<string, object>
+                            {
+                                ["Parameter"] = r["Parameter"],
+                                ["Value"] = r["Value"],
+                                ["Unit"] = r["Unit"]
+                            })
+                            .ToList();
+
+                        return groupDict;
+                    })
+                    .ToList();
+
+                rowValues["cage_groups"] = cageGroups;
+            }
+            else if (
+string.Equals(template.EntityDbName, "vw_BoughtOutDetails",
+          StringComparison.OrdinalIgnoreCase)
+|| string.Equals(template.Title, "Bought Out Details",
+             StringComparison.OrdinalIgnoreCase)
+)
+            {
+                var boughtOutGroups = listData
+                    .GroupBy(d => d["Process_Volume_M3h"])
+                    .Select(g =>
+                    {
+                        var first = g.First();
+
+                        var groupDict = new Dictionary<string, object>();
+
+                        // Header fields (MUST match template placeholders)
+                        if (first.TryGetValue("EnquiryId", out var enq))
+                            groupDict["EnquiryId"] = enq;
+
+                        if (first.TryGetValue("BagfilterMasterId", out var bm))
+                            groupDict["BagfilterMasterId"] = bm;
+
+                        if (first.TryGetValue("Process_Volume_M3h", out var pv))
+                            groupDict["Process_Volume_M3h"] = pv;
+
+                        if (first.TryGetValue("VolumeQty", out var vqty))
+                            groupDict["VolumeQty"] = vqty;
+
+                        if (first.TryGetValue("Enquiry_RequiredBagFilters", out var rb))
+                            groupDict["Enquiry_RequiredBagFilters"] = rb;
+
+                        // 🚨 THIS IS THE IMPORTANT PART
+                        groupDict["BoughtOutRows"] = g
+                            .Select(r => new Dictionary<string, object>
+                            {
+                                ["Item"] = r.GetValueOrDefault("Item"),
+                                ["Make"] = r.GetValueOrDefault("Make"),
+                                ["Material"] = r.GetValueOrDefault("Material"),
+                                ["ItemQty"] = r.GetValueOrDefault("ItemQty"),
+                                ["Units"] = r.GetValueOrDefault("Units"),
+                                ["Rate"] = r.GetValueOrDefault("Rate"),
+                                ["Cost"] = r.GetValueOrDefault("Cost")
+                            })
+                            .ToList();
+
+                        return groupDict;
+                    })
+                    .ToList();
+
+                rowValues["boughtout_groups"] = boughtOutGroups;
+            }
+
+
+            else if (string.Equals(template.EntityDbName, "vw_PaintingCostDetails",
+                              StringComparison.OrdinalIgnoreCase) || string.Equals(template.Title, "Painting Cost", StringComparison.OrdinalIgnoreCase))
+            {
+
+
+                var paintingGroups = new List<Dictionary<string, object>>();
+
+                foreach (var rec in listData)
+                {
+                    var group = new Dictionary<string, object>();
+
+                    // header fields for the small Process Volume table
+                    if (rec.TryGetValue("EnquiryId", out var enq)) group["EnquiryId"] = enq;
+                    if (rec.TryGetValue("BagfilterMasterId", out var bm)) group["BagfilterMasterId"] = bm;
+                    if (rec.TryGetValue("Process_Volume_M3h", out var pv)) group["Process_Volume_M3h"] = pv;
+                    if (rec.TryGetValue("Qty", out var qty)) group["Qty"] = qty;
+                    if (rec.TryGetValue("Enquiry_RequiredBagFilters", out var rb)) group["Enquiry_RequiredBagFilters"] = rb;
+
+                    // parse PaintingTableJson for this volume
+                    var paintingJson = rec.TryGetValue("PaintingTableJson", out var ptj)
+                        ? ptj?.ToString()
+                        : null;
+
+                    List<Dictionary<string, object>> paintingRows = new();
+
+                    if (!string.IsNullOrWhiteSpace(paintingJson))
+                    {
+                        var list = JsonSerializer.Deserialize<List<Dictionary<string, object>>>(paintingJson);
+                        if (list != null)
+                            paintingRows = list;
+                    }
+
+                    group["PaintingRows"] = paintingRows;
+
+                    paintingGroups.Add(group);
+                }
+
+                rowValues["painting_groups"] = paintingGroups;
+            }
+            else
+            {
+                // normal templates still use list_values
+                rowValues["list_values"] = listData;
+            }
+
+            // -----------------------------
+            // Final processing (UNCHANGED)
+            // -----------------------------
+            var processed =
+                await PrepareTemplateWithValuesAsync(
+                    template, rowValues, headerValues);
+
+            //if there is no data avaialable for any report add Data not available row.
+            if (!HasRenderableContent(processed))
+            {
+                processed.Rows = new List<ReportRow>
+                {
+                    BuildNoDataRow()
+                };
+            }
+
+
+            return new EvaluatedReportTemplateDto
+            {
+                ReportName = processed.ReportName,
+                ReportTitle = processed.Title,
+                Template = processed,
+                HeaderInputDict = headerValues,
+                ValuesDict = rowValues
+            };
+        }
+
+        //helper method to conditionally render rows in report
+        private bool EvaluateVisibleWhen(
+        Dictionary<string, object> record,
+        VisibleWhenCondition? condition)
+        {
+            if (condition == null) return true;
+
+            // AND
+            if (condition.All != null && condition.All.Count > 0)
+                return condition.All.All(c => EvaluateVisibleWhen(record, c));
+
+            // OR
+            if (condition.Any != null && condition.Any.Count > 0)
+                return condition.Any.Any(c => EvaluateVisibleWhen(record, c));
+
+            // Primitive
+            if (!string.IsNullOrEmpty(condition.Key)
+                && record.TryGetValue(condition.Key, out var val))
+            {
+                return string.Equals(
+                    val?.ToString(),
+                    condition.Equals,
+                    StringComparison.OrdinalIgnoreCase);
+            }
+
+            return false;
+        }
+
+
+        private bool HasRenderableContent(ReportTemplateModelDto template)
+        {
+            if (template.Rows == null || template.Rows.Count == 0)
+                return false;
+
+            foreach (var row in template.Rows)
+            {
+                if (row.Type == "heading" || row.Type == "text")
+                    return true;
+
+                if (row.Type == "table" && row.Rows != null)
+                {
+                    // At least one row with real data
+                    if (row.Rows.Any(r =>
+                        r.RowData.Any(cell =>
+                            !string.IsNullOrWhiteSpace(cell) &&
+                            cell != "-" &&
+                            cell != "N/A")))
+                    {
+                        return true;
+                    }
+                }
+            }
+
+            return false;
+        }
+
+
+
+        private ReportRow BuildNoDataRow()
+        {
+            return new ReportRow
+            {
+                Type = "table",
+                LayoutColumns = new List<string> { "" },
+                ColumnWidths = new List<double> { 100 },
+                Rows = new List<TableRow>
+                {
+                    new TableRow
+                    {
+                        RowData = new List<string> { "Data not available." },
+                        RowStyle = new ReportRowStyle
+                        {
+                            FontSize = 12,
+                            Bold = true,
+                            Alignment = "center",
+                            InlineCss = "background-color:#1f4fd8;padding:10px;color:#ffffff;font-weight:bolder"
+                        },
+                        ColumnSpan = 1
+                    }
+                }
+            };
+        }
+
+
 
     }
 }

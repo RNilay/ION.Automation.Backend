@@ -37,7 +37,7 @@
                         {
                             "RowData": [
                                 "Process Volume (m<sup>3</sup>/hr)",
-                                "Qty (Nos.)"
+                                "No"
                             ],
                             "RowStyle": {
                                 "FontSize": 12,
@@ -48,7 +48,7 @@
                         {
                             "RowData": [
                                 "{Process_Volume_M3h}",
-                                "{Qty} of {Enquiry_RequiredBagFilters}"
+                                "{Qty}"
                             ],
                             "RowStyle": {
                                 "FontSize": 11,
@@ -91,7 +91,7 @@
                             "RowStyle": {
                                 "FontSize": 11,
                                 "Bold": true,
-                                "InlineCss": "background-color:#7392E8; font-weight:bolder; color:#ffffff;"
+                                "InlineCss": "background-color:#008fd8; font-weight:bolder; color:#ffffff;"
                             }
                         },
                         {

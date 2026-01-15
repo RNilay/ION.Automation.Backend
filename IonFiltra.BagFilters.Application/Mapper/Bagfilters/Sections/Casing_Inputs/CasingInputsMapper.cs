@@ -16,6 +16,7 @@ namespace IonFiltra.BagFilters.Application.Mappers.Bagfilters.Sections.Casing_In
                 CasingInputs = new CasingInputsDto
                 {
                     Casing_Wall_Thickness = entity.Casing_Wall_Thickness,
+                    Stiffening_Factor_Casing = entity.Stiffening_Factor_Casing,
                     Casing_Height = entity.Casing_Height,
                     Casing_Area = entity.Casing_Area,
                     Casing_Weight = entity.Casing_Weight,
@@ -33,6 +34,7 @@ namespace IonFiltra.BagFilters.Application.Mappers.Bagfilters.Sections.Casing_In
                 EnquiryId = dto.EnquiryId,
                 BagfilterMasterId = dto.BagfilterMasterId,
                 Casing_Wall_Thickness = dto.CasingInputs.Casing_Wall_Thickness,
+                Stiffening_Factor_Casing = dto.CasingInputs.Stiffening_Factor_Casing,
                 Casing_Height = dto.CasingInputs.Casing_Height,
                 Casing_Area = dto.CasingInputs.Casing_Area,
                 Casing_Weight = dto.CasingInputs.Casing_Weight,

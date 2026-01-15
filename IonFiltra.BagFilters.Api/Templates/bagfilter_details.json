@@ -1,6 +1,6 @@
 {
-    "Id": 2,
-    "Order": 2,
+    "Id": 3,
+    "Order": 3,
     "ReportName": "Bag Filter Details",
     "Title": "Bag Filter Details",
     "EntityDbName": "vw_BagfilterDetails",
@@ -36,7 +36,7 @@
                     "ColumnWidths": [ 70, 30 ],
                     "Rows": [
                         {
-                            "RowData": [ "Process Volume (m<sup>3</sup>/hr)", "Qty (Nos.)" ],
+                            "RowData": [ "Process Volume (m<sup>3</sup>/hr)", "No" ],
                             "RowStyle": {
                                 "FontSize": 12,
                                 "Bold": true,
@@ -44,7 +44,7 @@
                             }
                         },
                         {
-                            "RowData": [ "{Process_Volume_M3h}", "{Qty} of {Enquiry_RequiredBagFilters}" ],
+                            "RowData": [ "{Process_Volume_M3h}", "{Qty}" ],
                             "RowStyle": {
                                 "FontSize": 11,
                                 "InlineCss": "font-weight: bold"
@@ -175,8 +175,6 @@
                                     "ColSpan": 2
                                 },
 
-
-
                                 {
                                     "Label": "Process Info",
                                     "ValueKey": null,
@@ -216,16 +214,8 @@
                                     "ValueKey": "ProcessVolumeMin",
                                     "InlineCss": "{#CALC}"
                                 },
-                                {
-                                    "Label": "Process Acrmax (m/min)",
-                                    "ValueKey": "Process_Acrmax",
-                                    "InlineCss": "{#CALC}"
-                                },
-                                {
-                                    "Label": "Cloth Area (m<sup>2</sup>)",
-                                    "ValueKey": "ClothArea",
-                                    "InlineCss": "{#CALC}"
-                                },
+
+
                                 {
                                     "Label": "Process Dust",
                                     "ValueKey": "Process_Dust",
@@ -342,11 +332,7 @@
                                     "ValueKey": "ClothAreaPerBag",
                                     "InlineCss": "{#CALC}"
                                 },
-                                {
-                                    "Label": "No Of Bags",
-                                    "ValueKey": "noOfBags",
-                                    "InlineCss": "{#CALC}"
-                                },
+
                                 {
                                     "Label": "Filter Bag Recommendation",
                                     "ValueKey": "Fil_Bag_Recommendation",
@@ -358,12 +344,12 @@
                                     "InlineCss": "{#CALC}"
                                 },
                                 {
-                                    "Label": "Number of Rows",
+                                    "Label": "Number of Rows (Solenoid Valves)",
                                     "ValueKey": "Number_Of_Rows",
                                     "InlineCss": "{#CALC}"
                                 },
                                 {
-                                    "Label": "Actual Bags Required",
+                                    "Label": "Actual Bags Provided",
                                     "ValueKey": "Actual_Bag_Req",
                                     "InlineCss": "{#CALC}"
                                 },
@@ -372,21 +358,7 @@
                                     "ValueKey": "Wire_Cross_Sec_Area",
                                     "InlineCss": "{#CALC}"
                                 },
-                                {
-                                    "Label": "Number of Rings",
-                                    "ValueKey": "No_Of_Rings",
-                                    "InlineCss": "{#CALC}"
-                                },
-                                {
-                                    "Label": "Total Wire Length (m)",
-                                    "ValueKey": "Tot_Wire_Length",
-                                    "InlineCss": "{#CALC}"
-                                },
-                                {
-                                    "Label": "Cage Weight (Kg)",
-                                    "ValueKey": "BagSelection_Cage_Weight",
-                                    "InlineCss": "{#CALC}"
-                                },
+
                                 //leave a blank row after each section
                                 {
                                     "Label": "-",
@@ -411,37 +383,65 @@
                                 {
                                     "Label": "Cage-Sub Type",
                                     "ValueKey": "Cage_Sub_Type",
-                                    "InlineCss": "{#USER}"
+                                    "InlineCss": "{#USER}",
+                                    "VisibleWhen": {
+                                        "Key": "Cage_Type",
+                                        "Equals": "Non-Standard"
+                                    }
                                 },
                                 {
                                     "Label": "Cage Material",
                                     "ValueKey": "Cage_Material",
-                                    "InlineCss": "{#USER}"
+                                    "InlineCss": "{#USER}",
+                                    "VisibleWhen": {
+                                        "Key": "Cage_Type",
+                                        "Equals": "Non-Standard"
+                                    }
                                 },
                                 {
                                     "Label": "Cage Wire Diameter (mm)",
                                     "ValueKey": "Cage_Wire_Dia",
-                                    "InlineCss": "{#USER}"
+                                    "InlineCss": "{#USER}",
+                                    "VisibleWhen": {
+                                        "Key": "Cage_Type",
+                                        "Equals": "Non-Standard"
+                                    }
                                 },
                                 {
                                     "Label": "No Of Cage Wires",
                                     "ValueKey": "No_Of_Cage_Wires",
-                                    "InlineCss": "{#USER}"
+                                    "InlineCss": "{#USER}",
+                                    "VisibleWhen": {
+                                        "Key": "Cage_Type",
+                                        "Equals": "Non-Standard"
+                                    }
                                 },
                                 {
                                     "Label": "Ring Spacing (mm)",
                                     "ValueKey": "Ring_Spacing",
-                                    "InlineCss": "{#USER}"
+                                    "InlineCss": "{#USER}",
+                                    "VisibleWhen": {
+                                        "Key": "Cage_Type",
+                                        "Equals": "Non-Standard"
+                                    }
                                 },
                                 {
                                     "Label": "Cage Diameter (mm)",
                                     "ValueKey": "Cage_Diameter",
-                                    "InlineCss": "{#USER}"
+                                    "InlineCss": "{#USER}",
+                                    "VisibleWhen": {
+                                        "Key": "Cage_Type",
+                                        "Equals": "Non-Standard"
+                                    }
                                 },
                                 {
                                     "Label": "Cage Length (mm)",
                                     "ValueKey": "Cage_Length",
-                                    "InlineCss": "{#USER}"
+                                    "InlineCss": "{#USER}",
+                                    "VisibleWhen": {
+                                        "Key": "Cage_Type",
+                                        "Equals": "Non-Standard"
+                                    }
                                 },
                                 {
                                     "Label": "Spare Cages (%)",
@@ -451,8 +451,44 @@
                                 {
                                     "Label": "Cage Configuration",
                                     "ValueKey": "Cage_Configuration",
-                                    "InlineCss": "{#USER}"
+                                    "InlineCss": "{#USER}",
+                                    "VisibleWhen": {
+                                        "Key": "Cage_Type",
+                                        "Equals": "Standard"
+                                    }
                                 },
+
+                                {
+                                    "Label": "Number of Rings",
+                                    "ValueKey": "No_Of_Rings",
+                                    "InlineCss": "{#CALC}"
+                                },
+                                {
+                                    "Label": "Total Wire Length (m)",
+                                    "ValueKey": "Tot_Wire_Length",
+                                    "InlineCss": "{#CALC}"
+                                },
+                                {
+                                    "Label": "Weight of Cage Wires (Kg)",
+                                    "ValueKey": "Weight_Of_Cage_Wires",
+                                    "InlineCss": "{#CALC}"
+                                },
+                                {
+                                    "Label": "Weight of Cage Rings (Kg)",
+                                    "ValueKey": "Weight_Of_Cage_Rings",
+                                    "InlineCss": "{#CALC}"
+                                },
+                                {
+                                    "Label": "Weight of One Cage (Kg)",
+                                    "ValueKey": "Weight_Of_One_Cage",
+                                    "InlineCss": "{#CALC}"
+                                },
+                                {
+                                    "Label": "Total Weight of all Cages (Kg)",
+                                    "ValueKey": "BagSelection_Cage_Weight",
+                                    "InlineCss": "{#CALC}"
+                                },
+
                                 //leave a blank row after each section
                                 {
                                     "Label": "-",
@@ -582,6 +618,11 @@
                                     "InlineCss": "{#CALC}"
                                 },
                                 {
+                                    "Label": "Total Capsule Height (mm)",
+                                    "ValueKey": "Total_Capsule_Height",
+                                    "InlineCss": "{#CALC}"
+                                },
+                                {
                                     "Label": "Tube Sheet Thickness (mm)",
                                     "ValueKey": "Tube_Sheet_Thickness",
                                     "InlineCss": "{#USER}"
@@ -643,6 +684,11 @@
                                     "InlineCss": "{#USER}"
                                 },
                                 {
+                                    "Label": "Casing Stiffening Factor",
+                                    "ValueKey": "Stiffening_Factor_Casing",
+                                    "InlineCss": "{#USER}"
+                                },
+                                {
                                     "Label": "Casing Height (m)",
                                     "ValueKey": "Casing_Height",
                                     "InlineCss": "{#CALC}"
@@ -686,22 +732,54 @@
                                 {
                                     "Label": "Total Number Of Hoppers",
                                     "ValueKey": "Tot_No_Of_Hoppers",
-                                    "InlineCss": "{#USER}"
+                                    "InlineCss": "{#USER}",
+                                    "VisibleWhen": {
+                                        "Key": "Hopper_Type",
+                                        "Equals": "Pyramid"
+                                    }
                                 },
                                 {
                                     "Label": "Total Number Of Trough",
                                     "ValueKey": "Tot_No_Of_Trough",
-                                    "InlineCss": "{#USER}"
+                                    "InlineCss": "{#USER}",
+                                    "VisibleWhen": {
+                                        "Key": "Hopper_Type",
+                                        "Equals": "Trough"
+                                    }
                                 },
                                 {
                                     "Label": "Plenum Width (mm)",
                                     "ValueKey": "Plenum_Width",
-                                    "InlineCss": "{#USER}"
+                                    "InlineCss": "{#USER}",
+                                    "VisibleWhen": {
+                                        "All": [
+                                            {
+                                                "Key": "Gas_Entry",
+                                                "Equals": "Center Entry"
+                                            },
+                                            {
+                                                "Key": "Gas_Entry",
+                                                "Equals": "Top Entry"
+                                            }
+                                        ]
+                                    }
                                 },
                                 {
                                     "Label": "Inlet Height (mm)",
                                     "ValueKey": "Inlet_Height",
-                                    "InlineCss": "{#USER}"
+                                    "InlineCss": "{#USER}",
+                                    "VisibleWhen": {
+                                        "All": [
+                                            {
+                                                "Key": "Gas_Entry",
+                                                "Equals": "Center Entry"
+                                            },
+                                            {
+                                                "Key": "Gas_Entry",
+                                                "Equals": "Top Entry"
+                                            }
+                                        ]
+                                    }
                                 },
                                 {
                                     "Label": "Hopper/Trough Thickness (mm)",
@@ -721,7 +799,11 @@
                                 {
                                     "Label": "Access Door Quantity (Qty)",
                                     "ValueKey": "Access_Door_Qty",
-                                    "InlineCss": "{#USER}"
+                                    "InlineCss": "{#USER}",
+                                    "VisibleWhen": {
+                                        "Key": "Access_Door_Type",
+                                        "Equals": "Yes"
+                                    }
                                 },
                                 {
                                     "Label": "RAV Maintenance Platform",
@@ -741,22 +823,34 @@
                                 {
                                     "Label": "Distance Piece Height (mm)",
                                     "ValueKey": "Distance_Piece_Height",
-                                    "InlineCss": "{#USER}"
+                                    "InlineCss": "{#USER}",
+                                    "VisibleWhen": {
+                                        "Key": "Is_Distance_Piece",
+                                        "Equals": "Yes"
+                                    }
                                 },
                                 {
-                                    "Label": "Stiffening Factor",
-                                    "ValueKey": "Stiffening_Factor",
+                                    "Label": "Hopper Stiffening Factor",
+                                    "ValueKey": "Stiffening_Factor_Hopper",
                                     "InlineCss": "{#USER}"
                                 },
                                 {
                                     "Label": "Hopper (Qty)",
                                     "ValueKey": "Hopper",
-                                    "InlineCss": "{#USER}"
+                                    "InlineCss": "{#USER}",
+                                    "VisibleWhen": {
+                                        "Key": "Hopper_Type",
+                                        "Equals": "Pyramid"
+                                    }
                                 },
                                 {
                                     "Label": "Discharge Opening Square in Size (mm)",
                                     "ValueKey": "Discharge_Opening_Sqr",
-                                    "InlineCss": "{#USER}"
+                                    "InlineCss": "{#USER}",
+                                    "VisibleWhen": {
+                                        "Key": "Hopper_Type",
+                                        "Equals": "Pyramid"
+                                    }
                                 },
                                 {
                                     "Label": "Height Of RAV (mm)",
@@ -776,17 +870,29 @@
                                 {
                                     "Label": "Trough Outlet Length (mm)",
                                     "ValueKey": "Trough_Outlet_Length",
-                                    "InlineCss": "{#USER}"
+                                    "InlineCss": "{#USER}",
+                                    "VisibleWhen": {
+                                        "Key": "Hopper_Type",
+                                        "Equals": "Trough"
+                                    }
                                 },
                                 {
                                     "Label": "Trough Outlet Width (mm)",
                                     "ValueKey": "Trough_Outlet_Width",
-                                    "InlineCss": "{#USER}"
+                                    "InlineCss": "{#USER}",
+                                    "VisibleWhen": {
+                                        "Key": "Hopper_Type",
+                                        "Equals": "Trough"
+                                    }
                                 },
                                 {
                                     "Label": "Material Handling Type",
                                     "ValueKey": "Material_Handling_Xxx",
-                                    "InlineCss": "{#USER}"
+                                    "InlineCss": "{#USER}",
+                                    "VisibleWhen": {
+                                        "Key": "Hopper_Type",
+                                        "Equals": "Trough"
+                                    }
                                 },
                                 {
                                     "Label": "Horizontal Difference in Length (m)",
@@ -862,12 +968,20 @@
                                 {
                                     "Label": "Number of Column",
                                     "ValueKey": "NoOfColumn",
-                                    "InlineCss": "{#CALC}"
+                                    "InlineCss": "{#CALC}",
+                                    "VisibleWhen": {
+                                        "Key": "Support_Struct_Type",
+                                        "Equals": "Regular"
+                                    }
                                 },
                                 {
                                     "Label": "Column Height (mm)",
                                     "ValueKey": "Column_Height",
-                                    "InlineCss": "{#USER}"
+                                    "InlineCss": "{#USER}",
+                                    "VisibleWhen": {
+                                        "Key": "Support_Struct_Type",
+                                        "Equals": "Pedestal"
+                                    }
                                 },
                                 {
                                     "Label": "Clearance Below Hopper Flange (mm)",
@@ -923,42 +1037,105 @@
                                 {
                                     "Label": "Weight Of Cage Ladder (kg/m)",
                                     "ValueKey": "Cage_Weight_Ladder",
-                                    "InlineCss": "{#USER}"
+                                    "InlineCss": "{#USER}",
+                                    "VisibleWhen": {
+                                        "Key": "Access_Type",
+                                        "Equals": "Cage Ladder"
+                                    }
+                                },
+                                {
+                                    "Label": "Total Weight of Cage Ladder (kg)",
+                                    "ValueKey": "Total_Weight_Of_Cage_Ladder",
+                                    "InlineCss": "{#CALC}",
+                                    "VisibleWhen": {
+                                        "Key": "Access_Type",
+                                        "Equals": "Cage Ladder"
+                                    }
                                 },
                                 {
                                     "Label": "Mid Landing Platform",
                                     "ValueKey": "Mid_Landing_Pltform",
-                                    "InlineCss": "{#USER}"
+                                    "InlineCss": "{#USER}",
+                                    "VisibleWhen": {
+                                        "Key": "Access_Type",
+                                        "Equals": "Cage Ladder"
+                                    }
                                 },
                                 {
                                     "Label": "Weight Of Platform (kg)",
                                     "ValueKey": "Platform_Weight",
-                                    "InlineCss": "{#USER}"
+                                    "InlineCss": "{#USER}",
+                                    "VisibleWhen": {
+                                        "All": [
+                                            {
+                                                "Key": "Access_Type",
+                                                "Equals": "Cage Ladder"
+                                            },
+                                            {
+                                                "Key": "Mid_Landing_Pltform",
+                                                "Equals": "Yes"
+                                            }
+                                        ]
+                                    }
                                 },
                                 {
                                     "Label": "Staircase Height (m)",
                                     "ValueKey": "Staircase_Height",
-                                    "InlineCss": "{#USER}"
+                                    "InlineCss": "{#USER}",
+                                    "VisibleWhen": {
+                                        "Key": "Access_Type",
+                                        "Equals": "Staircase"
+                                    }
                                 },
                                 {
                                     "Label": "Weight Of Staircase / Running m (kg/m)",
                                     "ValueKey": "Staircase_Weight",
-                                    "InlineCss": "{#USER}"
+                                    "InlineCss": "{#USER}",
+                                    "VisibleWhen": {
+                                        "Key": "Access_Type",
+                                        "Equals": "Staircase"
+                                    }
                                 },
                                 {
                                     "Label": "Weight Of Railing / Running m (kg/m)",
                                     "ValueKey": "AccessGroup_Railing_Weight",
-                                    "InlineCss": "{#USER}"
+                                    "InlineCss": "{#USER}",
+                                    "VisibleWhen": {
+                                        "Key": "Access_Type",
+                                        "Equals": "Staircase"
+                                    }
                                 },
                                 {
-                                    "Label": "Maintenance Platform",
+                                    "Label": "Total Weight of Railing (kg)",
+                                    "ValueKey": "Total_Weight_Of_Railing",
+                                    "InlineCss": "{#CALC}",
+                                    "VisibleWhen": {
+                                        "Key": "Access_Type",
+                                        "Equals": "Staircase"
+                                    }
+                                },
+                                {
+                                    "Label": "Solenoid Valve Maintenance Platform",
                                     "ValueKey": "Maintainence_Pltform",
                                     "InlineCss": "{#USER}"
                                 },
                                 {
-                                    "Label": "Weight Of Maintenance Platform (kg)",
+                                    "Label": "Weight Of Solenoid Valve Maintenance Platform (kg)",
                                     "ValueKey": "Maintainence_Pltform_Weight",
-                                    "InlineCss": "{#USER}"
+                                    "InlineCss": "{#USER}",
+                                    "VisibleWhen": {
+                                        "Key": "Maintainence_Pltform",
+                                        "Equals": "Yes"
+                                    }
+                                },
+                                {
+                                    "Label": "Total Weight Of Solenoid Valve Maintenance Platform (kg)",
+                                    "ValueKey": "Total_Weight_Of_Maintainence_Pltform",
+                                    "InlineCss": "{#CALC}",
+                                    "VisibleWhen": {
+                                        "Key": "Maintainence_Pltform",
+                                        "Equals": "Yes"
+                                    }
                                 },
                                 {
                                     "Label": "Blow Pipe (Purge Pipe) (kg/m)",
@@ -966,8 +1143,18 @@
                                     "InlineCss": "{#CALC}"
                                 },
                                 {
+                                    "Label": "Total Weight of Blow Pipe (kg)",
+                                    "ValueKey": "Total_Weight_Of_Blow_Pipe",
+                                    "InlineCss": "{#CALC}"
+                                },
+                                {
                                     "Label": "Pressure Header (kg/m)",
                                     "ValueKey": "PressureHeader",
+                                    "InlineCss": "{#CALC}"
+                                },
+                                {
+                                    "Label": "Total Weight of Pressure Header (kg)",
+                                    "ValueKey": "Total_Weight_Of_Pressure_Header",
                                     "InlineCss": "{#CALC}"
                                 },
                                 {
@@ -1027,9 +1214,9 @@
                                     "InlineCss": "{#CALC}"
                                 },
                                 {
-                                    "Label": "Stiffness Factor for Roof Door",
-                                    "ValueKey": "Stiffness_Factor_For_Roof_Door",
-                                    "InlineCss": "{#CALC}"
+                                    "Label": "Roof Door Stiffening Factor",
+                                    "ValueKey": "Stiffening_Factor_Roof_Door",
+                                    "InlineCss": "{#USER}"
                                 },
                                 {
                                     "Label": "Weight per Door (kg)",
@@ -1057,17 +1244,29 @@
                                 {
                                     "Label": "Damper Series",
                                     "ValueKey": "Damper_Series",
-                                    "InlineCss": "{#USER}"
+                                    "InlineCss": "{#USER}",
+                                    "VisibleWhen": {
+                                        "Key": "Is_Damper_Required",
+                                        "Equals": "Yes"
+                                    }
                                 },
                                 {
                                     "Label": "Damper Diameter (mm)",
                                     "ValueKey": "Damper_Diameter",
-                                    "InlineCss": "{#USER}"
+                                    "InlineCss": "{#USER}",
+                                    "VisibleWhen": {
+                                        "Key": "Is_Damper_Required",
+                                        "Equals": "Yes"
+                                    }
                                 },
                                 {
                                     "Label": "Damper Quantity (No's)",
                                     "ValueKey": "Damper_Qty",
-                                    "InlineCss": "{#USER}"
+                                    "InlineCss": "{#USER}",
+                                    "VisibleWhen": {
+                                        "Key": "Is_Damper_Required",
+                                        "Equals": "Yes"
+                                    }
                                 },
 
                                 {
@@ -1134,16 +1333,16 @@
                             "RowStyle": {
                                 "FontSize": 12,
                                 "Bold": true,
-                                "InlineCss": "background-color:#4B2BA6; color:#FFFFFF; font-weight:bolder;"
+                                "InlineCss": "background-color:#F9C043; color:#FFFFFF; font-weight:bolder;"
                             },
                             "ColumnSpan": 3
                         },
                         {
-                            "RowData": [ "ITEM", "QTY (mm²)", "QTY (m²)" ],
+                            "RowData": [ "ITEM", "AREA (mm²)", "AREA (m²)" ],
                             "RowStyle": {
                                 "FontSize": 11,
                                 "Bold": true,
-                                "InlineCss": "background-color:#6D28D9; color:#FFFFFF; font-weight:bolder;"
+                                "InlineCss": "background-color:#008fd8; color:#FFFFFF; font-weight:bolder;"
                             }
                         },
 

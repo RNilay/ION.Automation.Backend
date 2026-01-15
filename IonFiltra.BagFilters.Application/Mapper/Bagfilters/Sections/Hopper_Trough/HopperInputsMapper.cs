@@ -29,7 +29,7 @@ namespace IonFiltra.BagFilters.Application.Mappers.Bagfilters.Sections.Hopper_Tr
                     Hopper_Access_Stool = entity.Hopper_Access_Stool,
                     Is_Distance_Piece = entity.Is_Distance_Piece,
                     Distance_Piece_Height = entity.Distance_Piece_Height,
-                    Stiffening_Factor = entity.Stiffening_Factor,
+                    Stiffening_Factor_Hopper = entity.Stiffening_Factor_Hopper,
                     Hopper = entity.Hopper,
                     Discharge_Opening_Sqr = entity.Discharge_Opening_Sqr,
                     Rav_Height = entity.Rav_Height,//New
@@ -75,7 +75,7 @@ namespace IonFiltra.BagFilters.Application.Mappers.Bagfilters.Sections.Hopper_Tr
                 Hopper_Access_Stool = dto.HopperInputs.Hopper_Access_Stool,
                 Is_Distance_Piece = dto.HopperInputs.Is_Distance_Piece,
                 Distance_Piece_Height = dto.HopperInputs.Distance_Piece_Height,
-                Stiffening_Factor = dto.HopperInputs.Stiffening_Factor,
+                Stiffening_Factor_Hopper = dto.HopperInputs.Stiffening_Factor_Hopper,
                 Hopper = dto.HopperInputs.Hopper,
                 Discharge_Opening_Sqr = dto.HopperInputs.Discharge_Opening_Sqr,
                 Rav_Height = dto.HopperInputs.Rav_Height,//New

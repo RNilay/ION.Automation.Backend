@@ -11,8 +11,8 @@ namespace IonFiltra.BagFilters.Core.Entities.Bagfilters.Sections.Process_Info
         public string? Destination_State { get; set; }
         public string? Location { get; set; }
         public decimal? ProcessVolumeMin { get; set; }
-        public decimal? Process_Acrmax { get; set; }
-        public decimal? ClothArea { get; set; }
+        //public decimal? Process_Acrmax { get; set; }
+        //public decimal? ClothArea { get; set; }
         public string? Process_Dust { get; set; }
         public decimal? Process_Dustload_gmspm3 { get; set; }
         public decimal? Process_Temp_C { get; set; }

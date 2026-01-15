@@ -111,8 +111,30 @@ namespace IonFiltra.BagFilters.Application.DTOs.Report
         public bool IsFooter { get; set; } = false;
         public string? InlineCss { get; set; } = null;
         public int ColSpan { get; set; } = 1; // if 2 => span both columns
+        // NEW (optional)
+        public VisibleWhenCondition? VisibleWhen { get; set; }
     }
 
+    public class EvaluatedReportTemplateDto
+    {
+        public string? ReportName { get; set; }
+        public string? ReportTitle { get; set; }
+        public string? EntityDbName { get; set; }
+
+        public ReportTemplateModelDto Template { get; set; } = default!;
+        public Dictionary<string, object>? HeaderInputDict { get; set; } // ✅ Add this
+        public Dictionary<string, object>? ValuesDict { get; set; } // ✅ Add this
+
+    }
+
+    public class VisibleWhenCondition
+    {
+        public string? Key { get; set; }
+        public string? Equals { get; set; }
+
+        public List<VisibleWhenCondition>? All { get; set; }
+        public List<VisibleWhenCondition>? Any { get; set; }
+    }
 
 
 }

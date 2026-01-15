@@ -17,5 +17,11 @@ namespace IonFiltra.BagFilters.Application.Interfaces.Report
             Dictionary<string, object> rowValues,
             Dictionary<string, object> headerValues);
 
+
+        Task<EvaluatedReportTemplateDto> EvaluateTemplateAsync(
+                ReportTemplateModelDto template,
+                double? processVolume, int enquiryId,
+        HashSet<string> nonVolumeDependentReports, List<Dictionary<string, object>> headerDict,
+    List<Dictionary<string, object>> bagfilterMasterData);
     }
 }

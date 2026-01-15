@@ -20,7 +20,7 @@ namespace IonFiltra.BagFilters.Application.Mappers.Bagfilters.Sections.Roof_Door
                     T3d = entity.T3d,
                     N_Doors = entity.N_Doors,
                     Compartment_No = entity.Compartment_No,
-                    Stiffness_Factor_For_Roof_Door = entity.Stiffness_Factor_For_Roof_Door,
+                    Stiffening_Factor_Roof_Door = entity.Stiffening_Factor_Roof_Door,
                     Weight_Per_Door = entity.Weight_Per_Door,
                     Tot_Weight_Per_Compartment = entity.Tot_Weight_Per_Compartment,
                 },
@@ -41,7 +41,7 @@ namespace IonFiltra.BagFilters.Application.Mappers.Bagfilters.Sections.Roof_Door
                 T3d = dto.RoofDoor.T3d,
                 N_Doors = dto.RoofDoor.N_Doors,
                 Compartment_No = dto.RoofDoor.Compartment_No,
-                Stiffness_Factor_For_Roof_Door = dto.RoofDoor.Stiffness_Factor_For_Roof_Door,
+                Stiffening_Factor_Roof_Door = dto.RoofDoor.Stiffening_Factor_Roof_Door,
                 Weight_Per_Door = dto.RoofDoor.Weight_Per_Door,
                 Tot_Weight_Per_Compartment = dto.RoofDoor.Tot_Weight_Per_Compartment,
 

@@ -19,6 +19,7 @@ namespace IonFiltra.BagFilters.Application.Mappers.Bagfilters.Sections.Capsule_I
                     Voltage_Rating = entity.Voltage_Rating,
                   
                     Capsule_Height = entity.Capsule_Height,
+                    Total_Capsule_Height = entity.Total_Capsule_Height,
                     Tube_Sheet_Thickness = entity.Tube_Sheet_Thickness,
                     Capsule_Wall_Thickness = entity.Capsule_Wall_Thickness,
                     Canopy = entity.Canopy,
@@ -44,6 +45,7 @@ namespace IonFiltra.BagFilters.Application.Mappers.Bagfilters.Sections.Capsule_I
                 Voltage_Rating = dto.CapsuleInputs.Voltage_Rating,
               
                 Capsule_Height = dto.CapsuleInputs.Capsule_Height,
+                Total_Capsule_Height = dto.CapsuleInputs.Total_Capsule_Height,
                 Tube_Sheet_Thickness = dto.CapsuleInputs.Tube_Sheet_Thickness,
                 Capsule_Wall_Thickness = dto.CapsuleInputs.Capsule_Wall_Thickness,
                 Canopy = dto.CapsuleInputs.Canopy,

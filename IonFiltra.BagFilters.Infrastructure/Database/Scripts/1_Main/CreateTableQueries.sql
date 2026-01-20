@@ -135,6 +135,12 @@ CREATE TABLE
         Damper_Series VARCHAR(100),
         Damper_Diameter DECIMAL(10, 2),
         Damper_Qty INT,
+        --new fields
+        Column_Section NVARCHAR(250),
+        Beam_Tie_Section NVARCHAR(250),
+        Rav_Section NVARCHAR(250),
+        Bracing_Section NVARCHAR(250),
+
         IsMatched BOOLEAN NOT NULL DEFAULT 0,
         MatchedBagfilterInputId INT NULL,
         MatchedBagfilterMasterId INT NULL,
@@ -171,6 +177,7 @@ CREATE TABLE ionfiltrabagfilters.WeightSummary (
     Cage_Weight DECIMAL(10,2) ,
     Structure_Weight DECIMAL(10,2),
     Scrap_Holes_Weight DECIMAL(10,2),
+    Total_Weight_Of_Pressure_Header DECIMAL(10,2),
     Weight_Total DECIMAL(10,2),
 	CreatedAt DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
     UpdatedAt DATETIME NULL ON UPDATE CURRENT_TIMESTAMP,

@@ -9,6 +9,14 @@ namespace IonFiltra.BagFilters.Core.Interfaces.Repositories.BagfilterDatabase.Wi
         Task UpdateAsync(IFI_Bagfilter_Database_Without_Canopy entity);
         Task<IFI_Bagfilter_Database_Without_Canopy?> GetByMatchAsync(string? processVolume, string? hopperType, decimal? numberOfColumns);
 
+        Task<IFI_Bagfilter_Database_Without_Canopy?> GetByMatchAsync(
+            string? processVolume,
+            string? hopperType,
+            decimal? numberOfColumns,
+            decimal? baysX,
+            decimal? baysZ
+        );
+
     }
 }
     

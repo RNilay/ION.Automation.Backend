@@ -111,6 +111,7 @@ namespace IonFiltra.BagFilters.Application.Services.SkyCiv
             return new AnalysisResponseDto
             {
                 SessionId = sessionId,
+                RawResponse = result,
                 ModelData = modelDataToken != null
                     ? new JObject { ["data"] = modelDataToken }   // ✅ force object wrapper
                     : null,
@@ -343,7 +344,7 @@ namespace IonFiltra.BagFilters.Application.Services.SkyCiv
                                 optimize_by = new
                                 {
                                     item = "sections",
-                                    ids = new[] { 1 }
+                                    ids = new[] { 1, 2, 3, 4 }
                                 }
                             }
                         }

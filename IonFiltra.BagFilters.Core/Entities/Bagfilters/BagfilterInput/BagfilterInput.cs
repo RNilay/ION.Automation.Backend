@@ -111,6 +111,13 @@ namespace IonFiltra.BagFilters.Core.Entities.Bagfilters.BagfilterInputs
 
         public string? S3dModel { get; set; }
         public string? AnalysisResult { get; set; }
+
+        //new fields
+        public string? Column_Section { get; set; }
+        public string? Beam_Tie_Section { get; set; }
+        public string? Rav_Section { get; set; }
+        public string? Bracing_Section { get; set; }
+
         public DateTime? MatchedAt { get; set; }
 
         public DateTime CreatedAt { get; set; }
@@ -118,13 +125,26 @@ namespace IonFiltra.BagFilters.Core.Entities.Bagfilters.BagfilterInputs
 
     }
 
-    public class GroupKey
+    //public class GroupKey
+    //{
+    //    public string? Location { get; set; }
+    //    public decimal? No_Of_Column { get; set; }
+    //    public decimal? Ground_Clearance { get; set; }
+    //    public decimal? Bag_Per_Row { get; set; }
+    //    public decimal? Number_Of_Rows { get; set; }
+    //}
+
+    public sealed class GroupKey
     {
-        public string? Location { get; set; }
-        public decimal? No_Of_Column { get; set; }
-        public decimal? Ground_Clearance { get; set; }
-        public decimal? Bag_Per_Row { get; set; }
-        public decimal? Number_Of_Rows { get; set; }
+        public decimal? ProcessVolume { get; init; }
+        public string? HopperType { get; init; }
+        public string? Canopy { get; init; }
+
+        // effective value after applying pyramid logic
+        public decimal? EffectiveNoOfColumns { get; init; }
+
+        public decimal? BaysInX { get; init; }
+        public decimal? BaysInZ { get; init; }
     }
 
 

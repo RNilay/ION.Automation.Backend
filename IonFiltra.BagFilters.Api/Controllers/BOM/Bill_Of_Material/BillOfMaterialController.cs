@@ -60,6 +60,60 @@ namespace IonFiltra.BagFilters.API.Controllers.BOM.Bill_Of_Material
             }
         }
 
+        [HttpGet("get-by-enquiry/{enquiryId}")]
+        public async Task<IActionResult> GetByEnquiryId(int enquiryId)
+        {
+            _logger.LogInformation(
+                "Get BillOfMaterial list started for EnquiryId {EnquiryId}",
+                enquiryId);
+
+            try
+            {
+                var result = await _service.GetByEnquiryIdAsync(enquiryId);
+
+                // IMPORTANT: list being empty is NOT an error
+                if (result == null || result.Count == 0)
+                {
+                    _logger.LogWarning(
+                        "No BillOfMaterial records found for EnquiryId {EnquiryId}",
+                        enquiryId);
+
+                    return Ok(new
+                    {
+                        success = true,
+                        message = $"No BillOfMaterial records found for EnquiryId {enquiryId}.",
+                        data = new List<object>()
+                    });
+                }
+
+                _logger.LogInformation(
+                    "Get BillOfMaterial list completed successfully for EnquiryId {EnquiryId}",
+                    enquiryId);
+
+                return Ok(new
+                {
+                    success = true,
+                    message = "BillOfMaterial list fetched successfully.",
+                    data = result
+                });
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(
+                    ex,
+                    "An error occurred while fetching BillOfMaterial list for EnquiryId {EnquiryId}",
+                    enquiryId);
+
+                return StatusCode(500, new
+                {
+                    success = false,
+                    message = "An error occurred while processing your request.",
+                    data = (object?)null
+                });
+            }
+        }
+
+
 
         [HttpPost("add")]
         public async Task<IActionResult> Add([FromBody] BillOfMaterialMainDto dto)

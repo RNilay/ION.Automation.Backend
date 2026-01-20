@@ -32,6 +32,8 @@ using IonFiltra.BagFilters.Core.Entities.MasterData.BoughtOutItems;
 using IonFiltra.BagFilters.Core.Interfaces.Bagfilters.BagfilterMasters;
 using IonFiltra.BagFilters.Core.Interfaces.GenericView;
 using IonFiltra.BagFilters.Core.Interfaces.MasterData.Master_Definition;
+using IonFiltra.BagFilters.Core.Interfaces.Repositories.BagfilterDatabase.WithCanopy;
+using IonFiltra.BagFilters.Core.Interfaces.Repositories.BagfilterDatabase.WithoutCanopy;
 using IonFiltra.BagFilters.Core.Interfaces.Repositories.Bagfilters.BagfilterInputs;
 using IonFiltra.BagFilters.Core.Interfaces.Repositories.Bagfilters.Sections.Access_Group;
 using IonFiltra.BagFilters.Core.Interfaces.Repositories.Bagfilters.Sections.Bag_Selection;
@@ -57,6 +59,7 @@ using IonFiltra.BagFilters.Core.Interfaces.SkyCiv;
 using Microsoft.Extensions.Logging;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
+using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Globalization;
 using System.Linq;
@@ -88,9 +91,6 @@ namespace IonFiltra.BagFilters.Application.Services.Bagfilters.BagfilterInputs
 
         private readonly IBoughtOutItemSelectionRepository _boughtOutRepo;
         private readonly IMasterDefinitionsRepository _masterDefinitionsRepository;
-        // new: registry of handlers keyed by DTO property name (case-insensitive)
-        private readonly Dictionary<string, Func<BagfilterInputMainDto, int, CancellationToken, Task>> _childHandlers;
-        private readonly Dictionary<string, Func<BagfilterInputMainDto, int, CancellationToken, Task>> _childUpdateHandlers;
 
         private readonly IGenericViewRepository _genericViewRepository;
 
@@ -101,6 +101,8 @@ namespace IonFiltra.BagFilters.Application.Services.Bagfilters.BagfilterInputs
         private readonly ICageCostEntityRepository _cageCostRepository;
         private readonly IDamperSizeInputsRepository _damperSizeInputsRepository;
         private readonly IExplosionVentEntityRepository _explosionVentEntityRepository;
+        private readonly IIFI_Bagfilter_Database_Without_CanopyRepository _withoutCanopyRepo;
+        private readonly IIFI_Bagfilter_Database_With_CanopyRepository _withCanopyRepo;
 
         public BagfilterInputService(
             IBagfilterInputRepository repository,
@@ -128,7 +130,9 @@ namespace IonFiltra.BagFilters.Application.Services.Bagfilters.BagfilterInputs
             IDamperCostEntityRepository damperCostRepository,
             ICageCostEntityRepository cageCostEntityRepository,
             IDamperSizeInputsRepository damperSizeInputsRepository,
-            IExplosionVentEntityRepository explosionVentEntityRepository
+            IExplosionVentEntityRepository explosionVentEntityRepository,
+            IIFI_Bagfilter_Database_Without_CanopyRepository withoutCanopyRepo,
+            IIFI_Bagfilter_Database_With_CanopyRepository withCanopyRepo
         )
         {
             _repository = repository;
@@ -150,7 +154,6 @@ namespace IonFiltra.BagFilters.Application.Services.Bagfilters.BagfilterInputs
             _paintingAreaRepository = paintingAreaRepository ?? throw new ArgumentNullException(nameof(paintingAreaRepository));
             _billOfMaterialRepository = billOfMaterialRepository ?? throw new ArgumentNullException(nameof(billOfMaterialRepository));
             _paintingCostRepository = paintingCostRepository ?? throw new ArgumentNullException(nameof(paintingCostRepository));
-
             _boughtOutRepo = boughtOutRepo;
             _masterDefinitionsRepository = masterDefinitionsRepository;
             _genericViewRepository = genericViewRepository;
@@ -159,29 +162,8 @@ namespace IonFiltra.BagFilters.Application.Services.Bagfilters.BagfilterInputs
             _cageCostRepository = cageCostEntityRepository;
             _damperSizeInputsRepository = damperSizeInputsRepository;
             _explosionVentEntityRepository = explosionVentEntityRepository;
-
-
-
-            _childHandlers = new Dictionary<string, Func<BagfilterInputMainDto, int, CancellationToken, Task>>(StringComparer.OrdinalIgnoreCase);
-            _childUpdateHandlers = new Dictionary<string, Func<BagfilterInputMainDto, int, CancellationToken, Task>>(StringComparer.OrdinalIgnoreCase);
-
-            // Register handlers. Use the helper to keep it clean.
-            // For each area, we pass the existing Add handler and the corresponding Update handler.
-            RegisterChildHandler("weightSummary", HandleWeightSummaryAsync);
-            RegisterChildHandler("processInfo", HandleProcessInfoAsync);
-            RegisterChildHandler("cageInputs", HandleCageInputsAsync);
-            RegisterChildHandler("bagSelection", HandleBagSelectionAsync);
-            RegisterChildHandler("structureInputs", HandleStructureInputsAsync);
-            RegisterChildHandler("capsuleInputs", HandleCapsuleInputsAsync);
-            RegisterChildHandler("casingInputs", HandleCasingInputsAsync);
-            RegisterChildHandler("hopperInputs", HandleHopperInputsAsync);
-            RegisterChildHandler("supportStructure", HandleSupportStructureAsync);
-            RegisterChildHandler("accessGroup", HandleAccessGroupAsync);
-            RegisterChildHandler("roofDoor", HandleRoofDoorAsync);
-            RegisterChildHandler("paintingArea", HandlePaintingAreaAsync);
-            RegisterChildHandler("billOfMaterial", HandleBillOfMaterialAsync);
-            RegisterChildHandler("paintingCost", HandlePaintingCostAsync);
-            RegisterChildHandler("boughtOutItems", HandleBoughtOutItemsAsync);
+            _withoutCanopyRepo = withoutCanopyRepo;
+            _withCanopyRepo = withCanopyRepo;
 
         }
 
@@ -265,8 +247,29 @@ namespace IonFiltra.BagFilters.Application.Services.Bagfilters.BagfilterInputs
 
                 pairs.Add((masterEntity, inputEntity));
 
-                // Build group key for grouping duplicates (Location + the 4 numeric fields)
-                string groupKey = BuildGroupKey(inputEntity.Location, inputEntity.No_Of_Column, inputEntity.Ground_Clearance, inputEntity.Bag_Per_Row, inputEntity.Number_Of_Rows);
+               
+                // SupportStructure is REQUIRED for matching
+                var support = dto.SupportStructure
+                    ?? throw new ArgumentException("SupportStructure is required for bagfilter matching.");
+
+                var effectiveColumns = ResolveNumberOfColumns(
+                    inputEntity.Hopper_Type,
+                    inputEntity.No_Of_Column,
+                    support?.No_Of_Bays_In_X,
+                    support?.No_Of_Bays_In_Z
+                );
+
+                // If columns cannot be resolved → force unmatched later
+                // but still group deterministically
+                var groupKey = BuildGroupKeyV2(
+                    inputEntity.Process_Volume_M3h,
+                    inputEntity.Hopper_Type,
+                    inputEntity.Canopy,
+                    effectiveColumns,
+                    support?.No_Of_Bays_In_X,
+                    support?.No_Of_Bays_In_Z
+                );
+
 
                 pairGroupKeys.Add(groupKey);
 
@@ -274,29 +277,40 @@ namespace IonFiltra.BagFilters.Application.Services.Bagfilters.BagfilterInputs
                 list.Add(idx);
             }
 
-            // 2) Prepare group representative list for database candidate lookup
-            var groupKeys = groups.Keys
-                .Select(k =>
-                {
-                    // parse one representative from groups: use first pair index
-                    var firstIdx = groups[k].First();
-                    var repInput = pairs[firstIdx].Input;
-                    return new GroupKey
-                    {
-                        Location = repInput.Location,
-                        No_Of_Column = repInput.No_Of_Column,
-                        Ground_Clearance = repInput.Ground_Clearance,
-                        Bag_Per_Row = repInput.Bag_Per_Row,
-                        Number_Of_Rows = repInput.Number_Of_Rows
-                    };
-                })
-                .ToList();
-
-            // 3) Fetch candidate existing DB rows for all group keys (single DB query)
-            var candidates = await _repository.FindCandidatesByGroupKeysAsync(groupKeys); // returns BagfilterInput with BagfilterMaster included
+            
 
             // --- Build Group labels (Group 1, Group 2, ...) ---
             var groupKeysList = groups.Keys.ToList();
+
+            var groupKeyObjectMap = new Dictionary<string, GroupKey>();
+
+            foreach (var groupKeyString in groupKeysList)
+            {
+                var firstIdx = groups[groupKeyString].First();
+                var repInput = pairs[firstIdx].Input;
+                var repDto = dtos[firstIdx];
+                var support = repDto.SupportStructure!;
+
+                var effectiveColumns = ResolveNumberOfColumns(
+                    repInput.Hopper_Type,
+                    repInput.No_Of_Column,
+                    support.No_Of_Bays_In_X,
+                    support.No_Of_Bays_In_Z
+                );
+
+                groupKeyObjectMap[groupKeyString] = new GroupKey
+                {
+                    ProcessVolume = repInput.Process_Volume_M3h,
+                    HopperType = repInput.Hopper_Type,
+                    Canopy = repInput.Canopy,
+                    EffectiveNoOfColumns = effectiveColumns,
+                    BaysInX = support.No_Of_Bays_In_X,
+                    BaysInZ = support.No_Of_Bays_In_Z
+                };
+            }
+
+            var masterMatchesByGroupKey = await FindMasterMatchesAsync(groupKeyObjectMap);
+
             var groupIdByKey = new Dictionary<string, string>(groupKeysList.Count);
             for (int i = 0; i < groupKeysList.Count; i++)
             {
@@ -307,58 +321,28 @@ namespace IonFiltra.BagFilters.Application.Services.Bagfilters.BagfilterInputs
             var groupMatchMap = new Dictionary<string, BagfilterMatchDto>(groups.Count);
             var matchedEnquiryIds = new HashSet<int>();
 
-            // For each group, create a placeholder DTO and try to find a DB match
+
             foreach (var groupKey in groupKeysList)
             {
                 var representativePairIndex = groups[groupKey].First();
                 var repInput = pairs[representativePairIndex].Input;
-                var incomingEnquiryId = dtoHasEnquiryId(pairs[representativePairIndex]);
 
-                // Placeholder for group — ensures we return every group even if unmatched
                 var placeholder = new BagfilterMatchDto
                 {
                     GroupId = groupIdByKey[groupKey],
-                    Location = repInput.Location,
-                    BagfilterInputId = 0,
-                    BagfilterMasterId = 0,
-                    AssignmentId = null,
-                    EnquiryId = null,
-                    BagFilterName = null,
-                    CustomerName = null,
-                    CreatedAt = null,
-                    No_Of_Column = repInput.No_Of_Column,
-                    Ground_Clearance = repInput.Ground_Clearance,
-                    Bag_Per_Row = repInput.Bag_Per_Row,
-                    Number_Of_Rows = repInput.Number_Of_Rows,
                     IsMatched = false
                 };
 
-                // Find first candidate match in DB (exclude same enquiry if incomingEnquiryId present)
-                var matchCandidate = candidates
-                    .FirstOrDefault(c =>
-                        string.Equals(c.Location ?? "", repInput.Location ?? "", StringComparison.InvariantCultureIgnoreCase)
-                        && EqualsNullable(c.No_Of_Column, repInput.No_Of_Column)
-                        && EqualsNullable(c.Ground_Clearance, repInput.Ground_Clearance)
-                        && EqualsNullable(c.Bag_Per_Row, repInput.Bag_Per_Row)
-                        && EqualsNullable(c.Number_Of_Rows, repInput.Number_Of_Rows)
-                        && (incomingEnquiryId == null || c.EnquiryId != incomingEnquiryId)
-                    );
-
-                if (matchCandidate != null)
+                if (masterMatchesByGroupKey.TryGetValue(groupKey, out var masterId)
+                    && masterId.HasValue)
                 {
                     placeholder.IsMatched = true;
-                    placeholder.BagfilterInputId = matchCandidate.BagfilterInputId;
-                    placeholder.BagfilterMasterId = matchCandidate.BagfilterMasterId;
-                    placeholder.AssignmentId = matchCandidate.BagfilterMaster?.AssignmentId;
-                    placeholder.EnquiryId = matchCandidate.EnquiryId;
-                    placeholder.BagFilterName = matchCandidate.BagfilterMaster?.BagFilterName;
-                    // Collect enquiry ids for enrichment (only non-null)
-                    if (matchCandidate.EnquiryId.HasValue)
-                        matchedEnquiryIds.Add(matchCandidate.EnquiryId.Value);
+                    placeholder.BagfilterMasterId = masterId.Value;
                 }
 
                 groupMatchMap[groupKey] = placeholder;
             }
+
 
             // Fetch all Enquiries for matched groups in one DB call
             Dictionary<int, Enquiry> enquiryMap = new();
@@ -392,7 +376,7 @@ namespace IonFiltra.BagFilters.Application.Services.Bagfilters.BagfilterInputs
                 // For every pair index in this group, mark mapping to the matched candidate
                 foreach (var pairIndex in kv.Value)
                 {
-                    matchMappingByPairIndex[pairIndex] = (matchDto.BagfilterInputId, matchDto.BagfilterMasterId);
+                    matchMappingByPairIndex[pairIndex] = (0, matchDto.BagfilterMasterId);
                 }
             }
 
@@ -741,86 +725,14 @@ namespace IonFiltra.BagFilters.Application.Services.Bagfilters.BagfilterInputs
                 }
             }
 
-            // If nothing to run, skip
-            //if (unmatchedPairIndices.Any())
-            //{
-            //    // limiter to avoid flooding SkyCiv — adjust concurrency as needed
-            //    var maxConcurrency = 2; // or 1 if you want strictly sequential
-            //    using var sem = new SemaphoreSlim(maxConcurrency);
-            //    var tasks = new List<Task>();
-
-            //    foreach (var pairIndex in unmatchedPairIndices)
-            //    {
-            //        await sem.WaitAsync(); // respect cancellation
-            //        tasks.Add(Task.Run(async () =>
-            //        {
-            //            try
-            //            {
-            //                // get model to send
-            //                var inputEntity = pairs[pairIndex].Input;
-            //                // assume the DTO or entity stored s3dModel as JObject (if not, adapt to convert string->JObject)
-            //                var s3dModel = inputEntity.S3dModel != null
-            //                    ? JObject.Parse(inputEntity.S3dModel) // if stored as string
-            //                    : null;
-
-            //                if (s3dModel == null)
-            //                {
-            //                    _logger?.LogWarning("No S3D model present for pairIndex {idx}", pairIndex);
-            //                    return;
-            //                }
-
-            //                // Call analysis service
-            //                AnalysisResponseDto analysisResponse;
-            //                try
-            //                {
-            //                    analysisResponse = await _skyCivService.RunAnalysisAsync(s3dModel, ct);
-            //                }
-            //                catch (Exception ex)
-            //                {
-            //                    _logger?.LogError(ex, "SkyCiv analysis failed for pairIndex {idx}", pairIndex);
-            //                    return;
-            //                }
-
-            //                if (analysisResponse != null && analysisResponse.Status == "Succeeded")
-            //                {
-            //                    // Persist model data and session id to the DB row that was created earlier
-            //                    var createdId = createdInputIds[pairIndex]; // createdInputIds indexes map to pairs
-            //                    var modelJson = analysisResponse.ModelData?.ToString(Formatting.None) ?? string.Empty;
-            //                    var sessionId = analysisResponse.SessionId;
-
-            //                    // Call repository to update the row (you need to implement this)
-            //                    await _repository.UpdateS3dModelAsync(createdId, modelJson, sessionId);
-
-            //                    // Optionally update the groupMatchMap or matchesList for return DTOs
-            //                    var groupKey = pairGroupKeys[pairIndex];
-            //                    if (groupMatchMap.TryGetValue(groupKey, out var gm2))
-            //                    {
-            //                        // annotate placeholder to indicate analysis was run
-            //                        gm2.IsMatched = false; // still unmatched, but tried analysis
-
-            //                    }
-            //                }
-            //                else
-            //                {
-            //                    _logger?.LogWarning("Analysis didn't succeed for pairIndex {idx}. Status: {status}", pairIndex, analysisResponse?.Status);
-            //                }
-            //            }
-            //            finally
-            //            {
-            //                sem.Release();
-            //            }
-            //        }));
-            //    }
-
-            //    // Wait for all tasks to complete
-            //    await Task.WhenAll(tasks);
-            //}
-
+            var optimizationBag = new ConcurrentBag<SkyCivOptimizationDto>();
+            //call for sky civ for unmatched items only
             if (unmatchedPairIndices.Any())
             {
                 const int maxConcurrency = 2;
                 using var sem = new SemaphoreSlim(maxConcurrency);
                 var tasks = new List<Task>();
+
 
                 foreach (var originalPairIndex in unmatchedPairIndices)
                 {
@@ -828,9 +740,10 @@ namespace IonFiltra.BagFilters.Application.Services.Bagfilters.BagfilterInputs
                     var pairIndex = originalPairIndex;
 
                     // start the processing task directly (no Task.Run)
-                    tasks.Add(ProcessPairAsync(pairIndex, pairs, pairGroupKeys, createdInputIds, groupMatchMap, sem, ct));
+                    tasks.Add(ProcessPairAsync(pairIndex, pairs, pairGroupKeys, createdInputIds, groupMatchMap, optimizationBag, sem, ct));
                 }
 
+               
                 try
                 {
                     await Task.WhenAll(tasks).ConfigureAwait(false);
@@ -842,8 +755,10 @@ namespace IonFiltra.BagFilters.Application.Services.Bagfilters.BagfilterInputs
                 }
             }
 
-            
 
+            result.Optimizations = optimizationBag.Any()
+                   ? optimizationBag.ToList()
+                   : new List<SkyCivOptimizationDto>();
 
             return result;
         }
@@ -894,105 +809,97 @@ namespace IonFiltra.BagFilters.Application.Services.Bagfilters.BagfilterInputs
 
                 pairs.Add((masterEntity, inputEntity));
 
-                var groupKey = BuildGroupKey(inputEntity.Location, inputEntity.No_Of_Column, inputEntity.Ground_Clearance, inputEntity.Bag_Per_Row, inputEntity.Number_Of_Rows);
+                // SupportStructure is REQUIRED for matching
+                var support = dto.SupportStructure
+                    ?? throw new ArgumentException("SupportStructure is required for bagfilter matching.");
+
+                var effectiveColumns = ResolveNumberOfColumns(
+                    inputEntity.Hopper_Type,
+                    inputEntity.No_Of_Column,
+                    support?.No_Of_Bays_In_X,
+                    support?.No_Of_Bays_In_Z
+                );
+
+                // If columns cannot be resolved → force unmatched later
+                // but still group deterministically
+                var groupKey = BuildGroupKeyV2(
+                    inputEntity.Process_Volume_M3h,
+                    inputEntity.Hopper_Type,
+                    inputEntity.Canopy,
+                    effectiveColumns,
+                    support?.No_Of_Bays_In_X,
+                    support?.No_Of_Bays_In_Z
+                );
+
                 pairGroupKeys.Add(groupKey);
 
                 if (!groups.TryGetValue(groupKey, out var list)) { list = new List<int>(); groups[groupKey] = list; }
                 list.Add(idx);
             }
 
-            // Step B: Find candidates for groups
-            var groupKeys = groups.Keys
-                .Select(k =>
-                {
-                    var firstIdx = groups[k].First();
-                    var repInput = pairs[firstIdx].Input;
-                    return new GroupKey
-                    {
-                        Location = repInput.Location,
-                        No_Of_Column = repInput.No_Of_Column,
-                        Ground_Clearance = repInput.Ground_Clearance,
-                        Bag_Per_Row = repInput.Bag_Per_Row,
-                        Number_Of_Rows = repInput.Number_Of_Rows
-                    };
-                })
-                .ToList();
-
-            var candidates = await _repository.FindCandidatesByGroupKeysAsync(groupKeys); // BagfilterInput + Master included
+            
 
             // Step C: For each group, create placeholder and decide match/update vs insert
             var groupKeysList = groups.Keys.ToList();
+
+            // === Build GroupKey → GroupKey object map (IDENTICAL to AddRange) ===
+            var groupKeyObjectMap = new Dictionary<string, GroupKey>();
+
+            foreach (var groupKeyString in groups.Keys)
+            {
+                var firstIdx = groups[groupKeyString].First();
+                var repInput = pairs[firstIdx].Input;
+                var repDto = dtos[firstIdx];
+                var support = repDto.SupportStructure!;
+
+                var effectiveColumns = ResolveNumberOfColumns(
+                    repInput.Hopper_Type,
+                    repInput.No_Of_Column,
+                    support.No_Of_Bays_In_X,
+                    support.No_Of_Bays_In_Z
+                );
+
+                groupKeyObjectMap[groupKeyString] = new GroupKey
+                {
+                    ProcessVolume = repInput.Process_Volume_M3h,
+                    HopperType = repInput.Hopper_Type,
+                    Canopy = repInput.Canopy,
+                    EffectiveNoOfColumns = effectiveColumns,
+                    BaysInX = support.No_Of_Bays_In_X,
+                    BaysInZ = support.No_Of_Bays_In_Z
+                };
+            }
+
+            // === MASTER MATCHING (single source of truth) ===
+            var masterMatchesByGroupKey =
+                await FindMasterMatchesAsync(groupKeyObjectMap);
+
             var groupIdByKey = new Dictionary<string, string>(groupKeysList.Count);
             for (int i = 0; i < groupKeysList.Count; i++) groupIdByKey[groupKeysList[i]] = $"Group {i + 1}";
 
-            var groupMatchMap = new Dictionary<string, BagfilterMatchDto>(groups.Count);
             var matchedEnquiryIds = new HashSet<int>();
+            // === Build groupMatchMap (NO input-level ids) ===
+            var groupMatchMap = new Dictionary<string, BagfilterMatchDto>();
 
-            foreach (var groupKey in groupKeysList)
+            foreach (var groupKey in groups.Keys)
             {
-                var repPairIdx = groups[groupKey].First();
-                var repInput = pairs[repPairIdx].Input;
-                var incomingEnquiryId = dtoHasEnquiryId(pairs[repPairIdx]);
-
                 var placeholder = new BagfilterMatchDto
                 {
-                    GroupId = groupIdByKey[groupKey],
-                    Location = repInput.Location,
-                    BagfilterInputId = 0,
-                    BagfilterMasterId = 0,
-                    AssignmentId = null,
-                    EnquiryId = null,
-                    BagFilterName = null,
-                    CustomerName = null,
-                    CreatedAt = null,
-                    No_Of_Column = repInput.No_Of_Column,
-                    Ground_Clearance = repInput.Ground_Clearance,
-                    Bag_Per_Row = repInput.Bag_Per_Row,
-                    Number_Of_Rows = repInput.Number_Of_Rows,
+                    GroupId = groupKey,
                     IsMatched = false
                 };
 
-                var matchCandidate = candidates
-                    .FirstOrDefault(c =>
-                        string.Equals(c.Location ?? "", repInput.Location ?? "", StringComparison.InvariantCultureIgnoreCase)
-                        && EqualsNullable(c.No_Of_Column, repInput.No_Of_Column)
-                        && EqualsNullable(c.Ground_Clearance, repInput.Ground_Clearance)
-                        && EqualsNullable(c.Bag_Per_Row, repInput.Bag_Per_Row)
-                        && EqualsNullable(c.Number_Of_Rows, repInput.Number_Of_Rows)
-                    // no same-enquiry exclusion in UpdateRange
-                    );
-
-
-                if (matchCandidate != null)
+                if (masterMatchesByGroupKey.TryGetValue(groupKey, out var masterId)
+                    && masterId.HasValue)
                 {
                     placeholder.IsMatched = true;
-                    placeholder.BagfilterInputId = matchCandidate.BagfilterInputId;
-                    placeholder.BagfilterMasterId = matchCandidate.BagfilterMasterId;
-                    placeholder.AssignmentId = matchCandidate.BagfilterMaster?.AssignmentId;
-                    placeholder.EnquiryId = matchCandidate.EnquiryId;
-                    placeholder.BagFilterName = matchCandidate.BagfilterMaster?.BagFilterName;
-                    if (matchCandidate.EnquiryId.HasValue) matchedEnquiryIds.Add(matchCandidate.EnquiryId.Value);
+                    placeholder.BagfilterMasterId = masterId.Value;
                 }
 
                 groupMatchMap[groupKey] = placeholder;
             }
 
-            // Enrich enquiries if any (same as AddRange)
-            Dictionary<int, Enquiry> enquiryMap = new();
-            if (matchedEnquiryIds.Any())
-            {
-                var enquiryDict = await _repository.GetEnquiriesByIdsAsync(matchedEnquiryIds);
-                if (enquiryDict != null && enquiryDict.Any()) enquiryMap = enquiryDict;
-            }
-            foreach (var kv in groupMatchMap.ToList())
-            {
-                var matchDto = kv.Value;
-                if (matchDto.IsMatched && matchDto.EnquiryId.HasValue && enquiryMap.TryGetValue(matchDto.EnquiryId.Value, out var enq))
-                {
-                    matchDto.CustomerName = enq.Customer;
-                    matchDto.CreatedAt = enq.CreatedAt;
-                }
-            }
+            
 
             // Step D: Decide per-pair operations
             // We'll prepare:
@@ -1042,72 +949,21 @@ namespace IonFiltra.BagFilters.Application.Services.Bagfilters.BagfilterInputs
                 // 2) NEW ROWS (no BagfilterInputId) -> use existing group-match logic
                 var matchDto = groupMatchMap.TryGetValue(groupKey, out var m) ? m : null;
 
-                if (matchDto != null && matchDto.IsMatched && matchDto.BagfilterInputId > 0)
+                // 2) NEW ROWS (no BagfilterInputId)
+                // If group matched → insert new input under matched master
+                if (matchDto != null && matchDto.IsMatched)
                 {
-                    // Update path: we have an existing row to update (matched by group)
-                    var existingInputId = matchDto.BagfilterInputId;
-                    var existingMasterId = matchDto.BagfilterMasterId; // may be zero/nullable
+                    pair.Input.BagfilterMasterId = matchDto.BagfilterMasterId;
+                    pair.Input.BagfilterMaster = null;
 
-                    // Determine if incoming master info indicates a "new master" (distinct BagFilterName or explicit masterId mismatch)
-                    var incomingMasterName = pair.Master?.BagFilterName;
-                    var incomingMasterId = pair.Master?.BagfilterMasterId ?? 0;
-
-                    var requiresNewMaster = false;
-                    if (!string.IsNullOrWhiteSpace(incomingMasterName))
-                    {
-                        // if the incoming name differs from matched one -> create new master
-                        if (!string.Equals(incomingMasterName, matchDto.BagFilterName ?? "", StringComparison.InvariantCultureIgnoreCase))
-                        {
-                            requiresNewMaster = true;
-                        }
-                    }
-                    // if incoming explicitly references a masterId that is not the matched master, treat as new (or verify existence)
-                    if (incomingMasterId > 0 && incomingMasterId != matchDto.BagfilterMasterId)
-                    {
-                        requiresNewMaster = true;
-                    }
-
-                    if (requiresNewMaster)
-                    {
-                        // Create a new master entity (copy incoming master data if provided; otherwise minimal)
-                        var newMaster = pair.Master ?? new BagfilterMaster
-                        {
-                            BagFilterName = incomingMasterName ?? ("Master_For_Input_" + existingInputId),
-                            CreatedAt = DateTime.UtcNow
-                        };
-
-                        // Prepare an update intent that will first create a new master and then
-                        // point the input to that new master.
-                        updates[pairIndex] = new UpdateIntent
-                        {
-                            PairIndex = pairIndex,
-                            ExistingInputId = existingInputId,
-                            ExistingMasterId = existingMasterId,
-                            InputToUpdate = pair.Input,
-                            NewMasterToCreate = newMaster,
-                            UpdateMaster = false // we are creating new, not updating old
-                        };
-                    }
-                    else
-                    {
-                        // No new master required — maybe update existing master fields and/or input fields
-                        updates[pairIndex] = new UpdateIntent
-                        {
-                            PairIndex = pairIndex,
-                            ExistingInputId = existingInputId,
-                            ExistingMasterId = existingMasterId,
-                            InputToUpdate = pair.Input,
-                            MasterToUpdate = pair.Master, // may be a shell with fields to update
-                            UpdateMaster = pair.Master != null && pair.Master.BagfilterMasterId == 0
-                        };
-                    }
+                    inserts.Add((pair.Master, pair.Input, pairIndex));
                 }
                 else
                 {
-                    // 3) INSERT PATH — unmatched group or explicit new master requested;
-                    //    create new master+input pair
-                    inserts.Add((pairs[pairIndex].Master, pairs[pairIndex].Input, pairIndex));
+                    // fully unmatched → new master + input
+                    inserts.Add((pair.Master, pair.Input, pairIndex));
                 }
+
             }
 
 
@@ -1541,9 +1397,13 @@ namespace IonFiltra.BagFilters.Application.Services.Bagfilters.BagfilterInputs
 
             // For updates: detect changed S3D models (we need to fetch original DB inputs for comparison; use 'candidates' list earlier)
             // Build dictionary of candidate input id -> original S3dModel (if we have it from earlier candidate fetch)
-            var candidateModelMap = candidates
-                .Where(c => c.BagfilterInputId > 0)
-                .ToDictionary(c => c.BagfilterInputId, c => c.S3dModel ?? string.Empty);
+            var existingIds = updates.Values.Select(u => u.ExistingInputId).Distinct().ToList();
+
+            var beforeUpdateInputs = await _repository.GetByIdsAsync(existingIds);
+
+            var candidateModelMap = beforeUpdateInputs
+                .ToDictionary(x => x.BagfilterInputId, x => x.S3dModel ?? string.Empty);
+
 
             foreach (var kv in updates)
             {
@@ -1560,6 +1420,7 @@ namespace IonFiltra.BagFilters.Application.Services.Bagfilters.BagfilterInputs
                 }
             }
 
+            var optimizationBag = new ConcurrentBag<SkyCivOptimizationDto>();
             // Run SkyCiv for the skycivCandidates (same ProcessPairAsync helper as AddRange, but we will pass the list)
             if (skycivCandidates.Any())
             {
@@ -1582,8 +1443,10 @@ namespace IonFiltra.BagFilters.Application.Services.Bagfilters.BagfilterInputs
 
                     if (pairIndex < 0) continue;
 
-                    tasks.Add(ProcessPairAsync(pairIndex, pairs, pairGroupKeys, allIdsToFetch.ToList(), groupMatchMap, sem, ct));
+                    tasks.Add(ProcessPairAsync(pairIndex, pairs, pairGroupKeys, allIdsToFetch.ToList(), groupMatchMap, optimizationBag, sem, ct));
                 }
+
+                
 
                 try
                 {
@@ -1604,6 +1467,10 @@ namespace IonFiltra.BagFilters.Application.Services.Bagfilters.BagfilterInputs
                 Matches = groupMatchMap.Values.ToList()
             };
 
+            result.Optimizations = optimizationBag.Any()
+            ? optimizationBag.ToList()
+            : new List<SkyCivOptimizationDto>();
+
             return result;
         }
 
@@ -1621,18 +1488,19 @@ namespace IonFiltra.BagFilters.Application.Services.Bagfilters.BagfilterInputs
             public bool UpdateMaster { get; set; } = false;
         }
 
-        // repository input DTO
-        //public class RepositoryInputUpdateDto
-        //{
-        //    public int ExistingInputId { get; set; }
-        //    public BagfilterInput InputEntity { get; set; } = null!;
-        //    public int ExistingMasterId { get; set; }
-        //    public BagfilterMaster? MasterEntityToUpdate { get; set; } // optional, update existing master fields
-        //    public int ResolvedNewMasterId { get; set; } // optional - if set, attach to this master id
-        //}
+        private (string? col, string? beam, string? rav, string? bracing)
+        ExtractOptimizedSections(JObject skycivResult)
+        {
+            var arr = skycivResult["response"]?["data"] as JArray;
+            if (arr == null || arr.Count < 4) return default;
 
-
-
+            return (
+                arr[0]?["sections"]?.ToString(),
+                arr[1]?["sections"]?.ToString(),
+                arr[2]?["sections"]?.ToString(),
+                arr[3]?["sections"]?.ToString()
+            );
+        }
 
 
         private async Task ProcessPairAsync(
@@ -1641,6 +1509,7 @@ namespace IonFiltra.BagFilters.Application.Services.Bagfilters.BagfilterInputs
                 List<string> pairGroupKeys,
                 IList<int> createdInputIds,
                 Dictionary<string, BagfilterMatchDto> groupMatchMap,
+                ConcurrentBag<SkyCivOptimizationDto> optimizations,
                 SemaphoreSlim sem,
                 CancellationToken ct)
         {
@@ -1694,6 +1563,9 @@ namespace IonFiltra.BagFilters.Application.Services.Bagfilters.BagfilterInputs
                     try
                     {
                         analysisResponse = await _skyCivService.RunAnalysisAsync(s3dModel, ct).ConfigureAwait(false);
+
+
+                        
                         break; // success
                     }
                     catch (OperationCanceledException) { throw; }
@@ -1742,91 +1614,55 @@ namespace IonFiltra.BagFilters.Application.Services.Bagfilters.BagfilterInputs
 
                 // annotate groupMatchMap if present (safe lookup)
                 var groupKey = (pairIndex >= 0 && pairIndex < pairGroupKeys.Count) ? pairGroupKeys[pairIndex] : null;
-                if (!string.IsNullOrEmpty(groupKey) && groupMatchMap.TryGetValue(groupKey, out var gm2))
+                if (groupKey == null || !groupMatchMap.TryGetValue(groupKey, out var gm))
                 {
-                    // mark that analysis was attempted; do not flip IsMatched to true unless intended
-                    gm2.AnalysisAttempted = true; // add a property or similar to signal analysis ran
+                    _logger?.LogWarning("GroupKey missing for pairIndex {pairIndex}", pairIndex);
+                    return;
                 }
+
+                //if (!string.IsNullOrEmpty(groupKey) && groupMatchMap.TryGetValue(groupKey, out var gm2))
+                //{
+                //    // mark that analysis was attempted; do not flip IsMatched to true unless intended
+                //    gm2.AnalysisAttempted = true; // add a property or similar to signal analysis ran
+                //}
+
+                var (col, beam, rav, bracing) =
+                        ExtractOptimizedSections(analysisResponse.RawResponse);
+
+                if (col == null || beam == null || rav == null || bracing == null)
+                {
+                    _logger?.LogWarning("Incomplete optimization data for pairIndex {pairIndex}", pairIndex);
+                    return;
+                }
+
+                gm.AnalysisAttempted = true;
+
+                if (optimizations.Any(o => o.GroupId == gm.GroupId))
+                    return;
+
+                optimizations.Add(new SkyCivOptimizationDto
+                {
+                    PairIndex = pairIndex,
+                    GroupId = groupMatchMap[groupKey].GroupId,
+                    BagfilterInputId = createdId,
+
+                    OriginalColumnSection = inputEntity.Column_Section,
+                    OriginalBeamTieSection = inputEntity.Beam_Tie_Section,
+                    OriginalRavSection = inputEntity.Rav_Section,
+                    OriginalBracingSection = inputEntity.Bracing_Section,
+
+                    OptimizedColumnSection = col,
+                    OptimizedBeamTieSection = beam,
+                    OptimizedRavSection = rav,
+                    OptimizedBracingSection = bracing
+                });
+
+               
+
             }
             finally
             {
                 sem.Release();
-            }
-        }
-
-        private async Task PersistBoughtOutItemsForDtoAsync(
-            BagfilterInputMainDto dto,
-            int bagfilterMasterId,
-            CancellationToken ct)
-        {
-            if (dto == null) throw new ArgumentNullException(nameof(dto));
-            if (bagfilterMasterId <= 0) return;
-
-            var items = dto.BoughtOutItems;
-            if (items == null || items.Count == 0)
-                return; // nothing to persist for this BF
-
-            // We assume BagfilterInput.EnquiryId is always set for these
-            var enquiryId = dto.BagfilterInput?.EnquiryId;
-            if (enquiryId == null || enquiryId <= 0)
-            {
-                _logger.LogWarning(
-                    "Skipping BoughtOutItems for BagfilterMasterId {Id} because EnquiryId is missing.",
-                    bagfilterMasterId);
-                return;
-            }
-
-            // 1) Load master definitions once (for this call)
-            var masterDefs = await _masterDefinitionsRepository.GetAllActiveAsync();
-            var masterDefByKey = masterDefs
-                .Where(d => !string.IsNullOrWhiteSpace(d.MasterKey))
-                .ToDictionary(d => d.MasterKey!, d => d, StringComparer.OrdinalIgnoreCase);
-
-            // 2) Map DTO -> entities
-            var entities = new List<BoughtOutItemSelection>();
-
-            foreach (var item in items)
-            {
-                if (string.IsNullOrWhiteSpace(item.MasterKey) || item.SelectedRowId == null)
-                    continue;
-
-                if (!masterDefByKey.TryGetValue(item.MasterKey, out var def))
-                {
-                    _logger.LogWarning(
-                        "Unknown MasterKey {MasterKey} in BoughtOutItems for BagfilterMasterId {Id}",
-                        item.MasterKey,
-                        bagfilterMasterId);
-                    continue;
-                }
-
-                var entity = new BoughtOutItemSelection
-                {
-                    EnquiryId = (int)enquiryId,
-                    BagfilterMasterId = bagfilterMasterId,
-                    MasterDefinitionId = def.Id,
-                    MasterKey = item.MasterKey,
-                    SelectedRowId = item.SelectedRowId,
-                    CreatedAt = DateTime.UtcNow
-                };
-
-                entities.Add(entity);
-            }
-
-            if (entities.Count == 0)
-                return;
-
-            // 3) Upsert for this (EnquiryId, BagfilterMasterId) set
-            try
-            {
-                await _boughtOutRepo.UpsertRangeAsync(entities);
-            }
-            catch (Exception ex)
-            {
-                _logger.LogError(
-                    ex,
-                    "Failed to persist BoughtOutItems for BagfilterMasterId {Id}",
-                    bagfilterMasterId);
-                throw;
             }
         }
 
@@ -1932,6 +1768,10 @@ namespace IonFiltra.BagFilters.Application.Services.Bagfilters.BagfilterInputs
                 Damper_Series = dto.Damper_Series,
                 Damper_Diameter = dto.Damper_Diameter,
                 Damper_Qty = dto.Damper_Qty,
+                Column_Section = dto.Column_Section,
+                Beam_Tie_Section = dto.Beam_Tie_Section,
+                Rav_Section = dto.Rav_Section,
+                Bracing_Section = dto.Bracing_Section,
 
                 // NEW: EnquiryId - used to exclude same enquiry matches
                 EnquiryId = dto.EnquiryId,
@@ -1949,6 +1789,36 @@ namespace IonFiltra.BagFilters.Application.Services.Bagfilters.BagfilterInputs
             return $"{loc}|{Norm(no)}|{Norm(ground)}|{Norm(bag)}|{Norm(rows)}";
         }
 
+        private static string BuildGroupKeyV2(
+    decimal? processVolume,
+    string? hopperType,
+    string? canopy,
+    decimal? effectiveColumns,
+    decimal? baysInX,
+    decimal? baysInZ)
+        {
+            string NormDecimal(decimal? d) =>
+                d.HasValue
+                    ? d.Value.ToString(CultureInfo.InvariantCulture)
+                    : "__NULL__";
+
+            string NormString(string? s) =>
+                string.IsNullOrWhiteSpace(s)
+                    ? "__NULL__"
+                    : s.Trim().ToLowerInvariant();
+
+            return string.Join("|",
+                NormDecimal(processVolume),
+                NormString(hopperType),
+                NormString(canopy),
+                NormDecimal(effectiveColumns),
+                NormDecimal(baysInX),
+                NormDecimal(baysInZ)
+            );
+        }
+
+
+
         private static bool EqualsNullable(decimal? a, decimal? b)
         {
             if (a == null && b == null) return true;
@@ -1962,651 +1832,6 @@ namespace IonFiltra.BagFilters.Application.Services.Bagfilters.BagfilterInputs
             if (pair.Input?.EnquiryId != null) return pair.Input.EnquiryId;
             if (pair.Master?.EnquiryId != null) return pair.Master.EnquiryId;
             return null;
-        }
-
-
-       
-        // Register an add handler and optionally an update handler (both use masterId only)
-        private void RegisterChildHandler(
-            string key,
-            Func<BagfilterInputMainDto, int, CancellationToken, Task> addHandler,
-            Func<BagfilterInputMainDto, int, CancellationToken, Task>? updateHandler = null)
-        {
-            if (string.IsNullOrWhiteSpace(key)) throw new ArgumentException("key required", nameof(key));
-            if (addHandler == null) throw new ArgumentNullException(nameof(addHandler));
-
-            _childHandlers[key] = addHandler;
-
-            if (updateHandler != null)
-                _childUpdateHandlers[key] = updateHandler;
-        }
-
-
-
-        // Section Helper methods
-        private async Task HandleWeightSummaryAsync(BagfilterInputMainDto dto, int bagfilterMasterId, CancellationToken ct)
-        {
-            if (dto == null) throw new ArgumentNullException(nameof(dto));
-            if (dto.WeightSummary == null)
-                return; // nothing to do for this DTO
-
-            // Map DTO -> Entity (adjust property names to match your DTO/entity)
-            var entity = new WeightSummary
-            {
-
-                EnquiryId = (int)dto.BagfilterInput.EnquiryId,
-                BagfilterMasterId = bagfilterMasterId,
-                Casing_Weight = dto.WeightSummary.Casing_Weight,
-                Capsule_Weight = dto.WeightSummary.Capsule_Weight,
-                Tot_Weight_Per_Compartment = dto.WeightSummary.Tot_Weight_Per_Compartment,
-                Hopper_Weight = dto.WeightSummary.Hopper_Weight,
-                Weight_Of_Cage_Ladder = dto.WeightSummary.Weight_Of_Cage_Ladder,
-                Railing_Weight = dto.WeightSummary.Railing_Weight,
-                Tubesheet_Weight = dto.WeightSummary.Tubesheet_Weight,
-                Air_Header_Blow_Pipe = dto.WeightSummary.Air_Header_Blow_Pipe,
-                Hopper_Access_Stool_Weight = dto.WeightSummary.Hopper_Access_Stool_Weight,
-                Weight_Of_Mid_Landing_Plt = dto.WeightSummary.Weight_Of_Mid_Landing_Plt,
-                Weight_Of_Maintainence_Pltform = dto.WeightSummary.Weight_Of_Maintainence_Pltform,
-                Cage_Weight = dto.WeightSummary.Cage_Weight,
-                Structure_Weight = dto.WeightSummary.Structure_Weight,
-                Scrap_Holes_Weight = dto.WeightSummary.Scrap_Holes_Weight,
-                Weight_Total = dto.WeightSummary.Weight_Total,
-
-                CreatedAt = DateTime.UtcNow
-            };
-
-            // Persist using the dedicated repository
-            // Implement AddAsync on IWeightSummaryRepository if not present.
-            try
-            {
-                await _weightSummaryRepository.AddAsync(entity);
-            }
-            catch (Exception ex)
-            {
-                // decide how to handle child persistence failure: log and continue, or rethrow to fail the whole flow
-                _logger.LogError(ex, "Failed to persist WeightSummary for BagfilterMasterId {Id}", bagfilterMasterId);
-                throw; // rethrow if you want to fail the parent transaction/operation
-                // OR remove the throw; to log and continue
-            }
-        }
-
-     
-
-        private async Task HandleProcessInfoAsync(BagfilterInputMainDto dto, int bagfilterMasterId, CancellationToken ct)
-        {
-            if (dto == null) throw new ArgumentNullException(nameof(dto));
-            if (dto.BagfilterInput == null)
-                return; // nothing to process
-
-            var input = dto.ProcessInfo;
-
-            // Map DTO -> Entity
-            var entity = new ProcessInfo
-            {
-                EnquiryId = (int)dto.BagfilterInput.EnquiryId,
-                BagfilterMasterId = bagfilterMasterId,
-                Process_Volume_M3h = input.Process_Volume_M3h,
-                Design_Pressure_Mmwc = input.Design_Pressure_Mmwc,
-                Mfg_Plant = dto.ProcessInfo.Mfg_Plant,
-                Destination_State = dto.ProcessInfo.Destination_State,
-                Location = dto.ProcessInfo.Location,
-                ProcessVolumeMin = input.Process_Vol_M3_Min,
-                //Process_Acrmax = input.Process_Acrmax, 
-                //ClothArea = input.ClothArea,
-                Process_Dust = input.Process_Dust,
-                Process_Dustload_gmspm3 = input.Process_Dustload_gmspm3,
-                Process_Temp_C = input.Process_Temp_C,
-                Dew_Point_C = input.Dew_Point_C,
-                Outlet_Emission_mgpm3 = input.Outlet_Emission_mgpm3,
-                Process_Cloth_Ratio = input.Process_Cloth_Ratio,
-                Can_Correction = input.Can_Correction,
-                Customer_Equipment_Tag_No = input.Customer_Equipment_Tag_No,
-                Bagfilter_Cleaning_Type = input.Bagfilter_Cleaning_Type,
-                Offline_Maintainence = input.Offline_Maintainence,
-                Bag_Filter_Capacity_V = input.Bag_Filter_Capacity_V,
-                Process_Vol_M3_Sec = input.Process_Vol_M3_Sec,    // if you have in DTO, map it
-                Process_Vol_M3_Min = input.Process_Vol_M3_Min,
-                Bag_Area = input.Bag_Area,
-                Bag_Bottom_Area = input.Bag_Bottom_Area,
-                Min_Cloth_Area_Req = input.Min_Cloth_Area_Req,
-                Min_Bag_Req = input.Min_Bag_Req,
-                CreatedAt = DateTime.UtcNow
-            };
-
-            try
-            {
-                await _processInfoRepository.AddAsync(entity);
-            }
-            catch (Exception ex)
-            {
-                _logger.LogError(ex, "Failed to persist ProcessInfo for BagfilterMasterId {Id}", bagfilterMasterId);
-                throw;
-            }
-        }
-
-
-        private async Task HandleCageInputsAsync(BagfilterInputMainDto dto, int bagfilterMasterId, CancellationToken ct)
-        {
-            if (dto == null) throw new ArgumentNullException(nameof(dto));
-            if (dto.BagfilterInput == null)
-                return; // nothing to process
-
-            var input = dto.CageInputs;
-
-            // Map DTO -> Entity
-            var entity = new CageInputs
-            {
-                EnquiryId = (int)dto.BagfilterInput.EnquiryId,
-                BagfilterMasterId = bagfilterMasterId,
-                Cage_Type = input.Cage_Type,
-                Cage_Sub_Type = input.Cage_Sub_Type,
-                Cage_Material = input.Cage_Material,
-                Cage_Wire_Dia = input.Cage_Wire_Dia,
-                No_Of_Cage_Wires = input.No_Of_Cage_Wires,
-                Ring_Spacing = input.Ring_Spacing,
-                Cage_Diameter = input.Cage_Diameter,
-                Cage_Length = input.Cage_Length,
-                Spare_Cages = input.Spare_Cages,
-                Cage_Configuration = input.Cage_Configuration,
-                No_Of_Rings = input.No_Of_Rings,
-                Tot_Wire_Length = input.Tot_Wire_Length,
-                Weight_Of_Cage_Wires = input.Weight_Of_Cage_Wires,
-                Weight_Of_Cage_Rings = input.Weight_Of_Cage_Rings,
-                Weight_Of_One_Cage = input.Weight_Of_One_Cage,
-                Cage_Weight = input.Cage_Weight,
-                CreatedAt = DateTime.UtcNow
-            };
-
-            try
-            {
-                await _cageInputsRepository.AddAsync(entity);
-            }
-            catch (Exception ex)
-            {
-                _logger.LogError(ex, "Failed to persist CageInputs for BagfilterMasterId {Id}", bagfilterMasterId);
-                throw;
-            }
-        }
-
-  
-
-        private async Task HandleBagSelectionAsync(BagfilterInputMainDto dto, int bagfilterMasterId, CancellationToken ct)
-        {
-            if (dto == null) throw new ArgumentNullException(nameof(dto));
-            if (dto.BagSelection == null)
-                return; // nothing to process
-
-            var input = dto.BagSelection;
-
-            // Map DTO -> Entity
-            var entity = new BagSelection
-            {
-                EnquiryId = (int)dto.BagfilterInput.EnquiryId,
-                BagfilterMasterId = bagfilterMasterId,
-                Filter_Bag_Dia = input.Filter_Bag_Dia,
-                Fil_Bag_Length = input.Fil_Bag_Length,
-                ClothAreaPerBag = input.ClothAreaPerBag,
-                //noOfBags = input.noOfBags,
-                Fil_Bag_Recommendation = input.Fil_Bag_Recommendation,
-                Bag_Per_Row = input.Bag_Per_Row,
-                Number_Of_Rows = input.Number_Of_Rows,
-                Actual_Bag_Req = input.Actual_Bag_Req,
-                Wire_Cross_Sec_Area = input.Wire_Cross_Sec_Area,
-                //No_Of_Rings = input.No_Of_Rings,
-                //Tot_Wire_Length = input.Tot_Wire_Length,
-                //Cage_Weight = input.Cage_Weight,
-                CreatedAt = DateTime.UtcNow
-            };
-
-            try
-            {
-                await _bagSelectionRepository.AddAsync(entity);
-            }
-            catch (Exception ex)
-            {
-                _logger.LogError(ex, "Failed to persist BagSelection for BagfilterMasterId {Id}", bagfilterMasterId);
-                throw;
-            }
-        }
-
-
-        private async Task HandleStructureInputsAsync(BagfilterInputMainDto dto, int bagfilterMasterId, CancellationToken ct)
-        {
-            if (dto == null) throw new ArgumentNullException(nameof(dto));
-            if (dto.StructureInputs == null)
-                return; // nothing to process
-
-            var input = dto.StructureInputs;
-
-            // Map DTO -> Entity
-            var entity = new StructureInputs
-            {
-                EnquiryId = (int)dto.BagfilterInput.EnquiryId,
-                BagfilterMasterId = bagfilterMasterId,
-                Gas_Entry = input.Gas_Entry,
-                Support_Structure_Type = input.Support_Structure_Type,
-                
-                Nominal_Width = input.Nominal_Width,
-                Max_Bags_And_Pitch = input.Max_Bags_And_Pitch,
-                Nominal_Width_Meters = input.Nominal_Width_Meters,
-                Nominal_Length = input.Nominal_Length,
-                Nominal_Length_Meters = input.Nominal_Length_Meters,
-                Area_Adjust_Can_Vel = input.Area_Adjust_Can_Vel,
-                Can_Area_Req = input.Can_Area_Req,
-                Total_Avl_Area = input.Total_Avl_Area,
-                Length_Correction = input.Length_Correction,
-                Length_Correction_Derived = input.Length_Correction_Derived,
-                Actual_Length = input.Actual_Length,
-                Actual_Length_Meters = input.Actual_Length_Meters,
-                Ol_Flange_Length = input.Ol_Flange_Length,
-                Ol_Flange_Length_Mm = input.Ol_Flange_Length_Mm,
-
-                CreatedAt = DateTime.UtcNow
-            };
-
-            try
-            {
-                await _structureInputsRepository.AddAsync(entity);
-            }
-            catch (Exception ex)
-            {
-                _logger.LogError(ex, "Failed to persist StructureInputs for BagfilterMasterId {Id}", bagfilterMasterId);
-                throw;
-            }
-        }
-
- 
-        private async Task HandleCapsuleInputsAsync(BagfilterInputMainDto dto, int bagfilterMasterId, CancellationToken ct)
-        {
-            if (dto == null) throw new ArgumentNullException(nameof(dto));
-            if (dto.CapsuleInputs == null)
-                return; // nothing to process
-
-            var input = dto.CapsuleInputs;
-
-            // Map DTO -> Entity
-            var entity = new CapsuleInputs
-            {
-                EnquiryId = (int)dto.BagfilterInput.EnquiryId,
-                BagfilterMasterId = bagfilterMasterId,
-                Valve_Size = input.Valve_Size,
-                Voltage_Rating = input.Voltage_Rating,
-                Capsule_Height = input.Capsule_Height,
-                Total_Capsule_Height = input.Total_Capsule_Height,
-                Tube_Sheet_Thickness = input.Tube_Sheet_Thickness,
-                Capsule_Wall_Thickness = input.Capsule_Wall_Thickness,
-                Canopy = input.Canopy,
-                Solenoid_Valve_Maintainence = input.Solenoid_Valve_Maintainence,
-                Capsule_Area = input.Capsule_Area,
-                Capsule_Weight = input.Capsule_Weight,
-                Tubesheet_Area = input.Tubesheet_Area,
-                Tubesheet_Weight = input.Tubesheet_Weight,
-
-                CreatedAt = DateTime.UtcNow
-            };
-
-            try
-            {
-                await _capsuleInputsRepository.AddAsync(entity);
-            }
-            catch (Exception ex)
-            {
-                _logger.LogError(ex, "Failed to persist CapsuleInputs for BagfilterMasterId {Id}", bagfilterMasterId);
-                throw;
-            }
-        }
-
-        private async Task HandleCasingInputsAsync(BagfilterInputMainDto dto, int bagfilterMasterId, CancellationToken ct)
-        {
-            if (dto == null) throw new ArgumentNullException(nameof(dto));
-            if (dto.CasingInputs == null)
-                return; // nothing to process
-
-            var input = dto.CasingInputs;
-
-            // Map DTO -> Entity
-            var entity = new CasingInputs
-            {
-                EnquiryId = (int)dto.BagfilterInput.EnquiryId,
-                BagfilterMasterId = bagfilterMasterId,
-                Casing_Wall_Thickness = input.Casing_Wall_Thickness,
-                Stiffening_Factor_Casing = input.Stiffening_Factor_Casing,
-                Casing_Height = input.Casing_Height,
-                Casing_Area = input.Casing_Area,
-                Casing_Weight = input.Casing_Weight,
-
-                CreatedAt = DateTime.UtcNow
-            };
-
-            try
-            {
-                await _casingInputsRepository.AddAsync(entity);
-            }
-            catch (Exception ex)
-            {
-                _logger.LogError(ex, "Failed to persist CasingInputs for bagfilterMasterId {Id}", bagfilterMasterId);
-                throw;
-            }
-        }
-
-
-        private async Task HandleHopperInputsAsync(BagfilterInputMainDto dto, int bagfilterMasterId, CancellationToken ct)
-        {
-            if (dto == null) throw new ArgumentNullException(nameof(dto));
-            if (dto.HopperInputs == null)
-                return; // nothing to process
-
-            var input = dto.HopperInputs;
-
-            // Map DTO -> Entity
-            var entity = new HopperInputs
-            {
-                EnquiryId = (int)dto.BagfilterInput.EnquiryId,
-                BagfilterMasterId = bagfilterMasterId,
-
-                Hopper_Type = input.Hopper_Type,
-                Process_Compartments = input.Process_Compartments,
-                Tot_No_Of_Hoppers = input.Tot_No_Of_Hoppers,
-                Tot_No_Of_Trough = input.Tot_No_Of_Trough,
-                Plenum_Width = input.Plenum_Width,
-                Inlet_Height = input.Inlet_Height,
-                Hopper_Thickness = input.Hopper_Thickness,
-                Hopper_Valley_Angle = input.Hopper_Valley_Angle,
-                Access_Door_Type = input.Access_Door_Type,
-                Access_Door_Qty = input.Access_Door_Qty,
-                Rav_Maintainence_Pltform = input.Rav_Maintainence_Pltform,
-                Hopper_Access_Stool = input.Hopper_Access_Stool,
-                Is_Distance_Piece = input.Is_Distance_Piece,
-                Distance_Piece_Height = input.Distance_Piece_Height,
-                Stiffening_Factor_Hopper = input.Stiffening_Factor_Hopper,
-                Hopper = input.Hopper,
-                Discharge_Opening_Sqr = input.Discharge_Opening_Sqr,
-                Rav_Height = input.Rav_Height,
-                Material_Handling = input.Material_Handling,
-                Material_Handling_Qty = input.Material_Handling_Qty,
-                Trough_Outlet_Length = input.Trough_Outlet_Length,
-                Trough_Outlet_Width = input.Trough_Outlet_Width,
-                Material_Handling_Xxx = input.Material_Handling_Xxx,
-                Hor_Diff_Length = input.Hor_Diff_Length,
-                Hor_Diff_Width = input.Hor_Diff_Width,
-                Slant_Offset_Dist = input.Slant_Offset_Dist,
-                Hopper_Height = input.Hopper_Height,
-                Hopper_Height_Mm = input.Hopper_Height_Mm,
-                Slanting_Hopper_Height = input.Slanting_Hopper_Height,
-                Hopper_Area_Length = input.Hopper_Area_Length,
-                Hopper_Area_Width = input.Hopper_Area_Width,
-                Hopper_Tot_Area = input.Hopper_Tot_Area,
-                Hopper_Weight = input.Hopper_Weight,
-
-                CreatedAt = DateTime.UtcNow
-            };
-
-            try
-            {
-                await _hopperInputsRepository.AddAsync(entity);
-            }
-            catch (Exception ex)
-            {
-                _logger.LogError(ex, "Failed to persist HopperInputs for bagfilterMasterId {Id}", bagfilterMasterId);
-                throw;
-            }
-        }
-
-
-        private async Task HandleSupportStructureAsync(BagfilterInputMainDto dto, int bagfilterMasterId, CancellationToken ct)
-        {
-            if (dto == null) throw new ArgumentNullException(nameof(dto));
-            if (dto.SupportStructure == null)
-                return; // nothing to process
-
-            var input = dto.SupportStructure;
-
-            // Map DTO -> Entity
-            var entity = new SupportStructure
-            {
-                EnquiryId = (int)dto.BagfilterInput.EnquiryId,
-                BagfilterMasterId = bagfilterMasterId,
-                Support_Struct_Type = input.Support_Struct_Type,
-                NoOfColumn = input.NoOfColumn,
-                Column_Height = input.Column_Height,
-                Ground_Clearance = input.Ground_Clearance,
-                Slide_Gate_Height = input.Slide_Gate_Height,
-                Dist_Btw_Column_In_X = input.Dist_Btw_Column_In_X,
-                Dist_Btw_Column_In_Z = input.Dist_Btw_Column_In_Z,
-                No_Of_Bays_In_X = input.No_Of_Bays_In_X,
-                No_Of_Bays_In_Z = input.No_Of_Bays_In_Z,
-
-                CreatedAt = DateTime.UtcNow
-            };
-
-            try
-            {
-                await _supportStructureRepository.AddAsync(entity);
-            }
-            catch (Exception ex)
-            {
-                _logger.LogError(ex, "Failed to persist SupportStructure for BagfilterMasterId {Id}", bagfilterMasterId);
-                throw;
-            }
-        }
-
-
-        private async Task HandleAccessGroupAsync(BagfilterInputMainDto dto, int bagfilterMasterId, CancellationToken ct)
-        {
-            if (dto == null) throw new ArgumentNullException(nameof(dto));
-            if (dto.AccessGroup == null)
-                return; // nothing to process
-
-            var input = dto.AccessGroup;
-
-            var entity = new AccessGroup
-            {
-                EnquiryId = (int)dto.BagfilterInput.EnquiryId,
-                BagfilterMasterId = bagfilterMasterId,
-
-                Access_Type = input.Access_Type,
-                Cage_Weight_Ladder = input.Cage_Weight_Ladder,
-                Total_Weight_Of_Cage_Ladder = input.Total_Weight_Of_Cage_Ladder,
-                Mid_Landing_Pltform = input.Mid_Landing_Pltform,
-                Platform_Weight = input.Platform_Weight,
-                Staircase_Height = input.Staircase_Height,
-                Staircase_Weight = input.Staircase_Weight,
-                Railing_Weight = input.Railing_Weight,
-                Total_Weight_Of_Railing = input.Total_Weight_Of_Railing,
-                Maintainence_Pltform = input.Maintainence_Pltform,
-                Maintainence_Pltform_Weight = input.Maintainence_Pltform_Weight,
-                Total_Weight_Of_Maintainence_Pltform = input.Total_Weight_Of_Maintainence_Pltform,
-                BlowPipe = input.BlowPipe,
-                Total_Weight_Of_Blow_Pipe = input.Total_Weight_Of_Blow_Pipe,
-                PressureHeader = input.PressureHeader,
-                Total_Weight_Of_Pressure_Header = input.Total_Weight_Of_Pressure_Header,
-                DistancePiece = input.DistancePiece,
-                Access_Stool_Size_Mm = input.Access_Stool_Size_Mm,
-                Access_Stool_Size_Kg = input.Access_Stool_Size_Kg,
-
-                CreatedAt = DateTime.UtcNow
-            };
-
-            try
-            {
-                await _accessGroupRepository.AddAsync(entity);
-            }
-            catch (Exception ex)
-            {
-                _logger.LogError(ex, "Failed to persist AccessGroup for BagfilterMasterId {Id}", bagfilterMasterId);
-                throw;
-            }
-        }
-
-
-        private async Task HandleRoofDoorAsync(BagfilterInputMainDto dto, int bagfilterMasterId, CancellationToken ct)
-        {
-            if (dto == null) throw new ArgumentNullException(nameof(dto));
-            if (dto.RoofDoor == null)
-                return; // nothing to process
-
-            var input = dto.RoofDoor;
-
-            // Map DTO -> Entity
-            var entity = new RoofDoor
-            {
-                EnquiryId = (int)dto.BagfilterInput.EnquiryId,
-                BagfilterMasterId = bagfilterMasterId,
-
-                Roof_Door_Thickness = input.Roof_Door_Thickness,
-                T2d = input.T2d,
-                T3d = input.T3d,
-                N_Doors = input.N_Doors,
-                Compartment_No = input.Compartment_No,
-                Stiffening_Factor_Roof_Door = input.Stiffening_Factor_Roof_Door,
-                Weight_Per_Door = input.Weight_Per_Door,
-                Tot_Weight_Per_Compartment = input.Tot_Weight_Per_Compartment,
-
-                CreatedAt = DateTime.UtcNow
-            };
-
-            try
-            {
-                await _roofDoorRepository.AddAsync(entity);
-            }
-            catch (Exception ex)
-            {
-                _logger.LogError(ex, "Failed to persist RoofDoor for BagfilterMasterId {Id}", bagfilterMasterId);
-                throw;
-            }
-        }
-
-        private async Task HandlePaintingAreaAsync(BagfilterInputMainDto dto, int bagfilterMasterId, CancellationToken ct)
-        {
-            if (dto == null) throw new ArgumentNullException(nameof(dto));
-            if (dto.PaintingArea == null)
-                return; // nothing to process
-
-            var input = dto.PaintingArea;
-
-            // Map DTO -> Entity
-            var entity = new PaintingArea
-            {
-                EnquiryId = (int)dto.BagfilterInput.EnquiryId,
-                BagfilterMasterId = bagfilterMasterId,
-
-                Inside_Area_Casing_Area_Mm2 = input.Inside_Area_Casing_Area_Mm2,
-                Inside_Area_Casing_Area_M2 = input.Inside_Area_Casing_Area_M2,
-                Inside_Area_Hopper_Area_Mm2 = input.Inside_Area_Hopper_Area_Mm2,
-                Inside_Area_Hopper_Area_M2 = input.Inside_Area_Hopper_Area_M2,
-                Inside_Area_Air_Header_Mm2 = input.Inside_Area_Air_Header_Mm2,
-                Inside_Area_Air_Header_M2 = input.Inside_Area_Air_Header_M2,
-                Inside_Area_Purge_Pipe_Mm2 = input.Inside_Area_Purge_Pipe_Mm2,
-                Inside_Area_Purge_Pipe_M2 = input.Inside_Area_Purge_Pipe_M2,
-                Inside_Area_Roof_Door_Mm2 = input.Inside_Area_Roof_Door_Mm2,
-                Inside_Area_Roof_Door_M2 = input.Inside_Area_Roof_Door_M2,
-                Inside_Area_Tube_Sheet_Mm2 = input.Inside_Area_Tube_Sheet_Mm2,
-                Inside_Area_Tube_Sheet_M2 = input.Inside_Area_Tube_Sheet_M2,
-                Inside_Area_Total_M2 = input.Inside_Area_Total_M2,
-                Outside_Area_Casing_Area_Mm2 = input.Outside_Area_Casing_Area_Mm2,
-                Outside_Area_Casing_Area_M2 = input.Outside_Area_Casing_Area_M2,
-                Outside_Area_Hopper_Area_Mm2 = input.Outside_Area_Hopper_Area_Mm2,
-                Outside_Area_Hopper_Area_M2 = input.Outside_Area_Hopper_Area_M2,
-                Outside_Area_Air_Header_Mm2 = input.Outside_Area_Air_Header_Mm2,
-                Outside_Area_Air_Header_M2 = input.Outside_Area_Air_Header_M2,
-                Outside_Area_Purge_Pipe_Mm2 = input.Outside_Area_Purge_Pipe_Mm2,
-                Outside_Area_Purge_Pipe_M2 = input.Outside_Area_Purge_Pipe_M2,
-                Outside_Area_Roof_Door_Mm2 = input.Outside_Area_Roof_Door_Mm2,
-                Outside_Area_Roof_Door_M2 = input.Outside_Area_Roof_Door_M2,
-                Outside_Area_Tube_Sheet_Mm2 = input.Outside_Area_Tube_Sheet_Mm2,
-                Outside_Area_Tube_Sheet_M2 = input.Outside_Area_Tube_Sheet_M2,
-                Outside_Area_Total_M2 = input.Outside_Area_Total_M2,
-
-                CreatedAt = DateTime.UtcNow
-            };
-
-            try
-            {
-                await _paintingAreaRepository.AddAsync(entity);
-            }
-            catch (Exception ex)
-            {
-                _logger.LogError(ex, "Failed to persist PaintingArea for BagfilterMasterId {Id}", bagfilterMasterId);
-                throw;
-            }
-        }
-
-        private async Task HandleBillOfMaterialAsync(BagfilterInputMainDto dto, int bagfilterMasterId, CancellationToken ct)
-        {
-            if (dto == null) throw new ArgumentNullException(nameof(dto));
-            if (dto.BillOfMaterial == null || !dto.BillOfMaterial.Any())
-                return;
-
-            var enquiryId = (int)dto.BagfilterInput.EnquiryId;
-
-            // Convert all DTO → Entities in one shot
-            var entities = dto.BillOfMaterial.Select(line => new BillOfMaterial
-            {
-                EnquiryId = enquiryId,
-                BagfilterMasterId = bagfilterMasterId,
-
-                Item = line.Item,
-                Material = line.Material,
-                Weight = line.Weight,
-                Units = line.Units,
-                Rate = line.Rate,
-                Cost = line.Cost,
-
-                CreatedAt = DateTime.UtcNow
-            }).ToList();
-
-            try
-            {
-                await _billOfMaterialRepository.AddRangeAsync(entities);
-            }
-            catch (Exception ex)
-            {
-                _logger.LogError(ex,
-                    "Failed to persist BillOfMaterial (Batch) for BagfilterMasterId {BfMasterId}",
-                    bagfilterMasterId);
-                throw;
-            }
-        }
-
-        private async Task HandlePaintingCostAsync(BagfilterInputMainDto dto, int bagfilterMasterId, CancellationToken ct)
-        {
-            if (dto == null) throw new ArgumentNullException(nameof(dto));
-            if (dto.PaintingCost == null)
-                return; // nothing to process
-
-            var input = dto.PaintingCost;
-
-            // Map DTO -> Entity
-            var entity = new PaintingCost
-            {
-                EnquiryId = (int)dto.BagfilterInput.EnquiryId,
-                BagfilterMasterId = bagfilterMasterId,
-
-                PaintingTableJson = input.PaintingTableJson,
-
-                CreatedAt = DateTime.UtcNow
-            };
-
-            try
-            {
-                await _paintingCostRepository.AddAsync(entity);
-            }
-            catch (Exception ex)
-            {
-                _logger.LogError(ex, "Failed to persist Painting Cost for BagfilterMasterId {Id}", bagfilterMasterId);
-                throw;
-            }
-        }
-
-
-        private Task HandleBoughtOutItemsAsync(
-        BagfilterInputMainDto dto,
-        int bagfilterMasterId,
-        CancellationToken ct)
-        {
-            // For now Add and Update use the same logic because UpsertRange
-            // handles both inserting and updating rows.
-            return PersistBoughtOutItemsForDtoAsync(dto, bagfilterMasterId, ct);
         }
 
 
@@ -2647,6 +1872,7 @@ namespace IonFiltra.BagFilters.Application.Services.Bagfilters.BagfilterInputs
                 Cage_Weight = src.Cage_Weight,
                 Structure_Weight = src.Structure_Weight,
                 Scrap_Holes_Weight = src.Scrap_Holes_Weight,
+                Total_Weight_Of_Pressure_Header = src.Total_Weight_Of_Pressure_Header,
                 Weight_Total = src.Weight_Total,
                 // CreatedAt / UpdatedAt handled in repo
             };
@@ -3721,8 +2947,76 @@ namespace IonFiltra.BagFilters.Application.Services.Bagfilters.BagfilterInputs
             return entity;
         }
 
+        private static decimal? ResolveNumberOfColumns(
+    string? hopperType,
+    decimal? inputNoOfColumns,
+    decimal? baysX,
+    decimal? baysZ)
+        {
+            if (string.Equals(hopperType, "Regular", StringComparison.OrdinalIgnoreCase))
+                return inputNoOfColumns;
+
+            if (!string.Equals(hopperType, "Pyramid", StringComparison.OrdinalIgnoreCase))
+                return null;
+
+            if (!baysX.HasValue || !baysZ.HasValue)
+                return null;
+
+            return (baysX.Value, baysZ.Value) switch
+            {
+                (1, 1) => 4,
+                (2, 1) => 6,
+                (2, 2) => 9,
+                (3, 2) => 12,
+                _ => null
+            };
+        }
 
 
+        public async Task<Dictionary<string, int?>> FindMasterMatchesAsync(
+        IReadOnlyDictionary<string, GroupKey> groupKeyMap)
+        {
+            var result = new Dictionary<string, int?>();
+
+            foreach (var kv in groupKeyMap)
+            {
+                var groupKeyString = kv.Key;
+                var key = kv.Value;
+
+                if (!key.EffectiveNoOfColumns.HasValue)
+                {
+                    result[groupKeyString] = null;
+                    continue;
+                }
+
+                if (string.Equals(key.Canopy, "Yes", StringComparison.OrdinalIgnoreCase))
+                {
+                    var match = await _withCanopyRepo.GetByMatchAsync(
+                        key.ProcessVolume?.ToString(),
+                        key.HopperType,
+                        key.EffectiveNoOfColumns,
+                        key.BaysInX,
+                        key.BaysInZ
+                    );
+
+                    result[groupKeyString] = match?.Id;
+                }
+                else
+                {
+                    var match = await _withoutCanopyRepo.GetByMatchAsync(
+                        key.ProcessVolume?.ToString(),
+                        key.HopperType,
+                        key.EffectiveNoOfColumns,
+                        key.BaysInX,
+                        key.BaysInZ
+                    );
+
+                    result[groupKeyString] = match?.Id;
+                }
+            }
+
+            return result;
+        }
 
 
     }

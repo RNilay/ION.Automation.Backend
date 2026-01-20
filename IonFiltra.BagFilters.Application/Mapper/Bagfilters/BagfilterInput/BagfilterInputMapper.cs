@@ -107,6 +107,10 @@ namespace IonFiltra.BagFilters.Application.Mappers.Bagfilters.BagfilterInputs
                     Damper_Series = entity.Damper_Series,
                     Damper_Diameter = entity.Damper_Diameter,
                     Damper_Qty = entity.Damper_Qty,
+                    Column_Section = entity.Column_Section,
+                    Beam_Tie_Section = entity.Beam_Tie_Section,
+                    Rav_Section = entity.Rav_Section,
+                    Bracing_Section = entity.Bracing_Section,
                     //S3dModel = entity.S3dModel,
                 },
 
@@ -212,6 +216,10 @@ namespace IonFiltra.BagFilters.Application.Mappers.Bagfilters.BagfilterInputs
                 Damper_Series = dto.BagfilterInput.Damper_Series,
                 Damper_Diameter = dto.BagfilterInput.Damper_Diameter,
                 Damper_Qty = dto.BagfilterInput.Damper_Qty,
+                Column_Section = dto.BagfilterInput.Column_Section,
+                Beam_Tie_Section = dto.BagfilterInput.Beam_Tie_Section,
+                Rav_Section = dto.BagfilterInput.Rav_Section,
+                Bracing_Section = dto.BagfilterInput.Bracing_Section,
                 S3dModel = dto.BagfilterInput.S3dModel,
             };
         }

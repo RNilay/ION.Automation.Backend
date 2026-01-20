@@ -26,6 +26,23 @@ namespace IonFiltra.BagFilters.Application.Services.BOM.Bill_Of_Material
             return BillOfMaterialMapper.ToMainDto(entity);
         }
 
+        public async Task<List<BillOfMaterialMainDto>> GetByEnquiryIdAsync(int enquiryId)
+        {
+            _logger.LogInformation(
+                "Fetching BillOfMaterial list for EnquiryId {EnquiryId}",
+                enquiryId);
+
+            var entities = await _repository.GetByEnquiryIdAsync(enquiryId);
+
+            if (entities == null || entities.Count == 0)
+                return new List<BillOfMaterialMainDto>();
+
+            return entities
+                .Select(BillOfMaterialMapper.ToMainDto)
+                .ToList();
+        }
+
+
         public async Task<int> AddAsync(BillOfMaterialMainDto dto)
         {
             _logger.LogInformation("Adding BillOfMaterial for Id {Id}", dto.Id);

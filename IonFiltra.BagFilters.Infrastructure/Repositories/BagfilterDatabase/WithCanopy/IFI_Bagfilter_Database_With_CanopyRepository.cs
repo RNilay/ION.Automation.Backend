@@ -100,6 +100,47 @@ namespace IonFiltra.BagFilters.Infrastructure.Repositories.BagfilterDatabase.Wit
             });
         }
 
+        public async Task<IFI_Bagfilter_Database_With_Canopy?> GetByMatchAsync(
+        string? processVolume,
+        string? hopperType,
+        decimal? numberOfColumns,
+        decimal? baysX,
+        decimal? baysZ)
+        {
+            return await _transactionHelper.ExecuteAsync(async dbContext =>
+            {
+                var query = dbContext.IFI_Bagfilter_Database_With_Canopys
+                    .AsNoTracking()
+                    .AsQueryable();
+
+                if (!string.IsNullOrWhiteSpace(processVolume))
+                {
+                    var pv = processVolume.Trim().ToLower();
+                    query = query.Where(x => x.Process_Volume_m3hr != null &&
+                                             x.Process_Volume_m3hr.ToLower() == pv);
+                }
+
+                if (!string.IsNullOrWhiteSpace(hopperType))
+                {
+                    var ht = hopperType.Trim().ToLower();
+                    query = query.Where(x => x.Hopper_type != null &&
+                                             x.Hopper_type.ToLower() == ht);
+                }
+
+                if (numberOfColumns.HasValue)
+                    query = query.Where(x => x.Number_of_columns == numberOfColumns.Value);
+
+                if (baysX.HasValue)
+                    query = query.Where(x => x.Number_of_bays_in_X_direction == baysX.Value);
+
+                if (baysZ.HasValue)
+                    query = query.Where(x => x.Number_of_bays_in_Y_direction == baysZ.Value);
+
+                return await query
+                    .OrderByDescending(x => x.CreatedAt)
+                    .FirstOrDefaultAsync();
+            });
+        }
 
 
 

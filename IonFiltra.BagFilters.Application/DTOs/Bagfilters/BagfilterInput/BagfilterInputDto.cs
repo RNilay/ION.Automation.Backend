@@ -103,6 +103,12 @@ namespace IonFiltra.BagFilters.Application.DTOs.Bagfilters.BagfilterInputs
         public int? Damper_Qty { get; set; }
 
         public string? S3dModel { get; set; }
+        //new fields
+
+        public string? Column_Section { get; set; }
+        public string? Beam_Tie_Section { get; set; }
+        public string? Rav_Section { get; set; }
+        public string? Bracing_Section { get; set; }
 
     }
 
@@ -143,6 +149,7 @@ namespace IonFiltra.BagFilters.Application.DTOs.Bagfilters.BagfilterInputs
         // optional:
         public int TotalGroupsCount { get; set; } = 0;
         public int MatchedGroupsCount { get; set; } = 0;
+        public List<SkyCivOptimizationDto>? Optimizations { get; set; }
     }
 
     public class UpdateRangeResultDto
@@ -155,11 +162,31 @@ namespace IonFiltra.BagFilters.Application.DTOs.Bagfilters.BagfilterInputs
 
     
         public List<BagfilterMatchDto> Matches { get; set; } = new();
+        public List<SkyCivOptimizationDto>? Optimizations { get; set; }
 
-      
         public string? Message { get; set; }
     }
 
-    
+    public class SkyCivOptimizationDto
+    {
+        public int PairIndex { get; set; }           // BF index (column index)
+        public string GroupId { get; set; }           // "Group 2"
+        public int BagfilterInputId { get; set; }
+
+        // Original sections (from DB / frontend)
+        public string? OriginalColumnSection { get; set; }
+        public string? OriginalBeamTieSection { get; set; }
+        public string? OriginalRavSection { get; set; }
+        public string? OriginalBracingSection { get; set; }
+
+        // Optimized sections (from SkyCiv)
+        public string? OptimizedColumnSection { get; set; }
+        public string? OptimizedBeamTieSection { get; set; }
+        public string? OptimizedRavSection { get; set; }
+        public string? OptimizedBracingSection { get; set; }
+    }
+
+
+
 
 }

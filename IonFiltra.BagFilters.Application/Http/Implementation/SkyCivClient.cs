@@ -46,18 +46,30 @@ namespace IonFiltra.BagFilters.Infrastructure.Http.Implementation
               ""response"": {
                 ""data"": [
                   {
-                    ""sections"": ""25.0x25.0x2.6"",
-                    ""max_UR_ratio"": 0.4411548915042883
+                    ""sections"": ""113.5x113.5x4.8"",
+                    ""max_UR_ratio"": 0.9312089753443507
+                  },
+                  {
+                    ""sections"": ""JB150"",
+                    ""max_UR_ratio"": 0.00033933812192741777
+                  },
+                    {
+                    ""sections"": ""A8040x5"",
+                    ""max_UR_ratio"": 29.32138665029781
+                  },
+                  {
+                    ""sections"": ""NT 40"",
+                    ""max_UR_ratio"": 0.24505866882377741
                   }
                 ],
                 ""msg"": ""Optimizer successfully ran"",
                 ""status"": 0,
                 ""function"": ""S3D.design.member.optimize"",
-                ""last_session_id"": ""21CmUAM9ayBMJahBE35MyTeVQlstFAmFBYgUngnautbMp5FfTQqinoPE1khgm3Ji_1"",
+                ""last_session_id"": ""n6qpizSHoDWXkfgq0DFxEiOWEnLsRrmF3jI0YuiIamhOi114pICrkLUJl5VA95qc_4"",
                 ""monthly_api_credits"": {
                   ""quota"": 300,
-                  ""total_used"": ""43.00000110"",
-                  ""used_this_call"": 11
+                  ""total_used"": ""4.0000013"",
+                  ""used_this_call"": 4
                 }
               },
               ""keep_session_open"": true

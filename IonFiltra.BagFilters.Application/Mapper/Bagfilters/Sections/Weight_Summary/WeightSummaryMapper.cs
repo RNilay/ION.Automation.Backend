@@ -29,6 +29,7 @@ namespace IonFiltra.BagFilters.Application.Mappers.Bagfilters.Sections.Weight_Su
                     Cage_Weight = entity.Cage_Weight,
                     Structure_Weight = entity.Structure_Weight,
                     Scrap_Holes_Weight = entity.Scrap_Holes_Weight,
+                    Total_Weight_Of_Pressure_Header = entity.Total_Weight_Of_Pressure_Header,
                     Weight_Total = entity.Weight_Total,
                 },
 
@@ -57,6 +58,7 @@ namespace IonFiltra.BagFilters.Application.Mappers.Bagfilters.Sections.Weight_Su
                 Cage_Weight = dto.WeightSummary.Cage_Weight,
                 Structure_Weight = dto.WeightSummary.Structure_Weight,
                 Scrap_Holes_Weight = dto.WeightSummary.Scrap_Holes_Weight,
+                Total_Weight_Of_Pressure_Header = dto.WeightSummary.Total_Weight_Of_Pressure_Header,
                 Weight_Total = dto.WeightSummary.Weight_Total,
 
             };

@@ -109,12 +109,12 @@
                                     "InlineCss": "{#CALC}"
                                 },
                                 {
-                                    "Label": "Weight of Cage Ladder (Kg)",
+                                    "Label": "Total Weight of Cage Ladder (Kg)",
                                     "ValueKey": "Weight_Of_Cage_Ladder",
                                     "InlineCss": "{#CALC}"
                                 },
                                 {
-                                    "Label": "Weight of Railing (kg/m)",
+                                    "Label": "Total Weight of Railing (Kg)",
                                     "ValueKey": "Railing_Weight",
                                     "InlineCss": "{#CALC}"
                                 },
@@ -124,7 +124,7 @@
                                     "InlineCss": "{#CALC}"
                                 },
                                 {
-                                    "Label": "Air Header / Blow Pipe (kg/m)",
+                                    "Label": "Total Weight of Blow Pipe (Kg)",
                                     "ValueKey": "Air_Header_Blow_Pipe",
                                     "InlineCss": "{#CALC}"
                                 },
@@ -139,7 +139,7 @@
                                     "InlineCss": "{#CALC}"
                                 },
                                 {
-                                    "Label": "Weight of Maintenance Platform (Kg)",
+                                    "Label": "Total Weight of Solenoid Valve Maintenance Platform (Kg)",
                                     "ValueKey": "Weight_Of_Maintainence_Pltform",
                                     "InlineCss": "{#CALC}"
                                 },
@@ -156,6 +156,12 @@
                                 {
                                     "Label": "Scrap Hole Weight (Kg)",
                                     "ValueKey": "Scrap_Holes_Weight",
+                                    "InlineCss": "{#CALC}"
+                                },
+
+                                {
+                                    "Label": "Total Weight of Pressure Header (Kg)",
+                                    "ValueKey": "Weight_Of_Pressure_Header",
                                     "InlineCss": "{#CALC}"
                                 },
 

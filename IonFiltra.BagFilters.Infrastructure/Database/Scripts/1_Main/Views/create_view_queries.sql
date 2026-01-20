@@ -64,6 +64,7 @@ SELECT
     WS.Cage_Weight                       AS WeightSummary_Cage_Weight,
     WS.Structure_Weight,
     WS.Scrap_Holes_Weight,
+    WS.Total_Weight_Of_Pressure_Header   AS Weight_Of_Pressure_Header,
     WS.Weight_Total                      AS WeightSummary_Weight_Total,
 
     -- ProcessInfo (for that distinct volume)

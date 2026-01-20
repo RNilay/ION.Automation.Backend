@@ -20,6 +20,7 @@ namespace IonFiltra.BagFilters.Core.Entities.Bagfilters.Sections.Weight_Summary
         public decimal? Cage_Weight { get; set; }
         public decimal? Structure_Weight { get; set; }
         public decimal? Scrap_Holes_Weight { get; set; }
+        public decimal? Total_Weight_Of_Pressure_Header { get; set; }
         public decimal? Weight_Total { get; set; }
 
         public DateTime CreatedAt { get; set; }

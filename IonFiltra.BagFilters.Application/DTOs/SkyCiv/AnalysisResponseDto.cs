@@ -12,6 +12,7 @@ namespace IonFiltra.BagFilters.Application.DTOs.SkyCiv
     {
         public string SessionId { get; set; }
         public JObject ModelData { get; set; } // S3D.model.get -> data
+        public JObject RawResponse { get; set; }   // ✅ FULL SkyCiv JSON
         public string Status { get; set; }     // Succeeded / Failed
         public string Message { get; set; }    // optional
     }

@@ -30,6 +30,24 @@ namespace IonFiltra.BagFilters.Infrastructure.Repositories.BOM.Bill_Of_Material
             });
         }
 
+        public async Task<List<BillOfMaterial>> GetByEnquiryIdAsync(int enquiryId)
+        {
+            return await _transactionHelper.ExecuteAsync(async dbContext =>
+            {
+                _logger.LogInformation(
+                    "Fetching BillOfMaterial list for EnquiryId {EnquiryId}",
+                    enquiryId);
+
+                return await dbContext.BillOfMaterials
+                    .AsNoTracking()
+                    .Where(x => x.EnquiryId == enquiryId)
+                    .OrderBy(x => x.CreatedAt) // primary
+                    .ThenBy(x => x.Id)                         // secondary safety
+                    .ToListAsync();
+            });
+        }
+
+
         public async Task<int> AddAsync(BillOfMaterial entity)
         {
             return await _transactionHelper.ExecuteAsync(async dbContext =>

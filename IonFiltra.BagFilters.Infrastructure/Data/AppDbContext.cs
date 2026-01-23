@@ -33,6 +33,8 @@ using IonFiltra.BagFilters.Core.Entities.MasterData.Master_Definition;
 using IonFiltra.BagFilters.Core.Entities.MasterData.SolenoidValveData;
 using IonFiltra.BagFilters.Core.Entities.MasterData.TimerData;
 using IonFiltra.BagFilters.Core.Entities.SkyCivEntities;
+using IonFiltra.BagFilters.Core.Entities.Users.User;
+using IonFiltra.BagFilters.Core.Entities.Users.UserRoles;
 using Microsoft.EntityFrameworkCore;
 using System;
 using System.Collections.Generic;
@@ -110,7 +112,10 @@ namespace IonFiltra.BagFilters.Infrastructure.Data
 
         public DbSet<DamperSizeInputs> DamperSizeInputss { get; set; }
         public DbSet<ExplosionVentEntity> ExplosionVentEntitys { get; set; }
-
+        public DbSet<ApplicationRoles> Roles { get; set; }
+        public DbSet<UserAccount> Users { get; set; }
+        public DbSet<UserRole> UserRoles { get; set; }
+        public DbSet<UserOtp> UserOtps { get; set; } // Add the UserOtp table
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
@@ -345,6 +350,38 @@ namespace IonFiltra.BagFilters.Infrastructure.Data
                 entity.ToTable("ExplosionVentEntity", GlobalConstants.IONFILTRA_SCHEMA);
                 entity.HasKey(u => u.Id);
                 entity.Property(u => u.EnquiryId).IsRequired();
+            });
+
+            modelBuilder.Entity<ApplicationRoles>(entity =>
+            {
+                entity.ToTable("ApplicationRoles", GlobalConstants.IONFILTRA_SCHEMA);
+                entity.HasKey(u => u.RoleId);
+                
+            });
+
+
+            modelBuilder.Entity<UserAccount>(entity =>
+            {
+                entity.ToTable("UserAccount", GlobalConstants.IONFILTRA_SCHEMA);
+                entity.HasKey(u => u.UserId);
+            });
+            // Configure UserRole composite key
+            modelBuilder.Entity<UserRole>(entity =>
+            {
+                entity.ToTable("UserAccountRole", GlobalConstants.IONFILTRA_SCHEMA);
+                entity.HasKey(ur => new { ur.UserId, ur.RoleId });
+            });
+
+
+            // Configure relationships for UserOtp
+            modelBuilder.Entity<UserOtp>(entity =>
+            {
+                entity.ToTable("UserOtp", GlobalConstants.IONFILTRA_SCHEMA);
+                entity.HasKey(otp => otp.OtpId);
+                entity.HasOne(otp => otp.User)
+                    .WithMany()
+                    .HasForeignKey(otp => otp.UserId)
+                    .OnDelete(DeleteBehavior.Cascade);
             });
         }
     }

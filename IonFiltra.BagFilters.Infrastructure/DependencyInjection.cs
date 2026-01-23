@@ -5,6 +5,7 @@ using IonFiltra.BagFilters.Application.Interfaces.Enquiry;
 using IonFiltra.BagFilters.Application.Interfaces.GenericView;
 using IonFiltra.BagFilters.Application.Interfaces.MasterData.Master_Definition;
 using IonFiltra.BagFilters.Application.Interfaces.Report;
+using IonFiltra.BagFilters.Application.Interfaces.Users.User;
 using IonFiltra.BagFilters.Application.Services.Assignment;
 using IonFiltra.BagFilters.Application.Services.BagfilterDatabase.WithCanopy;
 using IonFiltra.BagFilters.Application.Services.BagfilterDatabase.WithoutCanopy;
@@ -41,6 +42,8 @@ using IonFiltra.BagFilters.Application.Services.MasterData.SolenoidValveData;
 using IonFiltra.BagFilters.Application.Services.MasterData.TimerData;
 using IonFiltra.BagFilters.Application.Services.Report;
 using IonFiltra.BagFilters.Application.Services.SkyCiv;
+using IonFiltra.BagFilters.Application.Services.Users.User;
+using IonFiltra.BagFilters.Application.Services.Users.UserRoles;
 using IonFiltra.BagFilters.Core.Interfaces.Bagfilters.BagfilterMasters;
 using IonFiltra.BagFilters.Core.Interfaces.EnquiryRep;
 using IonFiltra.BagFilters.Core.Interfaces.GenericView;
@@ -75,7 +78,9 @@ using IonFiltra.BagFilters.Core.Interfaces.Repositories.MasterData.DPTData;
 using IonFiltra.BagFilters.Core.Interfaces.Repositories.MasterData.FilterBagData;
 using IonFiltra.BagFilters.Core.Interfaces.Repositories.MasterData.SolenoidValveData;
 using IonFiltra.BagFilters.Core.Interfaces.Repositories.MasterData.TimerData;
+using IonFiltra.BagFilters.Core.Interfaces.Repositories.Users.UserRoles;
 using IonFiltra.BagFilters.Core.Interfaces.SkyCiv;
+using IonFiltra.BagFilters.Core.Interfaces.Users.User;
 using IonFiltra.BagFilters.Infrastructure.Data;
 using IonFiltra.BagFilters.Infrastructure.EnquiryRepo;
 using IonFiltra.BagFilters.Infrastructure.Repositories.Assignment;
@@ -112,6 +117,8 @@ using IonFiltra.BagFilters.Infrastructure.Repositories.MasterData.Master_Definit
 using IonFiltra.BagFilters.Infrastructure.Repositories.MasterData.SolenoidValveData;
 using IonFiltra.BagFilters.Infrastructure.Repositories.MasterData.TimerData;
 using IonFiltra.BagFilters.Infrastructure.Repositories.SkyCiv;
+using IonFiltra.BagFilters.Infrastructure.Repositories.Users.User;
+using IonFiltra.BagFilters.Infrastructure.Repositories.Users.UserRoles;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
 using Pomelo.EntityFrameworkCore.MySql.Infrastructure; // ✅ for MySqlServerVersion
@@ -135,6 +142,15 @@ namespace IonFiltra.BagFilters.Infrastructure
 
             // Register helpers & repositories
             services.AddScoped<TransactionHelper>();
+
+            services.AddScoped<IOtpRepository, OtpRepository>();
+            services.AddScoped<IUserService, UserService>();
+            services.AddScoped<IUserRepository, UserRepository>();
+            services.AddScoped<IUserMfaRepository, UserMfaRepository>();
+            services.AddScoped<IUserMfaService, UserMfaService>();
+
+
+
             services.AddScoped<IEnquiryService, EnquiryService>();
             services.AddScoped<IEnquiryRepository, EnquiryRepository>();
 
@@ -252,6 +268,9 @@ namespace IonFiltra.BagFilters.Infrastructure
 
             services.AddScoped<IExplosionVentEntityService, ExplosionVentEntityService>();
             services.AddScoped<IExplosionVentEntityRepository, ExplosionVentEntityRepository>();
+
+            services.AddScoped<IApplicationRolesService, ApplicationRolesService>();
+            services.AddScoped<IApplicationRolesRepository, ApplicationRolesRepository>();
 
             return services;
         }

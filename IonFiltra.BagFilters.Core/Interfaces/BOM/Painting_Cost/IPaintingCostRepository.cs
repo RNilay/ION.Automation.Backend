@@ -5,6 +5,8 @@ namespace IonFiltra.BagFilters.Core.Interfaces.Repositories.BOM.Painting_Cost
     public interface IPaintingCostRepository
     {
         Task<PaintingCost?> GetById(int id);
+
+        Task<List<PaintingCost>> GetByEnquiryId(int enquiryId);
         Task<int> AddAsync(PaintingCost entity);
         Task UpdateAsync(PaintingCost entity);
 

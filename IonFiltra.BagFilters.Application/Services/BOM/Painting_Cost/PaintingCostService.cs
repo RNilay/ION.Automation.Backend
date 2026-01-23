@@ -26,6 +26,18 @@ namespace IonFiltra.BagFilters.Application.Services.BOM.Painting_Cost
             return PaintingCostMapper.ToMainDto(entity);
         }
 
+        public async Task<List<PaintingCostMainDto>> GetByEnquiryId(int enquiryId)
+        {
+            _logger.LogInformation("Fetching PaintingCosts for EnquiryId {EnquiryId}", enquiryId);
+
+            var entities = await _repository.GetByEnquiryId(enquiryId);
+
+            return entities
+                .Select(PaintingCostMapper.ToMainDto)
+                .ToList();
+        }
+
+
         public async Task<int> AddAsync(PaintingCostMainDto dto)
         {
             _logger.LogInformation("Adding PaintingCost for Id {Id}", dto.Id);

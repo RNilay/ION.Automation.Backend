@@ -30,6 +30,21 @@ namespace IonFiltra.BagFilters.Infrastructure.Repositories.BOM.Painting_Cost
             });
         }
 
+        public async Task<List<PaintingCost>> GetByEnquiryId(int enquiryId)
+        {
+            return await _transactionHelper.ExecuteAsync(async dbContext =>
+            {
+                _logger.LogInformation("Fetching PaintingCosts for EnquiryId {EnquiryId}", enquiryId);
+
+                return await dbContext.PaintingCosts
+                    .AsNoTracking()
+                    .Where(x => x.EnquiryId == enquiryId)
+                    .OrderByDescending(x => x.CreatedAt)
+                    .ToListAsync();
+            });
+        }
+
+
         public async Task<int> AddAsync(PaintingCost entity)
         {
             return await _transactionHelper.ExecuteAsync(async dbContext =>

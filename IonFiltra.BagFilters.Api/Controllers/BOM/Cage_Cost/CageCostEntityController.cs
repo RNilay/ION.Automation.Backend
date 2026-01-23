@@ -60,6 +60,58 @@ namespace IonFiltra.BagFilters.API.Controllers.BOM.Cage_Cost
             }
         }
 
+        [HttpGet("get-by-enquiry/{enquiryId}")]
+        public async Task<IActionResult> GetByEnquiryId(int enquiryId)
+        {
+            _logger.LogInformation("Get started for EnquiryId {EnquiryId}", enquiryId);
+
+            try
+            {
+                var result = await _service.GetByEnquiryId(enquiryId);
+
+                if (result == null || !result.Any())
+                {
+                    _logger.LogWarning(
+                        "No CageCostEntity records found for EnquiryId: {EnquiryId}",
+                        enquiryId);
+
+                    return Ok(new
+                    {
+                        success = true, // empty list is NOT an error
+                        message = $"No CageCostEntity records found for EnquiryId {enquiryId}.",
+                        data = Array.Empty<CageCostMainDto>()
+                    });
+                }
+
+                _logger.LogInformation(
+                    "Get completed successfully for EnquiryId {EnquiryId}. Count: {Count}",
+                    enquiryId,
+                    result.Count);
+
+                return Ok(new
+                {
+                    success = true,
+                    message = "CageCostEntity data fetched successfully.",
+                    data = result
+                });
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(
+                    ex,
+                    "An error occurred while fetching CageCostEntity for EnquiryId: {EnquiryId}",
+                    enquiryId);
+
+                return StatusCode(500, new
+                {
+                    success = false,
+                    data = (object?)null,
+                    message = "An error occurred while processing your request."
+                });
+            }
+        }
+
+
 
         [HttpPost("add")]
         public async Task<IActionResult> Add([FromBody] CageCostMainDto dto)

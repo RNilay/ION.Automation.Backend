@@ -30,6 +30,23 @@ namespace IonFiltra.BagFilters.Infrastructure.Repositories.BOM.Cage_Cost
             });
         }
 
+        public async Task<List<CageCostEntity>> GetByEnquiryId(int enquiryId)
+        {
+            return await _transactionHelper.ExecuteAsync(async dbContext =>
+            {
+                _logger.LogInformation(
+                    "Fetching CageCostEntity list for EnquiryId {EnquiryId}",
+                    enquiryId);
+
+                return await dbContext.CageCostEntitys
+                    .AsNoTracking()
+                    .Where(x => x.EnquiryId == enquiryId)
+                    .OrderByDescending(x => x.CreatedAt)
+                    .ToListAsync();
+            });
+        }
+
+
         public async Task<int> AddAsync(CageCostEntity entity)
         {
             return await _transactionHelper.ExecuteAsync(async dbContext =>

@@ -60,6 +60,57 @@ namespace IonFiltra.BagFilters.API.Controllers.BOM.Painting_Cost
             }
         }
 
+        [HttpGet("get-by-enquiry/{enquiryId}")]
+        public async Task<IActionResult> GetByEnquiryId(int enquiryId)
+        {
+            _logger.LogInformation("Get started for EnquiryId {EnquiryId}", enquiryId);
+
+            try
+            {
+                var result = await _service.GetByEnquiryId(enquiryId);
+
+                if (result == null || !result.Any())
+                {
+                    _logger.LogWarning(
+                        "No PaintingCost records found for EnquiryId: {EnquiryId}",
+                        enquiryId);
+
+                    return Ok(new
+                    {
+                        success = false,
+                        message = $"No PaintingCost records found for EnquiryId {enquiryId}.",
+                        data = Array.Empty<PaintingCostMainDto>()
+                    });
+                }
+
+                _logger.LogInformation(
+                    "Get completed successfully for EnquiryId {EnquiryId}. Count: {Count}",
+                    enquiryId, result.Count);
+
+                return Ok(new
+                {
+                    success = true,
+                    message = "PaintingCost data fetched successfully.",
+                    data = result
+                });
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(
+                    ex,
+                    "An error occurred while fetching PaintingCost for EnquiryId: {EnquiryId}",
+                    enquiryId);
+
+                return StatusCode(500, new
+                {
+                    success = false,
+                    data = (object?)null,
+                    message = "An error occurred while processing your request."
+                });
+            }
+        }
+
+
 
         [HttpPost("add")]
         public async Task<IActionResult> Add([FromBody] PaintingCostMainDto dto)

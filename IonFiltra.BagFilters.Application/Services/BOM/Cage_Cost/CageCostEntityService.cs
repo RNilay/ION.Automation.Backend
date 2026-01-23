@@ -26,6 +26,20 @@ namespace IonFiltra.BagFilters.Application.Services.BOM.Cage_Cost
             return CageCostEntityMapper.ToMainDto(entity);
         }
 
+        public async Task<List<CageCostMainDto>> GetByEnquiryId(int enquiryId)
+        {
+            _logger.LogInformation(
+                "Fetching CageCostEntity list for EnquiryId {EnquiryId}",
+                enquiryId);
+
+            var entities = await _repository.GetByEnquiryId(enquiryId);
+
+            return entities
+                .Select(CageCostEntityMapper.ToMainDto)
+                .ToList();
+        }
+
+
         public async Task<int> AddAsync(CageCostMainDto dto)
         {
             _logger.LogInformation("Adding CageCostEntity for Id {Id}", dto.Id);

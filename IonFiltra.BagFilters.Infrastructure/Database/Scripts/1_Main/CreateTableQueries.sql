@@ -1,4 +1,60 @@
-﻿
+﻿---Login Table
+CREATE TABLE ionfiltrabagfilters.UserAccount (
+    UserId INT AUTO_INCREMENT PRIMARY KEY,
+    Email VARCHAR(255) NOT NULL UNIQUE,
+    PasswordHash TEXT NOT NULL,
+    PasswordSalt TEXT NOT NULL,
+    FirstName VARCHAR(50) NOT NULL,
+    LastName VARCHAR(50) NOT NULL,
+    IsActive TINYINT(1) NOT NULL DEFAULT 1,
+    IsDeleted TINYINT(1) NOT NULL DEFAULT 0,
+    MfaSecret VARCHAR(100), -- Stores the TOTP secret key
+    MfaEnabled TINYINT(1) DEFAULT 0, -- Indicates whether MFA is enabled for the user
+    CreatedAt DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    UpdatedAt DATETIME NULL ON UPDATE CURRENT_TIMESTAMP
+);
+
+
+CREATE TABLE ionfiltrabagfilters.UserOtp (
+    OtpId INT AUTO_INCREMENT PRIMARY KEY, -- Primary Key for the OTP table
+    UserId INT NOT NULL, -- Foreign Key to UserAccount table
+    Otp VARCHAR(6) NOT NULL, -- The OTP value (e.g., 6-digit code)
+    CreatedAt DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP, -- Timestamp of when the OTP was created
+    ExpiresAt DATETIME NOT NULL, -- Timestamp of when the OTP expires
+    IsUsed TINYINT(1) NOT NULL DEFAULT 0, -- Whether the OTP has been used (default: false)
+    
+    CONSTRAINT fk_userotp_user
+        FOREIGN KEY (UserId) REFERENCES ionfiltrabagfilters.UserAccount(UserId)
+        ON DELETE CASCADE
+);
+
+CREATE TABLE ionfiltrabagfilters.ApplicationRoles (
+    RoleId INT AUTO_INCREMENT PRIMARY KEY,
+    RoleName TEXT NOT NULL,
+    Description TEXT,
+    IsActive TINYINT(1) NOT NULL DEFAULT 1,
+    IsDeleted TINYINT(1) NOT NULL DEFAULT 0,
+    CreatedAt DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    UpdatedAt DATETIME NULL ON UPDATE CURRENT_TIMESTAMP
+);
+
+CREATE TABLE ionfiltrabagfilters.UserAccountRole (
+    UserId INT NOT NULL,
+    RoleId INT NOT NULL,
+    AssignedAt DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    AssignedBy VARCHAR(50) NULL,
+
+    PRIMARY KEY (UserId, RoleId),
+
+    CONSTRAINT fk_useraccountrole_user
+        FOREIGN KEY (UserId) REFERENCES ionfiltrabagfilters.UserAccount(UserId)
+        ON DELETE CASCADE,
+
+    CONSTRAINT fk_useraccountrole_role
+        FOREIGN KEY (RoleId) REFERENCES ionfiltrabagfilters.ApplicationRoles(RoleId)
+        ON DELETE CASCADE
+);
+
 ---Enquiry table
 
 CREATE TABLE Enquiry (
@@ -1326,3 +1382,7 @@ CREATE TABLE
         FOREIGN KEY (EnquiryId) REFERENCES ionfiltrabagfilters.Enquiry (Id) ON DELETE CASCADE,
         FOREIGN KEY (BagfilterMasterId) REFERENCES ionfiltrabagfilters.BagfilterMaster (BagfilterMasterId) ON DELETE CASCADE
     );
+
+
+
+    

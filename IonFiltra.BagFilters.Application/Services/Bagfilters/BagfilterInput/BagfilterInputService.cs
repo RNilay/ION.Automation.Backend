@@ -2948,10 +2948,10 @@ namespace IonFiltra.BagFilters.Application.Services.Bagfilters.BagfilterInputs
         }
 
         private static decimal? ResolveNumberOfColumns(
-    string? hopperType,
-    decimal? inputNoOfColumns,
-    decimal? baysX,
-    decimal? baysZ)
+        string? hopperType,
+        decimal? inputNoOfColumns,
+        decimal? baysX,
+        decimal? baysZ)
         {
             if (string.Equals(hopperType, "Regular", StringComparison.OrdinalIgnoreCase))
                 return inputNoOfColumns;
@@ -2962,14 +2962,15 @@ namespace IonFiltra.BagFilters.Application.Services.Bagfilters.BagfilterInputs
             if (!baysX.HasValue || !baysZ.HasValue)
                 return null;
 
-            return (baysX.Value, baysZ.Value) switch
-            {
-                (1, 1) => 4,
-                (2, 1) => 6,
-                (2, 2) => 9,
-                (3, 2) => 12,
-                _ => null
-            };
+            //return (baysX.Value, baysZ.Value) switch
+            //{
+            //    (1, 1) => 4,
+            //    (2, 1) => 6,
+            //    (2, 2) => 9,
+            //    (3, 2) => 12,
+            //    _ => null
+            //};
+            return (baysX.Value + 1) * (baysZ.Value + 1);
         }
 
 

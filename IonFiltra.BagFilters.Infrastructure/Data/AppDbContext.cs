@@ -95,6 +95,8 @@ namespace IonFiltra.BagFilters.Infrastructure.Data
 
         public DbSet<BoughtOutItemSelection> BoughtOutItemSelections { get; set; }
 
+        public DbSet<SecondaryBoughtOutItem> SecondaryBoughtOutItems { get; set; }
+
         //Master Data tables
         public DbSet<MasterDefinitions> MasterDefinitions { get; set; }
         public DbSet<FilterBag> FilterBags { get; set; }

@@ -10,6 +10,8 @@ namespace IonFiltra.BagFilters.Application.Interfaces
         Task UpdateAsync(BoughtOutItemSelectionMainDto dto);
 
         Task<List<BoughtOutItemSelection>> GetByEnquiryAsync(int enquiryId);
+
+        Task<List<SecondaryBoughtOutItem>> GetSecByEnquiryAsync(int enquiryId);
     }
 }
     

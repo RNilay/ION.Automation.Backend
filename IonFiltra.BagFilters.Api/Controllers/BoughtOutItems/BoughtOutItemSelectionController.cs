@@ -44,7 +44,7 @@ namespace IonFiltra.BagFilters.API.Controllers.MasterData.BoughtOutItems
                 return Ok(new
                 {
                     success = true,
-                    message = "BoughtOutItemSelection data fetched successfully.",
+                    message = "BoughtOutItem data fetched successfully.",
                     data = result,
                 });
             }
@@ -135,7 +135,7 @@ namespace IonFiltra.BagFilters.API.Controllers.MasterData.BoughtOutItems
             try
             {
                 var list = await _service.GetByEnquiryAsync(enquiryId);
-
+                var secList = await _service.GetSecByEnquiryAsync(enquiryId);
                 return Ok(new
                 {
                     success = true,
@@ -152,6 +152,14 @@ namespace IonFiltra.BagFilters.API.Controllers.MasterData.BoughtOutItems
                         x.Unit,
                         x.Weight,
                         x.Rate,
+                        x.Cost
+                    }),
+
+                    secondaryData = secList.Select(x => new
+                    {
+                        x.Id,
+                        x.MasterKey,
+                        x.SelectedRowId,
                         x.Cost
                     })
 

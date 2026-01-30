@@ -236,6 +236,8 @@ namespace IonFiltra.BagFilters.Infrastructure
             services.AddScoped<IBoughtOutItemSelectionService, BoughtOutItemSelectionService>();
             services.AddScoped<IBoughtOutItemSelectionRepository, BoughtOutItemSelectionRepository>();
 
+            services.AddScoped<ISecondaryBoughtOutItemRepository, SecondaryBoughtOutItemRepository>();
+
             //master data tables
 
             services.AddScoped<IMasterDefinitionsRepository, MasterDefinitionsRepository>();

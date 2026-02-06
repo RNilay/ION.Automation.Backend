@@ -15,7 +15,7 @@ namespace IonFiltra.BagFilters.Core.Entities.Bagfilters.Sections.Access_Group
         public decimal? Railing_Weight { get; set; }
         public decimal? Total_Weight_Of_Railing { get; set; }
         public string? Maintainence_Pltform { get; set; }
-        public decimal? Maintainence_Pltform_Weight { get; set; }
+        //public decimal? Maintainence_Pltform_Weight { get; set; }
         public decimal? Total_Weight_Of_Maintainence_Pltform { get; set; }
         public decimal? BlowPipe { get; set; }
         public decimal? Total_Weight_Of_Blow_Pipe { get; set; }

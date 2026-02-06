@@ -27,9 +27,8 @@ namespace IonFiltra.BagFilters.Application.Services.MasterData.BoughtOutItems
         {
             _logger.LogInformation("Fetching BoughtOutItemSelection for Id {Id}", id);
             var selectionEntity = await _repository.GetById(id);
-            var secEntity = await _secRepository.GetById(id);
 
-            return BoughtOutItemSelectionMapper.ToMainDto(selectionEntity,secEntity);
+            return BoughtOutItemSelectionMapper.ToMainDto(selectionEntity);
         }
 
         public async Task<int> AddAsync(BoughtOutItemSelectionMainDto dto)
@@ -38,15 +37,6 @@ namespace IonFiltra.BagFilters.Application.Services.MasterData.BoughtOutItems
             var entity = BoughtOutItemSelectionMapper.ToEntity(dto);
             await _repository.AddAsync(entity);
 
-            var secEntity = new SecondaryBoughtOutItem
-            {
-                Id = entity.Id,
-                MasterKey = dto.SecondaryBoughtOutItem.MasterKey,
-                SelectedRowId = dto.SecondaryBoughtOutItem.SelectedRowId,
-                Cost = dto.SecondaryBoughtOutItem.Cost,
-            };
-
-            await _secRepository.AddAsync(secEntity);
             return entity.Id;
         }
 
@@ -56,14 +46,6 @@ namespace IonFiltra.BagFilters.Application.Services.MasterData.BoughtOutItems
             var entity = BoughtOutItemSelectionMapper.ToEntity(dto);
             await _repository.UpdateAsync(entity);
 
-            var secEntity = new SecondaryBoughtOutItem
-            {
-                Id = entity.Id,
-                MasterKey = dto.SecondaryBoughtOutItem.MasterKey,
-                SelectedRowId = dto.SecondaryBoughtOutItem.SelectedRowId,
-                Cost = dto.SecondaryBoughtOutItem.Cost,
-            };
-            await _secRepository.UpdateAsync(secEntity);
         }
 
         public Task<List<BoughtOutItemSelection>> GetByEnquiryAsync(int enquiryId)

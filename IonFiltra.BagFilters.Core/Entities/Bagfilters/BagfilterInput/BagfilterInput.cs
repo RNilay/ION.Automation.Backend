@@ -87,7 +87,7 @@ namespace IonFiltra.BagFilters.Core.Entities.Bagfilters.BagfilterInputs
         public decimal? Staircase_Weight { get; set; }
         public decimal? Railing_Weight { get; set; }
         public string? Maintainence_Pltform { get; set; }
-        public decimal? Maintainence_Pltform_Weight { get; set; }
+        //public decimal? Maintainence_Pltform_Weight { get; set; }
         public decimal? Blow_Pipe { get; set; }
         public decimal? Pressure_Header { get; set; }
         public decimal? Distance_Piece { get; set; }

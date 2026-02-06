@@ -25,6 +25,65 @@ namespace IonFiltra.BagFilters.Infrastructure.Http.Implementation
       
         public async Task<JObject> PostAsync(object payload, CancellationToken ct = default)
         {
+            //var json = JsonConvert.SerializeObject(payload);
+            //using var content = new StringContent(json, Encoding.UTF8, "application/json");
+
+            //// link caller token + our own timeout
+            //using var cts = CancellationTokenSource.CreateLinkedTokenSource(ct);
+            //cts.CancelAfter(TimeSpan.FromMinutes(10)); // cancels after 10 minutes
+
+            //// Post to base address (empty relative URI)
+            //using var response = await _http.PostAsync("", content, cts.Token);
+            //response.EnsureSuccessStatusCode(); // fail fast on non-2xx
+
+            //var text = await response.Content.ReadAsStringAsync(ct);
+
+            //return JObject.Parse(text);
+
+
+            var text = @"
+            {
+              ""response"": {
+                ""data"": [
+                  {
+                    ""sections"": ""45.0x45.0x2.6"",
+                    ""max_UR_ratio"": 0.8420872694602191
+                  },
+                  {
+                    ""sections"": ""MC75"",
+                    ""max_UR_ratio"": 0.21283160690357036
+                  },
+                    {
+                    ""sections"": ""A2020x3"",
+                    ""max_UR_ratio"": 0.2166302268908826
+                  },
+                  {
+                    ""sections"": ""45.0x45.0x2.6"",
+                    ""max_UR_ratio"": 0.8768011654541732
+                  }
+                ],
+                ""msg"": ""Optimizer successfully ran"",
+                ""status"": 0,
+                ""function"": ""S3D.design.member.optimize"",
+                ""last_session_id"": ""6JTcHzE0BKd81QYxNcre6KeDtfLRsNalpbQVX7LtdrUNnEsLy97aslHn0TWDr4Hi_0"",
+                ""monthly_api_credits"": {
+                  ""quota"": 300,
+                  ""total_used"": ""12.0000013"",
+                  ""used_this_call"": 4
+                }
+              },
+              ""keep_session_open"": true
+            }";
+
+            var json = JObject.Parse(text);
+            return json;  // ✅ return JObject, not Task<JObject>
+
+        }
+
+
+
+        public async Task<JObject> PostBOMAsync(object payload, CancellationToken ct = default)
+        {
             var json = JsonConvert.SerializeObject(payload);
             using var content = new StringContent(json, Encoding.UTF8, "application/json");
 
@@ -41,44 +100,6 @@ namespace IonFiltra.BagFilters.Infrastructure.Http.Implementation
             return JObject.Parse(text);
 
 
-            //var text = @"
-            //{
-            //  ""response"": {
-            //    ""data"": [
-            //      {
-            //        ""sections"": ""113.5x113.5x4.8"",
-            //        ""max_UR_ratio"": 0.9312089753443507
-            //      },
-            //      {
-            //        ""sections"": ""JB150"",
-            //        ""max_UR_ratio"": 0.00033933812192741777
-            //      },
-            //        {
-            //        ""sections"": ""A8040x5"",
-            //        ""max_UR_ratio"": 29.32138665029781
-            //      },
-            //      {
-            //        ""sections"": ""NT 40"",
-            //        ""max_UR_ratio"": 0.24505866882377741
-            //      }
-            //    ],
-            //    ""msg"": ""Optimizer successfully ran"",
-            //    ""status"": 0,
-            //    ""function"": ""S3D.design.member.optimize"",
-            //    ""last_session_id"": ""n6qpizSHoDWXkfgq0DFxEiOWEnLsRrmF3jI0YuiIamhOi114pICrkLUJl5VA95qc_4"",
-            //    ""monthly_api_credits"": {
-            //      ""quota"": 300,
-            //      ""total_used"": ""4.0000013"",
-            //      ""used_this_call"": 4
-            //    }
-            //  },
-            //  ""keep_session_open"": true
-            //}";
-
-            //var json = JObject.Parse(text);
-            //return json;  // ✅ return JObject, not Task<JObject>
-
         }
-
     }
 }

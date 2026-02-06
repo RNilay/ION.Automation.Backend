@@ -3,6 +3,7 @@ using IonFiltra.BagFilters.Core.Interfaces.Repositories.MasterData.BoughtOutItem
 using IonFiltra.BagFilters.Infrastructure.Data;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
+using QuestPDF.Infrastructure;
 
 namespace IonFiltra.BagFilters.Infrastructure.Repositories.MasterData.BoughtOutItems
 {
@@ -17,161 +18,104 @@ namespace IonFiltra.BagFilters.Infrastructure.Repositories.MasterData.BoughtOutI
             _logger = logger;
         }
 
-        public async Task<SecondaryBoughtOutItem?> GetById(int id)
-        {
-            return await _transactionHelper.ExecuteAsync(async dbContext =>
-            {
-                _logger.LogInformation("Fetching SecondaryBoughtOutItem for Id {Id}", id);
-                return await dbContext.SecondaryBoughtOutItems
-                    .AsNoTracking()
-                    .Where(x => x.Id == id)
-                    .OrderByDescending(x => x.CreatedAt)
-                    .FirstOrDefaultAsync();
-            });
-        }
-
-        public async Task<int> AddAsync(SecondaryBoughtOutItem entity)
-        {
-            return await _transactionHelper.ExecuteAsync(async dbContext =>
-            {
-                _logger.LogInformation("Adding new SecondaryBoughtOutItem for Id {Id}", entity.Id);
-                entity.CreatedAt = DateTime.Now;
-                var addedEntity = await dbContext.SecondaryBoughtOutItems.AddAsync(entity);
-                await dbContext.SaveChangesAsync();
-                return addedEntity.Entity.Id; // Assuming 'Id' is the primary key
-            });
-        }
-
-        public async Task UpdateAsync(SecondaryBoughtOutItem entity)
-        {
-            _logger.LogInformation("Updating SecondaryBoughtOutItem for Id {Id}", entity.Id);
-
-            await _transactionHelper.ExecuteAsync(async dbContext =>
-            {
-                var existingEntity = await dbContext.SecondaryBoughtOutItems.FindAsync(entity.Id);
-                if (existingEntity != null)
-                {
-                    var createdAt = existingEntity.CreatedAt;
-                    dbContext.Entry(existingEntity).CurrentValues.SetValues(entity);
-                    existingEntity.UpdatedAt= DateTime.Now; // Assuming UpdatedDate exists
-                    existingEntity.CreatedAt = createdAt;
-                    await dbContext.SaveChangesAsync();
-                }
-                else
-                {
-                    _logger.LogWarning("SecondaryBoughtOutItem with Id {Id} not found", entity.Id);
-                }
-            });
-        }
-
-
-
-
 
         //new code
         public async Task<List<SecondaryBoughtOutItem>> GetByEnquiryAsync(int enquiryId)
         {
-            return await _transactionHelper.ExecuteAsync(async dbContext =>
+            return await _transactionHelper.ExecuteAsync(async db =>
             {
-                _logger.LogInformation("Fetching SecondaryBoughtOutItem for EnquiryId {EnquiryId}", enquiryId);
+                _logger.LogInformation(
+                    "Fetching SecondaryBoughtOutItems for EnquiryId {EnquiryId}",
+                    enquiryId);
 
-                return await dbContext.SecondaryBoughtOutItems
+                return await db.SecondaryBoughtOutItems
                     .AsNoTracking()
                     .Where(x => x.EnquiryId == enquiryId)
                     .ToListAsync();
             });
         }
 
-        public async Task<List<SecondaryBoughtOutItem>> GetByEnquiryAndMastersAsync(
-            int enquiryId,
-            IEnumerable<int> bagfilterMasterIds)
+        public async Task<List<SecondaryBoughtOutItem>> GetByEnquiryAndBagfiltersAsync(
+        int enquiryId,
+        IEnumerable<int> bagfilterMasterIds)
         {
-            var masterIds = bagfilterMasterIds?.Distinct().ToList() ?? new List<int>();
-            if (!masterIds.Any())
+            var ids = bagfilterMasterIds?.Distinct().ToList() ?? new();
+
+            if (!ids.Any())
                 return new List<SecondaryBoughtOutItem>();
 
-            return await _transactionHelper.ExecuteAsync(async dbContext =>
+            return await _transactionHelper.ExecuteAsync(async db =>
             {
                 _logger.LogInformation(
-                    "Fetching SecondaryBoughtOutItem for EnquiryId {EnquiryId} and bagfilters {@Ids}",
+                    "Fetching SecondaryBoughtOutItems for EnquiryId {EnquiryId}, Bagfilters {@Bagfilters}",
                     enquiryId,
-                    masterIds);
+                    ids);
 
-                return await dbContext.SecondaryBoughtOutItems
+                return await db.SecondaryBoughtOutItems
                     .AsNoTracking()
-                    .Where(x => x.EnquiryId == enquiryId && masterIds.Contains(x.BagfilterMasterId))
+                    .Where(x =>
+                        x.EnquiryId == enquiryId &&
+                        ids.Contains(x.BagfilterMasterId))
                     .ToListAsync();
             });
         }
 
-
-        public async Task UpsertRangeAsync(IEnumerable<SecondaryBoughtOutItem> entities)
+    
+        public async Task UpsertRangeAsync(IEnumerable<SecondaryBoughtOutItem> items)
         {
-            var list = entities?.ToList() ?? new List<SecondaryBoughtOutItem>();
+            var list = items?.ToList() ?? new();
             if (!list.Any())
                 return;
 
-            await _transactionHelper.ExecuteAsync(async dbContext =>
+            await _transactionHelper.ExecuteAsync(async db =>
             {
                 var enquiryId = list.Select(x => x.EnquiryId).Distinct().Single();
-                var bagfilterMasterIds = list.Select(x => x.BagfilterMasterId).Distinct().ToList();
-                var masterDefIds = list.Select(x => x.MasterDefinitionId).Distinct().ToList();
+                var bagfilterIds = list.Select(x => x.BagfilterMasterId).Distinct().ToList();
+                var masterKeys = list.Select(x => x.MasterKey).Distinct().ToList();
 
                 _logger.LogInformation(
-                    "Upserting SecondaryBoughtOutItem for EnquiryId {EnquiryId}, bagfilters {@Bagfilters}",
-                    enquiryId,
-                    bagfilterMasterIds);
+                    "Upserting SecondaryBoughtOutItems for EnquiryId {EnquiryId}",
+                    enquiryId);
 
-                var existing = await dbContext.SecondaryBoughtOutItems
+                var existing = await db.SecondaryBoughtOutItems
                     .Where(x =>
                         x.EnquiryId == enquiryId &&
-                        bagfilterMasterIds.Contains(x.BagfilterMasterId) &&
-                        masterDefIds.Contains(x.MasterDefinitionId))
+                        bagfilterIds.Contains(x.BagfilterMasterId) &&
+                        masterKeys.Contains(x.MasterKey))
                     .ToListAsync();
 
-                var existingByKey = existing.ToDictionary(
-                    x => (x.BagfilterMasterId, x.MasterDefinitionId),
+                var existingMap = existing.ToDictionary(
+                    x => (x.BagfilterMasterId, x.MasterKey),
                     x => x);
 
                 foreach (var incoming in list)
                 {
-                    var key = (incoming.BagfilterMasterId, incoming.MasterDefinitionId);
+                    var key = (incoming.BagfilterMasterId, incoming.MasterKey);
 
-                    if (existingByKey.TryGetValue(key, out var existingRow))
+                    if (existingMap.TryGetValue(key, out var row))
                     {
-                        // Update
-                        existingRow.SelectedRowId = incoming.SelectedRowId;
-                        existingRow.MasterKey = incoming.MasterKey;
-                        existingRow.UpdatedAt = DateTime.UtcNow;
+                        // UPDATE
+                        row.Make = incoming.Make;
+                        row.Cost = incoming.Cost;
+                        row.Qty = incoming.Qty;
+                        row.Rate = incoming.Rate;
+                        row.Unit = incoming.Unit;
+                        row.UpdatedAt = DateTime.UtcNow;
                     }
                     else
                     {
+                        // INSERT
                         incoming.CreatedAt = DateTime.UtcNow;
-                        await dbContext.SecondaryBoughtOutItems.AddAsync(incoming);
+                        await db.SecondaryBoughtOutItems.AddAsync(incoming);
                     }
                 }
 
-                await dbContext.SaveChangesAsync();
-            });
-        }
-
-        public async Task<Dictionary<(int, int), SecondaryBoughtOutItem>> GetByMasterIdsAsync(IEnumerable<int> masterIds, CancellationToken ct)
-        {
-            var ids = masterIds.Distinct().ToList();
-
-            return await _transactionHelper.ExecuteAsync(async dbContext =>
-            {
-                var rows = await dbContext.SecondaryBoughtOutItems
-                    .Where(x => ids.Contains(x.BagfilterMasterId))
-                    .ToListAsync(ct);
-
-                return rows.ToDictionary(
-                    x => (x.BagfilterMasterId, x.MasterDefinitionId.Value),
-                    x => x
-                );
+                await db.SaveChangesAsync();
             });
         }
 
     }
+
+
 }
     

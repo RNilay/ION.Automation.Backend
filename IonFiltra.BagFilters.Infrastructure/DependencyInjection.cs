@@ -1,6 +1,7 @@
 ﻿using IonFiltra.BagFilters.Application.Interfaces;
 using IonFiltra.BagFilters.Application.Interfaces.Bagfilters.BagfilterMaster;
 using IonFiltra.BagFilters.Application.Interfaces.Bagfilters.Sections.Bag_Selection;
+using IonFiltra.BagFilters.Application.Interfaces.BoughtOutItems;
 using IonFiltra.BagFilters.Application.Interfaces.Enquiry;
 using IonFiltra.BagFilters.Application.Interfaces.GenericView;
 using IonFiltra.BagFilters.Application.Interfaces.MasterData.Master_Definition;
@@ -32,6 +33,7 @@ using IonFiltra.BagFilters.Application.Services.BOM.Painting_Cost;
 using IonFiltra.BagFilters.Application.Services.BOM.PaintingRates;
 using IonFiltra.BagFilters.Application.Services.BOM.Rates;
 using IonFiltra.BagFilters.Application.Services.BOM.Transp_Cost;
+using IonFiltra.BagFilters.Application.Services.BoughtOutItems;
 using IonFiltra.BagFilters.Application.Services.EnquiryService;
 using IonFiltra.BagFilters.Application.Services.GenericView;
 using IonFiltra.BagFilters.Application.Services.MasterData.BoughtOutItems;
@@ -236,6 +238,7 @@ namespace IonFiltra.BagFilters.Infrastructure
             services.AddScoped<IBoughtOutItemSelectionService, BoughtOutItemSelectionService>();
             services.AddScoped<IBoughtOutItemSelectionRepository, BoughtOutItemSelectionRepository>();
 
+            services.AddScoped<ISecondaryBoughtOutItemService, SecondaryBoughtOutItemService>();
             services.AddScoped<ISecondaryBoughtOutItemRepository, SecondaryBoughtOutItemRepository>();
 
             //master data tables

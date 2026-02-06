@@ -1,11 +1,14 @@
 ﻿using IonFiltra.BagFilters.Application.DTOs.Bagfilters.BagfilterInputs;
 using IonFiltra.BagFilters.Application.DTOs.Bagfilters.Sections.DamperSize;
 using IonFiltra.BagFilters.Application.DTOs.Bagfilters.Sections.EV;
+using IonFiltra.BagFilters.Application.DTOs.Bagfilters.Sections.Support_Structure;
 using IonFiltra.BagFilters.Application.DTOs.BOM.Bill_Of_Material;
 using IonFiltra.BagFilters.Application.DTOs.MasterData.BoughtOutItems;
 using IonFiltra.BagFilters.Application.DTOs.SkyCiv;
 using IonFiltra.BagFilters.Application.Interfaces;
 using IonFiltra.BagFilters.Application.Mappers.Bagfilters.BagfilterInputs;
+using IonFiltra.BagFilters.Core.Entities.BagfilterDatabase.WithCanopy;
+using IonFiltra.BagFilters.Core.Entities.BagfilterDatabase.WithoutCanopy;
 using IonFiltra.BagFilters.Core.Entities.Bagfilters.BagfilterInputs;
 using IonFiltra.BagFilters.Core.Entities.Bagfilters.BagfilterMasterEntity;
 using IonFiltra.BagFilters.Core.Entities.Bagfilters.Sections.Access_Group;
@@ -63,6 +66,7 @@ using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Globalization;
 using System.Linq;
+using System.Text.Json.Nodes;
 
 namespace IonFiltra.BagFilters.Application.Services.Bagfilters.BagfilterInputs
 {
@@ -104,6 +108,8 @@ namespace IonFiltra.BagFilters.Application.Services.Bagfilters.BagfilterInputs
         private readonly IIFI_Bagfilter_Database_Without_CanopyRepository _withoutCanopyRepo;
         private readonly IIFI_Bagfilter_Database_With_CanopyRepository _withCanopyRepo;
 
+        private readonly ISecondaryBoughtOutItemRepository _secondaryBoughtOutRepo;
+
         public BagfilterInputService(
             IBagfilterInputRepository repository,
             IBagfilterMasterRepository masterRepository,
@@ -132,7 +138,8 @@ namespace IonFiltra.BagFilters.Application.Services.Bagfilters.BagfilterInputs
             IDamperSizeInputsRepository damperSizeInputsRepository,
             IExplosionVentEntityRepository explosionVentEntityRepository,
             IIFI_Bagfilter_Database_Without_CanopyRepository withoutCanopyRepo,
-            IIFI_Bagfilter_Database_With_CanopyRepository withCanopyRepo
+            IIFI_Bagfilter_Database_With_CanopyRepository withCanopyRepo,
+            ISecondaryBoughtOutItemRepository secondaryBoughtOutItemRepository
         )
         {
             _repository = repository;
@@ -164,6 +171,7 @@ namespace IonFiltra.BagFilters.Application.Services.Bagfilters.BagfilterInputs
             _explosionVentEntityRepository = explosionVentEntityRepository;
             _withoutCanopyRepo = withoutCanopyRepo;
             _withCanopyRepo = withCanopyRepo;
+            _secondaryBoughtOutRepo = secondaryBoughtOutItemRepository;
 
         }
 
@@ -205,7 +213,7 @@ namespace IonFiltra.BagFilters.Application.Services.Bagfilters.BagfilterInputs
             if (dtos == null || dtos.Count == 0) return new AddRangeResultDto();
 
             // 1) Map DTOs -> pairs (master + input) and collect group keys and mapping info
-            var pairs = new List<(BagfilterMaster Master, BagfilterInput Input)>(dtos.Count);
+            var pairs = new List<(BagfilterMaster Master, BagfilterInput Input, SupportStructureDto Support)>(dtos.Count);
 
             // keep parallel array to map pair index -> groupKey
             var pairGroupKeys = new List<string>(dtos.Count);
@@ -245,15 +253,16 @@ namespace IonFiltra.BagFilters.Application.Services.Bagfilters.BagfilterInputs
                 else
                     inputEntity.BagfilterMaster = masterEntity;
 
-                pairs.Add((masterEntity, inputEntity));
 
-               
                 // SupportStructure is REQUIRED for matching
                 var support = dto.SupportStructure
                     ?? throw new ArgumentException("SupportStructure is required for bagfilter matching.");
 
+                pairs.Add((masterEntity, inputEntity, support));
+
+
                 var effectiveColumns = ResolveNumberOfColumns(
-                    inputEntity.Hopper_Type,
+                    inputEntity.Support_Struct_Type,
                     inputEntity.No_Of_Column,
                     support?.No_Of_Bays_In_X,
                     support?.No_Of_Bays_In_Z
@@ -292,7 +301,7 @@ namespace IonFiltra.BagFilters.Application.Services.Bagfilters.BagfilterInputs
                 var support = repDto.SupportStructure!;
 
                 var effectiveColumns = ResolveNumberOfColumns(
-                    repInput.Hopper_Type,
+                    repInput.Support_Struct_Type,
                     repInput.No_Of_Column,
                     support.No_Of_Bays_In_X,
                     support.No_Of_Bays_In_Z
@@ -380,9 +389,14 @@ namespace IonFiltra.BagFilters.Application.Services.Bagfilters.BagfilterInputs
                 }
             }
 
+            //remove support structure from pairs
+            var dbPairs = pairs
+            .Select(p => (p.Master, p.Input))
+            .ToList();
+
 
             // 6) Insert all (masters + inputs) and apply match mapping inside repository in same transaction
-            var createdInputIds = await _repository.AddRangeAsync(pairs, matchMappingByPairIndex);
+            var createdInputIds = await _repository.AddRangeAsync(dbPairs, matchMappingByPairIndex);
 
             // Batch fetch all inputs (one DB call)
             var inputs = await _repository.GetByIdsAsync(createdInputIds);
@@ -594,6 +608,51 @@ namespace IonFiltra.BagFilters.Application.Services.Bagfilters.BagfilterInputs
                 }
             }
 
+            // ===============================
+            // === Batched SecondaryBoughtOutItems ===
+            // ===============================
+
+            var secondaryEntities = new List<SecondaryBoughtOutItem>();
+
+            for (int i = 0; i < dtos.Count; i++)
+            {
+                var dto = dtos[i];
+
+                if (dto.SecondaryBoughtOutItems == null || dto.SecondaryBoughtOutItems.Count == 0)
+                    continue;
+
+                var masterId = masterIdByIndex[i];
+                if (masterId <= 0)
+                    continue;
+
+                var enquiryId = dto.BagfilterInput.EnquiryId;
+
+                foreach (var sec in dto.SecondaryBoughtOutItems)
+                {
+                    // Ignore empty rows (important)
+                    if (sec.Make == null && sec.Cost == null)
+                        continue;
+
+                    secondaryEntities.Add(new SecondaryBoughtOutItem
+                    {
+                        EnquiryId = (int)enquiryId,
+                        BagfilterMasterId = masterId,
+                        MasterKey = sec.MasterKey,
+                        Make = sec.Make,
+                        Cost = sec.Cost,
+                        Qty = sec.Qty,
+                        Rate = sec.Rate,
+                        Unit = sec.Unit
+                    });
+                }
+            }
+            if (secondaryEntities.Count > 0)
+            {
+                await _secondaryBoughtOutRepo.UpsertRangeAsync(secondaryEntities);
+            }
+
+
+
             // === Batched TransportationCost ===
 
             var transportDataByMaster = new Dictionary<int, List<TransportationCostEntity>>();
@@ -771,7 +830,7 @@ namespace IonFiltra.BagFilters.Application.Services.Bagfilters.BagfilterInputs
             if (dtos == null || dtos.Count == 0) return new UpdateRangeResultDto();
 
             // Step A: Map DTOs -> desired pair state, build grouping keys & groups (same as AddRange)
-            var pairs = new List<(BagfilterMaster Master, BagfilterInput Input)>(dtos.Count);
+            var pairs = new List<(BagfilterMaster Master, BagfilterInput Input, SupportStructureDto support)>(dtos.Count);
             var pairGroupKeys = new List<string>(dtos.Count);
             var groups = new Dictionary<string, List<int>>();
 
@@ -807,14 +866,16 @@ namespace IonFiltra.BagFilters.Application.Services.Bagfilters.BagfilterInputs
                 else
                     inputEntity.BagfilterMaster = masterEntity;
 
-                pairs.Add((masterEntity, inputEntity));
-
                 // SupportStructure is REQUIRED for matching
                 var support = dto.SupportStructure
                     ?? throw new ArgumentException("SupportStructure is required for bagfilter matching.");
 
+                pairs.Add((masterEntity, inputEntity, support));
+
+              
+
                 var effectiveColumns = ResolveNumberOfColumns(
-                    inputEntity.Hopper_Type,
+                    inputEntity.Support_Struct_Type,
                     inputEntity.No_Of_Column,
                     support?.No_Of_Bays_In_X,
                     support?.No_Of_Bays_In_Z
@@ -853,7 +914,7 @@ namespace IonFiltra.BagFilters.Application.Services.Bagfilters.BagfilterInputs
                 var support = repDto.SupportStructure!;
 
                 var effectiveColumns = ResolveNumberOfColumns(
-                    repInput.Hopper_Type,
+                    repInput.Support_Struct_Type,
                     repInput.No_Of_Column,
                     support.No_Of_Bays_In_X,
                     support.No_Of_Bays_In_Z
@@ -1282,6 +1343,52 @@ namespace IonFiltra.BagFilters.Application.Services.Bagfilters.BagfilterInputs
                 }
             }
 
+            // ===============================
+            // === Batched SecondaryBoughtOutItems ===
+            // ===============================
+
+            var secondaryEntities = new List<SecondaryBoughtOutItem>();
+
+            for (int i = 0; i < dtos.Count; i++)
+            {
+                var dto = dtos[i];
+
+                if (dto.SecondaryBoughtOutItems == null || dto.SecondaryBoughtOutItems.Count == 0)
+                    continue;
+
+                var masterId = masterIdByIndex[i];
+                if (masterId <= 0)
+                    continue;
+
+                var enquiryId = dto.BagfilterInput.EnquiryId;
+
+                foreach (var sec in dto.SecondaryBoughtOutItems)
+                {
+                    // Skip empty rows
+                    if (sec.Make == null && sec.Cost == null)
+                        continue;
+
+                    secondaryEntities.Add(new SecondaryBoughtOutItem
+                    {
+                        EnquiryId = (int)enquiryId,
+                        BagfilterMasterId = masterId,
+                        MasterKey = sec.MasterKey,
+                        Make = sec.Make,
+                        Cost = sec.Cost,
+                        Qty = sec.Qty,
+                        Rate = sec.Rate,
+                        Unit = sec.Unit
+                    });
+                }
+            }
+
+            if (secondaryEntities.Count > 0)
+            {
+                await _secondaryBoughtOutRepo.UpsertRangeAsync(secondaryEntities);
+            }
+
+
+
             // === Batched TransportationCost ===
 
             var transportDataByMaster = new Dictionary<int, List<TransportationCostEntity>>();
@@ -1505,7 +1612,7 @@ namespace IonFiltra.BagFilters.Application.Services.Bagfilters.BagfilterInputs
 
         private async Task ProcessPairAsync(
                 int pairIndex,
-                List<(BagfilterMaster Master, BagfilterInput Input)> pairs,
+                List<(BagfilterMaster Master, BagfilterInput Input, SupportStructureDto Support)> pairs,
                 List<string> pairGroupKeys,
                 IList<int> createdInputIds,
                 Dictionary<string, BagfilterMatchDto> groupMatchMap,
@@ -1524,6 +1631,7 @@ namespace IonFiltra.BagFilters.Application.Services.Bagfilters.BagfilterInputs
                 }
 
                 var inputEntity = pairs[pairIndex].Input;
+                var support = pairs[pairIndex].Support;
                 if (inputEntity == null)
                 {
                     _logger?.LogWarning("No Input entity for pairIndex {pairIndex}. Skipping.", pairIndex);
@@ -1620,14 +1728,161 @@ namespace IonFiltra.BagFilters.Application.Services.Bagfilters.BagfilterInputs
                     return;
                 }
 
-                //if (!string.IsNullOrEmpty(groupKey) && groupMatchMap.TryGetValue(groupKey, out var gm2))
-                //{
-                //    // mark that analysis was attempted; do not flip IsMatched to true unless intended
-                //    gm2.AnalysisAttempted = true; // add a property or similar to signal analysis ran
-                //}
-
                 var (col, beam, rav, bracing) =
                         ExtractOptimizedSections(analysisResponse.RawResponse);
+
+
+                //new code to reapply optimized sections and get the structure weight.
+
+                var optimizedMap = new Dictionary<int, string>
+                {
+                    { 1, col },
+                    { 2, beam },
+                    { 3, rav },
+                    { 4, bracing }
+                };
+
+                var sections = (JObject)s3dModel["sections"];
+
+                foreach (var (id, newProfile) in optimizedMap)
+                {
+                    if (string.IsNullOrWhiteSpace(newProfile))
+                        throw new InvalidOperationException($"Optimized profile missing for section {id}");
+
+                    var sectionId = id.ToString();
+
+                    if (!sections.TryGetValue(sectionId, out var sectionToken))
+                        throw new InvalidOperationException($"Missing section {sectionId} in S3D model");
+
+                    var loadSection = (JArray)sectionToken["load_section"];
+
+                    var oldProfile = loadSection[loadSection.Count - 1]?.ToString();
+
+                    if (!string.Equals(oldProfile, newProfile, StringComparison.OrdinalIgnoreCase))
+                    {
+                        _logger?.LogInformation(
+                            "Section {id} changed from {old} to {new}",
+                            id, oldProfile, newProfile
+                        );
+
+                        loadSection[loadSection.Count - 1] = newProfile;
+                    }
+                }
+
+                double totalStructureWeight = 0;
+                // calling the bom calculate with the optimized model 
+                try
+                {
+                    var bomResp = await _skyCivService.RunBOMAsync(s3dModel, ct).ConfigureAwait(false);
+
+                    bool isCanopy = string.Equals(inputEntity.Canopy, "Yes", StringComparison.OrdinalIgnoreCase);
+
+                    //fetch the data from response
+
+                    var bomDataToken = bomResp.ModelData?["data"] as JObject;
+
+                    if (bomDataToken == null)
+                        throw new InvalidOperationException("Invalid BOM response shape");
+
+                    var memberSections = new List<JObject>();
+
+                    foreach (var prop in bomDataToken.Properties())
+                    {
+                        // Skip plate row (string key)
+                        if (!int.TryParse(prop.Name, out _))
+                            continue;
+
+                        var row = (JObject)prop.Value;
+
+                        memberSections.Add(row);
+                    }
+
+                   //summation of total_weight of all sections.
+
+                    foreach (var row in memberSections)
+                    {
+                        var weightToken = row["total_weight"];
+
+                        if (weightToken == null)
+                            continue;
+
+                        if (double.TryParse(weightToken.ToString(), out var weight))
+                        {
+                            totalStructureWeight += weight;
+                        }
+                    }
+
+                    var effectiveColumns = ResolveNumberOfColumns(
+                        inputEntity.Support_Struct_Type,
+                        inputEntity.No_Of_Column,
+                        support?.No_Of_Bays_In_X,
+                        support?.No_Of_Bays_In_Z
+                    );
+
+                    if (!effectiveColumns.HasValue)
+                    {
+                        _logger?.LogWarning(
+                            "Unable to resolve column count for pairIndex {pairIndex} (SupportType={type})",
+                            pairIndex,
+                            inputEntity.Support_Struct_Type
+                        );
+                    }
+
+
+                    //craeting payload based in isCanopy
+                    int structureRowId;
+
+                    if (isCanopy)
+                    {
+                        var payload = new IFI_Bagfilter_Database_With_Canopy
+                        {
+                            Process_Volume_m3hr = inputEntity.Process_Volume_M3h?.ToString(),
+                            Hopper_type = inputEntity.Hopper_Type,
+
+                            Number_of_columns = effectiveColumns,
+                            Number_of_bays_in_X_direction = support.No_Of_Bays_In_X,
+                            Number_of_bays_in_Y_direction = support.No_Of_Bays_In_Z,
+
+                            Member_Sizes_Column = col,
+                            Member_Sizes_Beam = beam,
+                            Member_Sizes_RAV = rav,
+                            Member_Sizes_Bracing_Ties = bracing,
+
+                            Total_Weight_of_Structure_kg = (decimal?)totalStructureWeight,
+                            CreatedAt = DateTime.UtcNow
+                        };
+
+                        structureRowId = await _withCanopyRepo.AddAsync(payload);
+                    }
+                    else
+                    {
+                        var payload = new IFI_Bagfilter_Database_Without_Canopy
+                        {
+                            Process_Volume_m3hr = inputEntity.Process_Volume_M3h?.ToString(),
+                            Hopper_type = inputEntity.Hopper_Type,
+
+                            Number_of_columns = effectiveColumns ?? 0,
+                            Number_of_bays_in_X_direction = support.No_Of_Bays_In_X ?? 0,
+                            Number_of_bays_in_Y_direction = support.No_Of_Bays_In_Z ?? 0,
+
+                            Member_Sizes_Column = col,
+                            Member_Sizes_Beam = beam,
+                            Member_Sizes_RAV = rav,
+                            Member_Sizes_Bracing_and_Ties = bracing,
+
+                            Total_Weight_of_Structure_kg = (decimal)totalStructureWeight,
+                            CreatedAt = DateTime.UtcNow
+                        };
+
+                        structureRowId = await _withoutCanopyRepo.AddAsync(payload);
+                    }
+
+                }
+                catch (Exception) { throw; }
+
+
+
+
 
                 if (col == null || beam == null || rav == null || bracing == null)
                 {
@@ -1751,7 +2006,7 @@ namespace IonFiltra.BagFilters.Application.Services.Bagfilters.BagfilterInputs
                 Staircase_Weight = dto.Staircase_Weight,
                 Railing_Weight = dto.Railing_Weight,
                 Maintainence_Pltform = dto.Maintainence_Pltform,
-                Maintainence_Pltform_Weight = dto.Maintainence_Pltform_Weight,
+                //Maintainence_Pltform_Weight = dto.Maintainence_Pltform_Weight,
                 Blow_Pipe = dto.Blow_Pipe,
                 Pressure_Header = dto.Pressure_Header,
                 Distance_Piece = dto.Distance_Piece,
@@ -2328,7 +2583,7 @@ namespace IonFiltra.BagFilters.Application.Services.Bagfilters.BagfilterInputs
                 Railing_Weight = src.Railing_Weight,
                 Total_Weight_Of_Railing = src.Total_Weight_Of_Railing,
                 Maintainence_Pltform = src.Maintainence_Pltform,
-                Maintainence_Pltform_Weight = src.Maintainence_Pltform_Weight,
+                //Maintainence_Pltform_Weight = src.Maintainence_Pltform_Weight,
                 Total_Weight_Of_Maintainence_Pltform = src.Total_Weight_Of_Maintainence_Pltform,
                 BlowPipe = src.BlowPipe,
                 Total_Weight_Of_Blow_Pipe = src.Total_Weight_Of_Blow_Pipe,
@@ -2948,15 +3203,15 @@ namespace IonFiltra.BagFilters.Application.Services.Bagfilters.BagfilterInputs
         }
 
         private static decimal? ResolveNumberOfColumns(
-        string? hopperType,
+        string? supportStructType,
         decimal? inputNoOfColumns,
         decimal? baysX,
         decimal? baysZ)
         {
-            if (string.Equals(hopperType, "Regular", StringComparison.OrdinalIgnoreCase))
+            if (string.Equals(supportStructType, "Regular", StringComparison.OrdinalIgnoreCase))
                 return inputNoOfColumns;
 
-            if (!string.Equals(hopperType, "Pyramid", StringComparison.OrdinalIgnoreCase))
+            if (!string.Equals(supportStructType, "Pedestal", StringComparison.OrdinalIgnoreCase))
                 return null;
 
             if (!baysX.HasValue || !baysZ.HasValue)

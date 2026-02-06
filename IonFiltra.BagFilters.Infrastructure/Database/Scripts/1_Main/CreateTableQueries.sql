@@ -176,7 +176,7 @@ CREATE TABLE
         Staircase_Weight DECIMAL(10, 2),
         Railing_Weight DECIMAL(10, 2),
         Maintainence_Pltform TEXT,
-        Maintainence_Pltform_Weight DECIMAL(10, 2),
+        Maintainence_Pltform_Weight DECIMAL(10, 2) NULL,
         Blow_Pipe DECIMAL(10, 2),
         Pressure_Header DECIMAL(10, 2),
         Distance_Piece DECIMAL(10, 2),
@@ -472,7 +472,7 @@ CREATE TABLE
         Railing_Weight DECIMAL(10, 2),
         Total_Weight_Of_Railing DECIMAL(10, 2),
         Maintainence_Pltform TEXT,
-        Maintainence_Pltform_Weight DECIMAL(10, 2),
+        Maintainence_Pltform_Weight DECIMAL(10, 2) NULL,
         Total_Weight_Of_Maintainence_Pltform DECIMAL(10, 2),
         BlowPipe DECIMAL(10, 2),
         Total_Weight_Of_Blow_Pipe DECIMAL(10, 2),
@@ -616,7 +616,20 @@ CREATE TABLE ionfiltrabagfilters.CageCostEntity (
     FOREIGN KEY (BagfilterMasterId) REFERENCES ionfiltrabagfilters.bagfiltermaster(BagfilterMasterId) ON DELETE CASCADE
 );
 
------------------
+-----------Master defination--------
+
+CREATE TABLE ionfiltrabagfilters.MasterDefinitions (
+    Id INT AUTO_INCREMENT PRIMARY KEY,
+    MasterKey VARCHAR(100) NOT NULL,
+    DisplayName VARCHAR(255) NOT NULL,
+    ApiRoute VARCHAR(255),
+    SectionOrder INT,
+    IsActive TINYINT(1) NOT NULL DEFAULT 1,
+    ColumnsJson JSON,
+    CreatedAt DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    UpdatedAt DATETIME NULL ON UPDATE CURRENT_TIMESTAMP
+    );
+
 
 CREATE TABLE
     ionfiltrabagfilters.BoughtOutItemSelection (
@@ -640,6 +653,33 @@ CREATE TABLE
         FOREIGN KEY (MasterDefinitionId) REFERENCES ionfiltrabagfilters.MasterDefinitions (Id)
     );
 
+    
+CREATE TABLE ionfiltrabagfilters.SecondaryBoughtOutItems (
+    Id INT AUTO_INCREMENT PRIMARY KEY,
+    EnquiryId INT NOT NULL,
+    BagfilterMasterId INT NOT NULL,
+    -- Identifies the secondary bought-out item (e.g. EXP_JOINT_INLET, VISIT_ENGINEERING_CHARGES)
+    MasterKey VARCHAR(100) NOT NULL,
+    Make VARCHAR(200) NULL,
+    Cost DECIMAL(18,2) NULL,
+    Qty DECIMAL(18,2) NOT NULL DEFAULT 1,
+    Unit VARCHAR(20) NOT NULL DEFAULT "No's",
+    Rate DECIMAL(18,2) NOT NULL DEFAULT 0,
+
+    CreatedAt DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    UpdatedAt DATETIME NULL ON UPDATE CURRENT_TIMESTAMP,
+    -- One row per (bagfilter, secondary item)
+    CONSTRAINT UQ_SecondaryBoughtOutItem UNIQUE (BagfilterMasterId, MasterKey),
+    -- Foreign keys
+    CONSTRAINT FK_SecondaryBoughtOutItem_Enquiry
+        FOREIGN KEY (EnquiryId)
+        REFERENCES ionfiltrabagfilters.Enquiry (Id)
+        ON DELETE CASCADE,
+    CONSTRAINT FK_SecondaryBoughtOutItem_Bagfilter
+        FOREIGN KEY (BagfilterMasterId)
+        REFERENCES ionfiltrabagfilters.bagfiltermaster (BagfilterMasterId)
+        ON DELETE CASCADE
+);
 
 --- Master Table for Database of Without Canpoy Bagfilters
 
@@ -941,18 +981,6 @@ CREATE TABLE ionfiltrabagfilters.ProxymitySwitch (
 );
 
 
-CREATE TABLE ionfiltrabagfilters.CableEntity (
-    Id INT AUTO_INCREMENT PRIMARY KEY,
-    Make VARCHAR(255),
-    Size VARCHAR(500),
-    Type VARCHAR(500),
-    Cost DECIMAL(10, 2),
-    CreatedAt DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
-    UpdatedAt DATETIME NULL ON UPDATE CURRENT_TIMESTAMP,
-    IsDeleted TINYINT(1) NOT NULL DEFAULT 0,
-    IsDefault TINYINT(1) DEFAULT 0
-);
-
 
 CREATE TABLE ionfiltrabagfilters.ZssController (
     Id INT AUTO_INCREMENT PRIMARY KEY,
@@ -1039,7 +1067,7 @@ CREATE TABLE ionfiltrabagfilters.HopperHeatingcontroller (
 );
 
 
-CREATE TABLE ionfiltrabagfilters.CentrifualFan(
+CREATE TABLE ionfiltrabagfilters.CentrifugalFan(
     Id INT AUTO_INCREMENT PRIMARY KEY,
     Make VARCHAR(255),
     CreatedAt DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
@@ -1119,12 +1147,7 @@ CREATE TABLE ionfiltrabagfilters.SStubing(
 
 CREATE TABLE ionfiltrabagfilters.LTMotor (
     Id INT AUTO_INCREMENT PRIMARY KEY,
-    KW DECIMAL(10, 2),
-    Efficiency DECIMAL(5, 2),
-    FrameSize VARCHAR(100),
-    RPM INT,
     Make VARCHAR(255),
-    Cost DECIMAL(10, 2),
     CreatedAt DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
     UpdatedAt DATETIME NULL ON UPDATE CURRENT_TIMESTAMP,
     IsDeleted TINYINT(1) NOT NULL DEFAULT 0,
@@ -1227,6 +1250,20 @@ CREATE TABLE ionfiltrabagfilters.CableTray (
     IsDefault TINYINT(1) DEFAULT 0
 );
 
+CREATE TABLE ionfiltrabagfilters.Cable (
+    Id INT AUTO_INCREMENT PRIMARY KEY,
+    Place VARCHAR(100),
+    Make VARCHAR(50),
+    CableType VARCHAR(255),
+    MultiplyFactor INT,
+    Rate DECIMAL(10,2),
+    CreatedAt DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    UpdatedAt DATETIME NULL ON UPDATE CURRENT_TIMESTAMP,
+    IsDeleted TINYINT(1) NOT NULL DEFAULT 0,
+    IsDefault TINYINT(1) DEFAULT 0
+);
+
+
 
 CREATE TABLE ionfiltrabagfilters.CompressedAirPiping (
     Id INT AUTO_INCREMENT PRIMARY KEY,
@@ -1236,21 +1273,6 @@ CREATE TABLE ionfiltrabagfilters.CompressedAirPiping (
     IsDeleted TINYINT(1) NOT NULL DEFAULT 0,
     IsDefault TINYINT(1) DEFAULT 0
 );
-
-
------------Master defination--------
-
-CREATE TABLE ionfiltrabagfilters.MasterDefinitions (
-    Id INT AUTO_INCREMENT PRIMARY KEY,
-    MasterKey VARCHAR(100) NOT NULL,
-    DisplayName VARCHAR(255) NOT NULL,
-    ApiRoute VARCHAR(255),
-    SectionOrder INT,
-    IsActive TINYINT(1) NOT NULL DEFAULT 1,
-    ColumnsJson JSON,
-    CreatedAt DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
-    UpdatedAt DATETIME NULL ON UPDATE CURRENT_TIMESTAMP
-    );
 
 
     ---- master table config

@@ -243,7 +243,7 @@
                                     "InlineCss": "{#USER}"
                                 },
                                 {
-                                    "Label": "Outlet Emission Desired (mgs/m<sup>3</sup>)",
+                                    "Label": "Outlet Emission Desired (m/Nm<sup>3</sup>)",
                                     "ValueKey": "Outlet_Emission_mgpm3",
                                     "InlineCss": "{#USER}"
                                 },
@@ -253,7 +253,7 @@
                                     "InlineCss": "{#USER}"
                                 },
                                 {
-                                    "Label": "Can Correction (m/sec)",
+                                    "Label": "Can Max (m/sec)",
                                     "ValueKey": "Can_Correction",
                                     "InlineCss": "{#USER}"
                                 },
@@ -758,7 +758,7 @@
                                     "ValueKey": "Plenum_Width",
                                     "InlineCss": "{#USER}",
                                     "VisibleWhen": {
-                                        "All": [
+                                        "Any": [
                                             {
                                                 "Key": "Gas_Entry",
                                                 "Equals": "Center Entry"
@@ -775,7 +775,7 @@
                                     "ValueKey": "Inlet_Height",
                                     "InlineCss": "{#USER}",
                                     "VisibleWhen": {
-                                        "All": [
+                                        "Any": [
                                             {
                                                 "Key": "Gas_Entry",
                                                 "Equals": "Center Entry"
@@ -985,8 +985,16 @@
                                     "ValueKey": "Column_Height",
                                     "InlineCss": "{#USER}",
                                     "VisibleWhen": {
-                                        "Key": "Support_Struct_Type",
-                                        "Equals": "Pedestal"
+                                        "Any": [
+                                            {
+                                                "Key": "Support_Struct_Type",
+                                                "Equals": "Regular"
+                                            },
+                                            {
+                                                "Key": "Support_Struct_Type",
+                                                "Equals": "Pedestal"
+                                            }
+                                        ]
                                     }
                                 },
                                 {
@@ -1005,7 +1013,7 @@
                                     "InlineCss": "{#CALC}"
                                 },
                                 {
-                                    "Label": "C/C Distance Between Column in Z Direction (mm)",
+                                    "Label": "C/C Distance Between Column in Y Direction (mm)",
                                     "ValueKey": "Dist_Btw_Column_In_Z",
                                     "InlineCss": "{#CALC}"
                                 },
@@ -1015,7 +1023,7 @@
                                     "InlineCss": "{#CALC}"
                                 },
                                 {
-                                    "Label": "Number of Bays in Z Direction",
+                                    "Label": "Number of Bays in Y Direction",
                                     "ValueKey": "No_Of_Bays_In_Z",
                                     "InlineCss": "{#CALC}"
                                 },
@@ -1067,23 +1075,7 @@
                                         "Equals": "Cage Ladder"
                                     }
                                 },
-                                {
-                                    "Label": "Weight Of Platform (kg)",
-                                    "ValueKey": "Platform_Weight",
-                                    "InlineCss": "{#USER}",
-                                    "VisibleWhen": {
-                                        "All": [
-                                            {
-                                                "Key": "Access_Type",
-                                                "Equals": "Cage Ladder"
-                                            },
-                                            {
-                                                "Key": "Mid_Landing_Pltform",
-                                                "Equals": "Yes"
-                                            }
-                                        ]
-                                    }
-                                },
+                               
                                 {
                                     "Label": "Staircase Height (m)",
                                     "ValueKey": "Staircase_Height",
@@ -1125,15 +1117,7 @@
                                     "ValueKey": "Maintainence_Pltform",
                                     "InlineCss": "{#USER}"
                                 },
-                                {
-                                    "Label": "Weight Of Solenoid Valve Maintenance Platform (kg)",
-                                    "ValueKey": "Maintainence_Pltform_Weight",
-                                    "InlineCss": "{#USER}",
-                                    "VisibleWhen": {
-                                        "Key": "Maintainence_Pltform",
-                                        "Equals": "Yes"
-                                    }
-                                },
+                                
                                 {
                                     "Label": "Total Weight Of Solenoid Valve Maintenance Platform (kg)",
                                     "ValueKey": "Total_Weight_Of_Maintainence_Pltform",

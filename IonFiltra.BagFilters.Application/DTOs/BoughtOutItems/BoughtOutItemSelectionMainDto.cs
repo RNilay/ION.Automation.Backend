@@ -8,7 +8,6 @@ namespace IonFiltra.BagFilters.Application.DTOs.MasterData.BoughtOutItems
         public int? MasterDefinitionId { get; set; }
         public BoughtOutItemSelectionDto? BoughtOutItemSelection { get; set; }
 
-        public SecondaryBoughtOutItemDto? SecondaryBoughtOutItem { get; set; }
 
     }
 }

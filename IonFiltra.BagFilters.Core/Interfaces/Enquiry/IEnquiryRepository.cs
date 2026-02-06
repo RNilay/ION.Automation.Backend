@@ -8,6 +8,14 @@ namespace IonFiltra.BagFilters.Core.Interfaces.EnquiryRep
         Task<(List<Enquiry> Items, int TotalCount)> GetByUserId(int userId, int pageNumber, int pageSize);
         Task<int> AddAsync(Enquiry entity);
         Task UpdateAsync(Enquiry entity);
+
+        Task<bool> UpdateByEnquiryIdAsync(
+            string enquiryId,
+            int userId,
+            string customer,
+            int requiredBagFilters,
+            List<int> processVolumes
+        );
     }
 }
     

@@ -1,4 +1,4 @@
-CREATE OR REPLACE VIEW ionfiltrabagfilters.vw_WeightSummary AS
+﻿CREATE OR REPLACE VIEW ionfiltrabagfilters.vw_WeightSummary AS
 SELECT distinct
     ws.*, 
     md.BagFilterName
@@ -246,7 +246,6 @@ SELECT
     AG.Railing_Weight                     AS AccessGroup_Railing_Weight,
     AG.Total_Weight_Of_Railing,
     AG.Maintainence_Pltform,
-    AG.Maintainence_Pltform_Weight,
     AG.Total_Weight_Of_Maintainence_Pltform,
     AG.BlowPipe,
     AG.Total_Weight_Of_Blow_Pipe,
@@ -742,9 +741,11 @@ ORDER BY
     cc.Id;
 
 
-    -------bought out details view
 
-    CREATE OR REPLACE VIEW ionfiltrabagfilters.vw_BoughtOutDetails AS
+  -------new vw_BoughtOutDetails view including Secondary Bought Out Items 
+
+  CREATE OR REPLACE VIEW ionfiltrabagfilters.vw_BoughtOutDetails AS
+
 WITH PiBm AS (
     SELECT
         e.Id AS EnquiryId,
@@ -763,6 +764,7 @@ WITH PiBm AS (
       ON e.Id = pi.EnquiryId
     WHERE pi.Process_Volume_M3h IS NOT NULL
 ),
+
 DistinctVolumes AS (
     SELECT
         EnquiryId,
@@ -772,62 +774,34 @@ DistinctVolumes AS (
         ROW_NUMBER() OVER (
             PARTITION BY EnquiryId
             ORDER BY Process_Volume_M3h, BagfilterMasterId
-        ) AS Qty
+        ) AS VolumeQty
     FROM PiBm
     WHERE RnPerVolume = 1
 )
+
+-- ==========================================================
+-- PRIMARY BOUGHT OUT ITEMS (your existing logic untouched)
+-- ==========================================================
+
 SELECT
     dv.EnquiryId,
     dv.BagfilterMasterId,
     dv.Process_Volume_M3h,
     dv.Enquiry_RequiredBagFilters,
-    dv.Qty AS VolumeQty,
+    dv.VolumeQty,
 
-    -- UI columns
     md.DisplayName AS Item,
 
-    /* ===========================
-       MAKE (resolved dynamically)
-       =========================== */
     COALESCE(
-        fb.Make,
-        sv.Make,
-        dpt.Make,
-        dpg.Make,
-        dps.Make,
-        pg.Make,
-        pt.Make,
-        ps.Make,
-        hld.Make,
-        rtd.Make,
-        utm.Make,
-        ev.Make,
-        fh.Make,
-        afr.Make,
-        proxy.Make,
-        prox.Make,
-        cable.Make,
-        zss.Make,
-        jb.Make,
-        vib.Make,
-        tc.Make,
-        th.Make,
-        hhp.Make,
-        hhc.Make,
-        ma.Make,
-        rav.Make,
-        hw.Item,      -- Hardware has Item instead of Make
-        lt.Make,
-        timer.Make
+        fb.Make, sv.Make, dpt.Make, dpg.Make, dps.Make,
+        pg.Make, pt.Make, ps.Make, hld.Make, rtd.Make,
+        utm.Make, ev.Make, fh.Make, afr.Make,
+        proxy.Make, prox.Make, zss.Make, jb.Make,
+        vib.Make, tc.Make, th.Make, hhp.Make, hhc.Make,
+        ma.Make, rav.Make, hw.Item, timer.Make, cable.Make
     ) AS Make,
 
-    /* ===========================
-       MATERIAL (only few masters)
-       =========================== */
-    COALESCE(
-        fb.Material,
-        sstub.Material
-    ) AS Material,
+    COALESCE(fb.Material, sstub.Material) AS Material,
 
     bo.Qty AS ItemQty,
     bo.Unit AS Units,
@@ -838,100 +812,112 @@ FROM DistinctVolumes dv
 JOIN ionfiltrabagfilters.BoughtOutItemSelection bo
   ON bo.EnquiryId = dv.EnquiryId
  AND bo.BagfilterMasterId = dv.BagfilterMasterId
-
 JOIN ionfiltrabagfilters.MasterDefinitions md
   ON md.Id = bo.MasterDefinitionId
 
-/* ===========================
-   MASTER TABLE JOINS
-   =========================== */
-
 LEFT JOIN ionfiltrabagfilters.FilterBag fb
   ON md.MasterKey = 'filterBag' AND fb.Id = bo.SelectedRowId
-
 LEFT JOIN ionfiltrabagfilters.SolenoidValve sv
   ON md.MasterKey = 'solenoidValve' AND sv.Id = bo.SelectedRowId
-
 LEFT JOIN ionfiltrabagfilters.DPTEntity dpt
   ON md.MasterKey = 'dpt' AND dpt.Id = bo.SelectedRowId
-
 LEFT JOIN ionfiltrabagfilters.DPGEntity dpg
   ON md.MasterKey = 'dpg' AND dpg.Id = bo.SelectedRowId
-
 LEFT JOIN ionfiltrabagfilters.DPSEntity dps
   ON md.MasterKey = 'dps' AND dps.Id = bo.SelectedRowId
-
 LEFT JOIN ionfiltrabagfilters.PGEntity pg
   ON md.MasterKey = 'pg' AND pg.Id = bo.SelectedRowId
-
 LEFT JOIN ionfiltrabagfilters.PTEntity pt
   ON md.MasterKey = 'pt' AND pt.Id = bo.SelectedRowId
-
 LEFT JOIN ionfiltrabagfilters.PSEntity ps
   ON md.MasterKey = 'ps' AND ps.Id = bo.SelectedRowId
-
 LEFT JOIN ionfiltrabagfilters.HLDEntity hld
   ON md.MasterKey = 'hld' AND hld.Id = bo.SelectedRowId
-
 LEFT JOIN ionfiltrabagfilters.RTDEntity rtd
   ON md.MasterKey = 'rtd' AND rtd.Id = bo.SelectedRowId
-
 LEFT JOIN ionfiltrabagfilters.UTubeManometer utm
   ON md.MasterKey = 'utubeManometer' AND utm.Id = bo.SelectedRowId
-
 LEFT JOIN ionfiltrabagfilters.ExplosionVent ev
   ON md.MasterKey = 'explosionVent' AND ev.Id = bo.SelectedRowId
-
 LEFT JOIN ionfiltrabagfilters.FieldHooter fh
   ON md.MasterKey = 'fieldHooter' AND fh.Id = bo.SelectedRowId
-
 LEFT JOIN ionfiltrabagfilters.AFREntity afr
   ON md.MasterKey = 'afr' AND afr.Id = bo.SelectedRowId
-
 LEFT JOIN ionfiltrabagfilters.ProxyPulser proxy
   ON md.MasterKey = 'proxyPulser' AND proxy.Id = bo.SelectedRowId
-
 LEFT JOIN ionfiltrabagfilters.ProxymitySwitch prox
   ON md.MasterKey = 'proximitySwitch' AND prox.Id = bo.SelectedRowId
-
-LEFT JOIN ionfiltrabagfilters.CableEntity cable
-  ON md.MasterKey = 'cable' AND cable.Id = bo.SelectedRowId
-
 LEFT JOIN ionfiltrabagfilters.ZssController zss
   ON md.MasterKey = 'zssController' AND zss.Id = bo.SelectedRowId
-
 LEFT JOIN ionfiltrabagfilters.JunctionBox jb
   ON md.MasterKey = 'junctionBox' AND jb.Id = bo.SelectedRowId
-
 LEFT JOIN ionfiltrabagfilters.VibrationTransmitter vib
   ON md.MasterKey = 'vibrationTransmitter' AND vib.Id = bo.SelectedRowId
-
 LEFT JOIN ionfiltrabagfilters.Thermocouple tc
   ON md.MasterKey = 'thermocouple' AND tc.Id = bo.SelectedRowId
-
 LEFT JOIN ionfiltrabagfilters.Thermostat th
   ON md.MasterKey = 'thermostat' AND th.Id = bo.SelectedRowId
-
 LEFT JOIN ionfiltrabagfilters.HopperHeatingPad hhp
   ON md.MasterKey = 'hopperHeatingPad' AND hhp.Id = bo.SelectedRowId
-
 LEFT JOIN ionfiltrabagfilters.HopperHeatingcontroller hhc
   ON md.MasterKey = 'hopperHeatingController' AND hhc.Id = bo.SelectedRowId
-
 LEFT JOIN ionfiltrabagfilters.MotorisedActuator ma
   ON md.MasterKey = 'motorisedActuator' AND ma.Id = bo.SelectedRowId
-
 LEFT JOIN ionfiltrabagfilters.RAVGearedMotor rav
   ON md.MasterKey = 'ravGearedMotor' AND rav.Id = bo.SelectedRowId
-
 LEFT JOIN ionfiltrabagfilters.HardwareEntity hw
   ON md.MasterKey = 'hardware' AND hw.Id = bo.SelectedRowId
-
 LEFT JOIN ionfiltrabagfilters.SStubing sstub
   ON md.MasterKey = 'sstubing' AND sstub.Id = bo.SelectedRowId
-
-LEFT JOIN ionfiltrabagfilters.LTMotor lt
-  ON md.MasterKey = 'ltMotor' AND lt.Id = bo.SelectedRowId
-
 LEFT JOIN ionfiltrabagfilters.TimerEntity timer
-  ON md.MasterKey = 'timer' AND timer.Id = bo.SelectedRowId;
+  ON md.MasterKey = 'timer' AND timer.Id = bo.SelectedRowId
+LEFT JOIN ionfiltrabagfilters.Cable cable
+  ON md.MasterKey = 'cable' AND cable.Id = bo.SelectedRowId
+
+UNION ALL
+
+-- ==========================================================
+-- SECONDARY BOUGHT OUT ITEMS (clean + fast)
+-- ==========================================================
+
+SELECT
+    dv.EnquiryId,
+    dv.BagfilterMasterId,
+    dv.Process_Volume_M3h,
+    dv.Enquiry_RequiredBagFilters,
+    dv.VolumeQty,
+
+    CASE s.MasterKey
+        WHEN 'CENTRIFUGAL_FAN' THEN 'Centrifugal Fan'
+        WHEN 'SCREW_CONVEYOR' THEN 'Screw Conveyor'
+        WHEN 'DRAG_CHAIN_CONVEYOR' THEN 'Drag Chain Conveyor'
+        WHEN 'LT_MOTOR' THEN 'LT Motor'
+        WHEN 'EXP_JOINT_INLET' THEN 'Expansion Joint - Inlet'
+        WHEN 'EXP_JOINT_OUTLET' THEN 'Expansion Joint - Outlet'
+        WHEN 'EXP_JOINT_RAV' THEN 'Expansion Joint - RAV'
+        WHEN 'METALLIC_EXPANSION_JOINT' THEN 'Metallic Expansion Joint'
+        WHEN 'PNEUMATIC_POPPET_DAMPER' THEN 'Pneumatic Poppet Damper'
+        WHEN 'CO2_SUPPRESSION_SYSTEM' THEN 'CO₂ Suppression System'
+        WHEN 'CABLE_TRAY' THEN 'Cable Tray'
+        WHEN 'COMPRESSED_AIR_PIPING' THEN 'Compressed Air Piping'
+        WHEN 'VISIT_ENGINEERING_CHARGES' THEN 'Visit & Engineering Charges'
+        WHEN 'SUPERVISION' THEN 'Supervision Free Man Days'
+        WHEN 'SUPERVISION_FREE_TO_FRO' THEN 'Supervision Free Man Days To and Fro'
+        WHEN 'SUPERVISION_FREE_LODGING' THEN 'Supervision Free Man Days Lodiging & Boarding'
+        WHEN 'SUPERVISION_CHARGEABLE_BASES' THEN 'Supervision Chargeable Bases'
+        WHEN 'SUPERVISION_CHARGEABLE_TO_FRO' THEN 'Supervision Chargeable Bases To and Fro'
+        WHEN 'SUPERVISION_CHARGEABLE_LODGING' THEN 'Supervision Chargeable Bases Lodiging & Boarding'
+        ELSE s.MasterKey
+    END AS Item,
+
+    s.Make,
+    NULL AS Material,
+    s.Qty AS ItemQty,
+    s.Unit AS Units,
+    s.Rate,
+    s.Cost
+
+FROM DistinctVolumes dv
+JOIN ionfiltrabagfilters.SecondaryBoughtOutItems s
+  ON s.EnquiryId = dv.EnquiryId
+ AND s.BagfilterMasterId = dv.BagfilterMasterId;

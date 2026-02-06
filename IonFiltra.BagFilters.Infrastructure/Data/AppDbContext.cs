@@ -286,6 +286,13 @@ namespace IonFiltra.BagFilters.Infrastructure.Data
                 entity.Property(u => u.EnquiryId).IsRequired();
             });
 
+            modelBuilder.Entity<SecondaryBoughtOutItem>(entity =>
+            {
+                entity.ToTable("SecondaryBoughtOutItems", GlobalConstants.IONFILTRA_SCHEMA);
+                entity.HasKey(u => u.Id);
+                entity.Property(u => u.EnquiryId).IsRequired();
+            });
+
             //master data tables
 
             modelBuilder.Entity<MasterDefinitions>(entity =>

@@ -124,6 +124,48 @@ namespace IonFiltra.BagFilters.Api.Controllers.Enquiry
             }
         }
 
+        [HttpPut("update")]
+        public async Task<IActionResult> Update([FromBody] EnquiryMainDto dto)
+        {
+            if (dto == null || dto.Enquiry == null)
+            {
+                _logger.LogWarning("PUT: Received null Enquiry update payload.");
+                return BadRequest("Request body cannot be null.");
+            }
+
+            try
+            {
+                _logger.LogInformation(
+                    "PUT: Updating Enquiry {EnquiryId} for User {UserId}",
+                    dto.Enquiry.EnquiryId,
+                    dto.UserId
+                );
+
+                var updated = await _service.UpdateByEnquiryIdAsync(dto);
+
+                if (!updated)
+                {
+                    return NotFound(new
+                    {
+                        success = false,
+                        message = "Enquiry not found"
+                    });
+                }
+
+                return Ok(new
+                {
+                    success = true,
+                    message = "Enquiry updated successfully"
+                });
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error while updating Enquiry.");
+                return StatusCode(500, "An error occurred while processing your request.");
+            }
+        }
+
+
 
 
     }

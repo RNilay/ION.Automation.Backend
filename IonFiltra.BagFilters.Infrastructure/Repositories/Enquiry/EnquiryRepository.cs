@@ -1,4 +1,4 @@
-using IonFiltra.BagFilters.Core.Entities.EnquiryEntity;
+﻿using IonFiltra.BagFilters.Core.Entities.EnquiryEntity;
 using IonFiltra.BagFilters.Core.Interfaces.EnquiryRep;
 using IonFiltra.BagFilters.Infrastructure.Data;
 using Microsoft.EntityFrameworkCore;
@@ -87,6 +87,51 @@ namespace IonFiltra.BagFilters.Infrastructure.EnquiryRepo
                 }
             });
         }
+
+        public async Task<bool> UpdateByEnquiryIdAsync(
+        string enquiryId,
+        int userId,
+        string customer,
+        int requiredBagFilters,
+        List<int> processVolumes
+    )
+        {
+            return await _transactionHelper.ExecuteAsync(async dbContext =>
+            {
+                _logger.LogInformation(
+                    "Updating Enquiry {EnquiryId} for User {UserId}",
+                    enquiryId,
+                    userId
+                );
+
+                var existing = await dbContext.Enquirys
+                    .FirstOrDefaultAsync(e =>
+                        e.EnquiryId == enquiryId &&
+                        e.UserId == userId
+                    );
+
+                if (existing == null)
+                {
+                    _logger.LogWarning(
+                        "Enquiry {EnquiryId} not found for User {UserId}",
+                        enquiryId,
+                        userId
+                    );
+                    return false;
+                }
+
+                // Only update allowed editable fields
+                existing.Customer = customer;
+                existing.RequiredBagFilters = requiredBagFilters;
+                existing.ProcessVolumes = processVolumes ?? new List<int>();
+                existing.UpdatedAt = DateTime.Now;
+
+                await dbContext.SaveChangesAsync();
+                return true;
+            });
+        }
+
+
     }
 }
     

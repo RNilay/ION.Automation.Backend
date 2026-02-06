@@ -43,7 +43,7 @@ namespace IonFiltra.BagFilters.Application.DTOs.Bagfilters.BagfilterInputs
         public RoofDoorDto? RoofDoor { get; set; }
         public PaintingAreaDto? PaintingArea { get; set; }
 
-        public List<BillOfMaterialDto> BillOfMaterial { get; set; }
+        public List<BillOfMaterialDto>? BillOfMaterial { get; set; }
         = new List<BillOfMaterialDto>();
 
         public PaintingCostDto? PaintingCost { get; set; }
@@ -51,13 +51,17 @@ namespace IonFiltra.BagFilters.Application.DTOs.Bagfilters.BagfilterInputs
         public List<BoughtOutItemSelectionDto>? BoughtOutItems { get; set; }
          = new List<BoughtOutItemSelectionDto>();
 
-        public List<TransportationCostEntityDto> TransportationCost { get; set; }
+        public List<SecondaryBoughtOutItemDto>? SecondaryBoughtOutItems { get; set; }
+        = new List<SecondaryBoughtOutItemDto>();
+
+
+        public List<TransportationCostEntityDto>? TransportationCost { get; set; }
         = new List<TransportationCostEntityDto>();
 
-        public List<DamperCostEntityDto> DamperCost { get; set; }
+        public List<DamperCostEntityDto>? DamperCost { get; set; }
         = new List<DamperCostEntityDto>();
 
-        public List<CageCostEntityDto> CageCost { get; set; }
+        public List<CageCostEntityDto>? CageCost { get; set; }
         = new List<CageCostEntityDto>();
 
         public DamperSizeInputsDto? DamperSizeInputs { get; set; }

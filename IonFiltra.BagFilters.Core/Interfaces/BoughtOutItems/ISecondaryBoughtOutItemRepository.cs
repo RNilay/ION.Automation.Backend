@@ -4,21 +4,13 @@ namespace IonFiltra.BagFilters.Core.Interfaces.Repositories.MasterData.BoughtOut
 {
     public interface ISecondaryBoughtOutItemRepository
     {
-        Task<SecondaryBoughtOutItem?> GetById(int id);
-        Task<int> AddAsync(SecondaryBoughtOutItem entity);
-        Task UpdateAsync(SecondaryBoughtOutItem entity);
-
-
+    
         Task<List<SecondaryBoughtOutItem>> GetByEnquiryAsync(int enquiryId);
-
-        Task<List<SecondaryBoughtOutItem>> GetByEnquiryAndMastersAsync(
+        Task<List<SecondaryBoughtOutItem>> GetByEnquiryAndBagfiltersAsync(
             int enquiryId,
             IEnumerable<int> bagfilterMasterIds);
 
-        Task UpsertRangeAsync(IEnumerable<SecondaryBoughtOutItem> entities);
-
-        Task<Dictionary<(int BagfilterMasterId, int MasterDefinitionId),SecondaryBoughtOutItem>> 
-            GetByMasterIdsAsync(IEnumerable<int> masterIds, CancellationToken ct);
+        Task UpsertRangeAsync(IEnumerable<SecondaryBoughtOutItem> items);
 
     }
 }

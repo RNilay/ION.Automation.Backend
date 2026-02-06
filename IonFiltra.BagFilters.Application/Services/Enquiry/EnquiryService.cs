@@ -54,5 +54,26 @@ namespace IonFiltra.BagFilters.Application.Services.EnquiryService
             var entity = EnquiryMapper.ToEntity(dto);
             await _repository.UpdateAsync(entity);
         }
+
+        public async Task<bool> UpdateByEnquiryIdAsync(EnquiryMainDto dto)
+        {
+            if (dto == null || dto.Enquiry == null)
+                throw new ArgumentNullException(nameof(dto));
+
+            _logger.LogInformation(
+                "Updating Enquiry {EnquiryId} for User {UserId}",
+                dto.Enquiry.EnquiryId,
+                dto.UserId
+            );
+
+            return await _repository.UpdateByEnquiryIdAsync(
+                dto.Enquiry.EnquiryId,
+                dto.UserId,
+                dto.Enquiry.Customer,
+                dto.Enquiry.RequiredBagFilters,
+                dto.Enquiry.ProcessVolumes
+            );
+        }
+
     }
 }

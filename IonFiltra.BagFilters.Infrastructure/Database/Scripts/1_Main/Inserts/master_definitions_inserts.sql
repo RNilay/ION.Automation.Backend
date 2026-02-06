@@ -318,23 +318,6 @@ VALUES
   )
 );
 
-INSERT INTO ionfiltrabagfilters.MasterDefinitions
-(`MasterKey`,`DisplayName`,`ApiRoute`,`SectionOrder`,`IsActive`,`ColumnsJson`)
-VALUES
-(
-  'cable',
-  'Cable',
-  'CableEntity',
-  17,
-  1,
-  JSON_ARRAY(
-    JSON_OBJECT('field','make','label','Make','type','string'),
-    JSON_OBJECT('field','size','label','Size','type','string'),
-    JSON_OBJECT('field','type','label','Type','type','string'),
-    JSON_OBJECT('field','cost','label','Cost','type','number')
-  )
-);
-
 
 INSERT INTO ionfiltrabagfilters.MasterDefinitions
 (`MasterKey`,`DisplayName`,`ApiRoute`,`SectionOrder`,`IsActive`,`ColumnsJson`)
@@ -343,7 +326,7 @@ VALUES
   'zssController',
   'ZSS Controller',
   'ZssController',
-  18,
+  17,
   1,
   JSON_ARRAY(
     JSON_OBJECT('field','make','label','Make','type','string'),
@@ -360,7 +343,7 @@ VALUES
   'junctionBox',
   'Junction Box',
   'JunctionBox',
-  19,
+  18,
   1,
   JSON_ARRAY(
     JSON_OBJECT('field','make','label','Make','type','string'),
@@ -377,7 +360,7 @@ VALUES
   'vibrationTransmitter',
   'Vibration Transmitter',
   'VibrationTransmitter',
-  20,
+  19,
   1,
   JSON_ARRAY(
     JSON_OBJECT('field','make','label','Make','type','string'),
@@ -394,7 +377,7 @@ VALUES
   'thermocouple',
   'Thermocouple',
   'Thermocouple',
-  21,
+  20,
   1,
   JSON_ARRAY(
     JSON_OBJECT('field','make','label','Make','type','string'),
@@ -411,7 +394,7 @@ VALUES
   'thermostat',
   'Thermostat',
   'Thermostat',
-  22,
+  21,
   1,
   JSON_ARRAY(
     JSON_OBJECT('field','make','label','Make','type','string'),
@@ -435,7 +418,7 @@ VALUES
     'hopperHeatingPad',
     'Hopper Heating Pad',
     'HopperHeatingPad',
-    23,
+    22,
     1,
     JSON_ARRAY(
         JSON_OBJECT('field', 'make',  'label', 'Make',  'type', 'string'),
@@ -458,7 +441,7 @@ VALUES
     'hopperHeatingController',
     'Hopper Heating Controller',
     'HopperHeatingcontroller',
-    24,
+    23,
     1,
     JSON_ARRAY(
         JSON_OBJECT('field', 'make',  'label', 'Make',  'type', 'string'),
@@ -467,76 +450,6 @@ VALUES
     )
 );
 
---INSERT INTO ionfiltrabagfilters.MasterDefinitions
---(
---    `MasterKey`,
---    `DisplayName`,
---    `ApiRoute`,
---    `SectionOrder`,
---    `IsActive`,
---    `ColumnsJson`
---)
---VALUES
---(
---    'centrifugalFan',
---    'Centrifugal Fan',
---    'CentrifualFan',
---    25,
---    1,
---    JSON_ARRAY(
---        JSON_OBJECT('field', 'make',   'label', 'Make',   'type', 'string'),
---        JSON_OBJECT('field', 'volume', 'label', 'Volume', 'type', 'string'),
---        JSON_OBJECT('field', 'cost',   'label', 'Cost',   'type', 'number')
---    )
---);
---
---INSERT INTO ionfiltrabagfilters.MasterDefinitions
---(
---    `MasterKey`,
---    `DisplayName`,
---    `ApiRoute`,
---    `SectionOrder`,
---    `IsActive`,
---    `ColumnsJson`
---)
---VALUES
---(
---    'screwConveyor',
---    'Screw Conveyor',
---    'ScrewConveyor',
---    26,
---    1,
---    JSON_ARRAY(
---        JSON_OBJECT('field', 'make',   'label', 'Make',   'type', 'string'),
---        JSON_OBJECT('field', 'length', 'label', 'Length', 'type', 'string'),
---        JSON_OBJECT('field', 'width',  'label', 'Width',  'type', 'string'),
---        JSON_OBJECT('field', 'cost',   'label', 'Cost',   'type', 'number')
---    )
---);
---
---INSERT INTO ionfiltrabagfilters.MasterDefinitions
---(
---    `MasterKey`,
---    `DisplayName`,
---    `ApiRoute`,
---    `SectionOrder`,
---    `IsActive`,
---    `ColumnsJson`
---)
---VALUES
---(
---    'dragChainConveyor',
---    'Drag Chain Conveyor',
---    'DragChainConveyor',
---    27,
---    1,
---    JSON_ARRAY(
---        JSON_OBJECT('field', 'make',   'label', 'Make',   'type', 'string'),
---        JSON_OBJECT('field', 'length', 'label', 'Length', 'type', 'string'),
---        JSON_OBJECT('field', 'width',  'label', 'Width',  'type', 'string'),
---        JSON_OBJECT('field', 'cost',   'label', 'Cost',   'type', 'number')
---    )
---);
 
 INSERT INTO ionfiltrabagfilters.MasterDefinitions
 (
@@ -552,7 +465,7 @@ VALUES
     'motorisedActuator',
     'Motorised Actuator',
     'MotorisedActuator',
-    28,
+    24,
     1,
     JSON_ARRAY(
         JSON_OBJECT('field', 'make',  'label', 'Make',  'type', 'string'),
@@ -575,7 +488,7 @@ VALUES
     'ravGearedMotor',
     'RAV Geared Motor',
     'RAVGearedMotor',
-    29,
+    25,
     1,
     JSON_ARRAY(
         JSON_OBJECT('field', 'kw',   'label', 'KW',   'type', 'string'),
@@ -598,7 +511,7 @@ VALUES
     'hardware',
     'Hardware',
     'HardwareEntity',
-    30,
+    26,
     1,
     JSON_ARRAY(
         JSON_OBJECT('field', 'item', 'label', 'Item', 'type', 'string'),
@@ -620,7 +533,7 @@ VALUES
     'sstubing',
     'SS Tubing',
     'SStubing',
-    31,
+    27,
     1,
     JSON_ARRAY(
         JSON_OBJECT('field', 'item',     'label', 'Item',     'type', 'string'),
@@ -640,36 +553,10 @@ INSERT INTO ionfiltrabagfilters.MasterDefinitions
 )
 VALUES
 (
-    'ltMotor',
-    'LT Motor',
-    'LTMotor',
-    32,
-    1,
-    JSON_ARRAY(
-        JSON_OBJECT('field', 'kw',         'label', 'KW',          'type', 'number'),
-        JSON_OBJECT('field', 'efficiency', 'label', 'Efficiency',  'type', 'number'),
-        JSON_OBJECT('field', 'frameSize',  'label', 'Frame Size',  'type', 'string'),
-        JSON_OBJECT('field', 'rpm',        'label', 'RPM',         'type', 'number'),
-        JSON_OBJECT('field', 'make',       'label', 'Make',        'type', 'string'),
-        JSON_OBJECT('field', 'cost',       'label', 'Cost',        'type', 'number')
-    )
-);
-
-INSERT INTO ionfiltrabagfilters.MasterDefinitions
-(
-    `MasterKey`,
-    `DisplayName`,
-    `ApiRoute`,
-    `SectionOrder`,
-    `IsActive`,
-    `ColumnsJson`
-)
-VALUES
-(
     'timer',
     'Timer',
     'TimerEntity',
-    33,
+    28,
     1,
     JSON_ARRAY(
         JSON_OBJECT('field', 'make',  'label', 'Make',  'type', 'string'),
@@ -677,6 +564,32 @@ VALUES
         JSON_OBJECT('field', 'cost',  'label', 'Cost',  'type', 'number')
     )
 );
+
+INSERT INTO ionfiltrabagfilters.MasterDefinitions
+(
+    MasterKey,
+    DisplayName,
+    ApiRoute,
+    SectionOrder,
+    IsActive,
+    ColumnsJson
+)
+VALUES
+(
+    'cable',
+    'Cable',
+    'Cable',
+    29,
+    1,
+    JSON_ARRAY(
+        JSON_OBJECT('field', 'place', 'label', 'Place', 'type', 'string'),
+        JSON_OBJECT('field', 'make', 'label', 'Make', 'type', 'string'),
+        JSON_OBJECT('field', 'cabletype', 'label', 'Cable Type', 'type', 'string'),
+        JSON_OBJECT('field', 'multiplyfactor', 'label', 'Multiply Factor', 'type', 'number'),
+        JSON_OBJECT('field', 'rate', 'label', 'Rate', 'type', 'number')
+    )
+);
+
 
 
 

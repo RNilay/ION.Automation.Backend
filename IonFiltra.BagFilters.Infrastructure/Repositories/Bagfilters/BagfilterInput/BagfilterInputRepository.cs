@@ -380,72 +380,7 @@ namespace IonFiltra.BagFilters.Infrastructure.Repositories.Bagfilters.BagfilterI
 
 
 
-        //public async Task<List<BagfilterInput>> FindCandidatesByGroupKeysAsync(IEnumerable<GroupKey> keys)
-        //{
-        //    var keyList = keys?.ToList() ?? new List<GroupKey>();
-        //    if (!keyList.Any()) return new List<BagfilterInput>();
-
-        //    return await _transactionHelper.ExecuteAsync(async dbContext =>
-        //    {
-        //        // Build predicate: ( (Location==k1.Location && No==k1.No && ... ) || (Location==k2.Location && ... ) || ... )
-        //        ParameterExpression param = Expression.Parameter(typeof(BagfilterInput), "i");
-        //        Expression combined = Expression.Constant(false);
-
-        //        foreach (var k in keyList)
-        //        {
-        //            // build equality sub-expression for this key
-        //            Expression exp = Expression.Constant(true);
-
-        //            // Location (string) - handle nulls
-        //            if (k.Location != null)
-        //            {
-        //                var left = Expression.PropertyOrField(param, nameof(BagfilterInput.Location));
-        //                var right = Expression.Constant(k.Location);
-        //                exp = Expression.AndAlso(exp, Expression.Equal(left, right));
-        //            }
-        //            else
-        //            {
-        //                var left = Expression.PropertyOrField(param, nameof(BagfilterInput.Location));
-        //                exp = Expression.AndAlso(exp, Expression.Equal(left, Expression.Constant(null, typeof(string))));
-        //            }
-
-        //            // Helper for decimals (nullable)
-        //            Expression MakeDecimalEquals(string propName, decimal? val)
-        //            {
-        //                var left = Expression.PropertyOrField(param, propName);
-        //                if (val == null)
-        //                {
-        //                    return Expression.Equal(left, Expression.Constant(null, left.Type));
-        //                }
-        //                else
-        //                {
-        //                    var right = Expression.Constant(val, left.Type);
-        //                    return Expression.Equal(left, right);
-        //                }
-        //            }
-
-        //            exp = Expression.AndAlso(exp, MakeDecimalEquals(nameof(BagfilterInput.No_Of_Column), k.No_Of_Column));
-        //            exp = Expression.AndAlso(exp, MakeDecimalEquals(nameof(BagfilterInput.Ground_Clearance), k.Ground_Clearance));
-        //            exp = Expression.AndAlso(exp, MakeDecimalEquals(nameof(BagfilterInput.Bag_Per_Row), k.Bag_Per_Row));
-        //            exp = Expression.AndAlso(exp, MakeDecimalEquals(nameof(BagfilterInput.Number_Of_Rows), k.Number_Of_Rows));
-
-        //            combined = Expression.OrElse(combined, exp);
-        //        }
-
-        //        var lambda = Expression.Lambda<Func<BagfilterInput, bool>>(combined, param);
-
-        //        // Query DB and include BagfilterMaster for details
-
-        //        var candidates = await dbContext.BagfilterInputs
-        //            .AsNoTracking()
-        //            .Include(i => i.BagfilterMaster)
-        //            .Where(lambda)
-        //            .OrderBy(i => i.BagfilterInputId)
-        //            .ToListAsync();
-
-        //        return candidates;
-        //    });
-        //}
+        
 
 
         public async Task<Dictionary<int, Enquiry>> GetEnquiriesByIdsAsync(IEnumerable<int> enquiryIds)

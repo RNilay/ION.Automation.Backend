@@ -5,7 +5,7 @@ namespace IonFiltra.BagFilters.Application.Mappers.MasterData.BoughtOutItems
 {
     public static class BoughtOutItemSelectionMapper
     {
-        public static BoughtOutItemSelectionMainDto ToMainDto(BoughtOutItemSelection entity,SecondaryBoughtOutItem secEntity)
+        public static BoughtOutItemSelectionMainDto ToMainDto(BoughtOutItemSelection entity)
         {
             if (entity == null) return null;
             return new BoughtOutItemSelectionMainDto
@@ -18,15 +18,7 @@ namespace IonFiltra.BagFilters.Application.Mappers.MasterData.BoughtOutItems
                 {
                     MasterKey = entity.MasterKey,
                     SelectedRowId = entity.SelectedRowId,
-                },
-
-                SecondaryBoughtOutItem = secEntity == null ? null : new SecondaryBoughtOutItemDto
-                {
-                    MasterKey = secEntity.MasterKey,
-                    SelectedRowId = secEntity.SelectedRowId,
-                    Cost = secEntity.Cost,
                 }
-
             };
         }
 

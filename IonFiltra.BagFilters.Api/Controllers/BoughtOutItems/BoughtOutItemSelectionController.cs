@@ -135,7 +135,6 @@ namespace IonFiltra.BagFilters.API.Controllers.MasterData.BoughtOutItems
             try
             {
                 var list = await _service.GetByEnquiryAsync(enquiryId);
-                var secList = await _service.GetSecByEnquiryAsync(enquiryId);
                 return Ok(new
                 {
                     success = true,
@@ -154,15 +153,6 @@ namespace IonFiltra.BagFilters.API.Controllers.MasterData.BoughtOutItems
                         x.Rate,
                         x.Cost
                     }),
-
-                    secondaryData = secList.Select(x => new
-                    {
-                        x.Id,
-                        x.MasterKey,
-                        x.SelectedRowId,
-                        x.Cost
-                    })
-
                 });
             }
             catch (Exception ex)
@@ -179,5 +169,7 @@ namespace IonFiltra.BagFilters.API.Controllers.MasterData.BoughtOutItems
 
 
     }
+
+
 }
     

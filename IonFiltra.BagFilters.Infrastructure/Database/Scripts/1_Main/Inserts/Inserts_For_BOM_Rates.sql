@@ -10,7 +10,7 @@ INSERT INTO ionfiltrabagfilters.BillOfMaterialRates (ItemKey, Rate, Unit) VALUES
   ('hopper_access_stool', 86000.00,  'piece'),
   ('mid_landing_platform', 86000.00, 'piece'),
   ('maintenance_platform', 86000.00, 'piece'),
-  ('cage',                 592.00,   'piece');
+  ('cage',                 592.00,   'piece'),
   ('scrap_holes',          35.00,   '');
 
 

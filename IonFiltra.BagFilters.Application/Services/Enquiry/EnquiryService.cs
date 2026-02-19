@@ -70,8 +70,7 @@ namespace IonFiltra.BagFilters.Application.Services.EnquiryService
                 dto.Enquiry.EnquiryId,
                 dto.UserId,
                 dto.Enquiry.Customer,
-                dto.Enquiry.RequiredBagFilters,
-                dto.Enquiry.ProcessVolumes
+                dto.Enquiry.RequiredBagFilters
             );
         }
 

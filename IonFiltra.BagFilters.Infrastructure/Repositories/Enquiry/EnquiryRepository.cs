@@ -77,7 +77,7 @@ namespace IonFiltra.BagFilters.Infrastructure.EnquiryRepo
                 {
                     var createdAt = existingEntity.CreatedAt;
                     dbContext.Entry(existingEntity).CurrentValues.SetValues(entity);
-                    existingEntity.UpdatedAt= DateTime.Now; // Assuming UpdatedDate exists
+                    existingEntity.UpdatedAt = DateTime.Now; // Assuming UpdatedDate exists
                     existingEntity.CreatedAt = createdAt;
                     await dbContext.SaveChangesAsync();
                 }
@@ -92,8 +92,7 @@ namespace IonFiltra.BagFilters.Infrastructure.EnquiryRepo
         string enquiryId,
         int userId,
         string customer,
-        int requiredBagFilters,
-        List<int> processVolumes
+        int requiredBagFilters
     )
         {
             return await _transactionHelper.ExecuteAsync(async dbContext =>
@@ -123,7 +122,6 @@ namespace IonFiltra.BagFilters.Infrastructure.EnquiryRepo
                 // Only update allowed editable fields
                 existing.Customer = customer;
                 existing.RequiredBagFilters = requiredBagFilters;
-                existing.ProcessVolumes = processVolumes ?? new List<int>();
                 existing.UpdatedAt = DateTime.Now;
 
                 await dbContext.SaveChangesAsync();
@@ -134,4 +132,3 @@ namespace IonFiltra.BagFilters.Infrastructure.EnquiryRepo
 
     }
 }
-    

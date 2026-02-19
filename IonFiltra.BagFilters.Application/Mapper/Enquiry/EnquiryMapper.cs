@@ -17,7 +17,7 @@ namespace IonFiltra.BagFilters.Application.Mappers.EnquiryMappper
                     EnquiryId = entity.EnquiryId,
                     Customer = entity.Customer,
                     RequiredBagFilters = entity.RequiredBagFilters,
-                    ProcessVolumes = entity.ProcessVolumes,
+         
                     CreatedAt = entity.CreatedAt
                 },
 
@@ -34,7 +34,7 @@ namespace IonFiltra.BagFilters.Application.Mappers.EnquiryMappper
                 EnquiryId = dto.Enquiry.EnquiryId,
                 Customer = dto.Enquiry.Customer,
                 RequiredBagFilters = dto.Enquiry.RequiredBagFilters,
-                ProcessVolumes = dto.Enquiry.ProcessVolumes ?? new List<int>(),
+         
                 CreatedAt = dto.Enquiry.CreatedAt
             };
         }

@@ -13,8 +13,7 @@ namespace IonFiltra.BagFilters.Core.Interfaces.EnquiryRep
             string enquiryId,
             int userId,
             string customer,
-            int requiredBagFilters,
-            List<int> processVolumes
+            int requiredBagFilters
         );
     }
 }

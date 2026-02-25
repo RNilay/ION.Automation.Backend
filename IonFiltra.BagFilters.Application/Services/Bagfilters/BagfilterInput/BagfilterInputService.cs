@@ -33,6 +33,7 @@ using IonFiltra.BagFilters.Core.Entities.BOM.Transp_Cost;
 using IonFiltra.BagFilters.Core.Entities.EnquiryEntity;
 using IonFiltra.BagFilters.Core.Entities.MasterData.BoughtOutItems;
 using IonFiltra.BagFilters.Core.Interfaces.Bagfilters.BagfilterMasters;
+using IonFiltra.BagFilters.Core.Interfaces.EnquiryRep;
 using IonFiltra.BagFilters.Core.Interfaces.GenericView;
 using IonFiltra.BagFilters.Core.Interfaces.MasterData.Master_Definition;
 using IonFiltra.BagFilters.Core.Interfaces.Repositories.BagfilterDatabase.WithCanopy;
@@ -109,6 +110,7 @@ namespace IonFiltra.BagFilters.Application.Services.Bagfilters.BagfilterInputs
         private readonly IIFI_Bagfilter_Database_With_CanopyRepository _withCanopyRepo;
 
         private readonly ISecondaryBoughtOutItemRepository _secondaryBoughtOutRepo;
+        private readonly IEnquiryRepository _enquiryRepo;
 
         public BagfilterInputService(
             IBagfilterInputRepository repository,
@@ -139,7 +141,8 @@ namespace IonFiltra.BagFilters.Application.Services.Bagfilters.BagfilterInputs
             IExplosionVentEntityRepository explosionVentEntityRepository,
             IIFI_Bagfilter_Database_Without_CanopyRepository withoutCanopyRepo,
             IIFI_Bagfilter_Database_With_CanopyRepository withCanopyRepo,
-            ISecondaryBoughtOutItemRepository secondaryBoughtOutItemRepository
+            ISecondaryBoughtOutItemRepository secondaryBoughtOutItemRepository,
+            IEnquiryRepository enquiryRepository
         )
         {
             _repository = repository;
@@ -172,6 +175,7 @@ namespace IonFiltra.BagFilters.Application.Services.Bagfilters.BagfilterInputs
             _withoutCanopyRepo = withoutCanopyRepo;
             _withCanopyRepo = withCanopyRepo;
             _secondaryBoughtOutRepo = secondaryBoughtOutItemRepository;
+            _enquiryRepo = enquiryRepository;
 
         }
 
@@ -211,6 +215,9 @@ namespace IonFiltra.BagFilters.Application.Services.Bagfilters.BagfilterInputs
         public async Task<AddRangeResultDto> AddRangeAsync(List<BagfilterInputMainDto> dtos, CancellationToken ct)
         {
             if (dtos == null || dtos.Count == 0) return new AddRangeResultDto();
+
+            // 🔥 Extract updated quota (batch-level metadata)
+            var updatedQuota = dtos.FirstOrDefault()?.UpdatedRequiredBagFilters;
 
             // 1) Map DTOs -> pairs (master + input) and collect group keys and mapping info
             var pairs = new List<(BagfilterMaster Master, BagfilterInput Input, SupportStructureDto Support)>(dtos.Count);
@@ -756,6 +763,18 @@ namespace IonFiltra.BagFilters.Application.Services.Bagfilters.BagfilterInputs
                     .ReplaceForMastersAsync(cageDataByMaster, ct);
             }
 
+            // 🔥 Update Enquiry.RequiredBagFilters if exceeded
+            if (updatedQuota.HasValue)
+            {
+                var enquiryId = dtos.First().BagfilterInput.EnquiryId;
+
+                await _enquiryRepo.UpdateRequiredBagFiltersAsync(
+                    (int)enquiryId,
+                    updatedQuota.Value,
+                    ct
+                );
+            }
+
             //8)
             var matchesList = groupKeysList.Select(k => groupMatchMap[k]).ToList();
             var matchedGroupsCount = matchesList.Count(m => m.IsMatched);
@@ -828,6 +847,9 @@ namespace IonFiltra.BagFilters.Application.Services.Bagfilters.BagfilterInputs
         public async Task<UpdateRangeResultDto> UpdateRangeAsync(List<BagfilterInputMainDto> dtos, CancellationToken ct)
         {
             if (dtos == null || dtos.Count == 0) return new UpdateRangeResultDto();
+
+            // 🔥 Extract updated quota (batch-level metadata)
+            var updatedQuota = dtos.FirstOrDefault()?.UpdatedRequiredBagFilters;
 
             // Step A: Map DTOs -> desired pair state, build grouping keys & groups (same as AddRange)
             var pairs = new List<(BagfilterMaster Master, BagfilterInput Input, SupportStructureDto support)>(dtos.Count);
@@ -1492,6 +1514,18 @@ namespace IonFiltra.BagFilters.Application.Services.Bagfilters.BagfilterInputs
                     .ReplaceForMastersAsync(cageDataByMaster, ct);
             }
 
+            // 🔥 Update Enquiry.RequiredBagFilters if exceeded
+            if (updatedQuota.HasValue)
+            {
+                var enquiryId = dtos.First().BagfilterInput.EnquiryId;
+
+                await _enquiryRepo.UpdateRequiredBagFiltersAsync(
+                    (int)enquiryId,
+                    updatedQuota.Value,
+                    ct
+                );
+            }
+
 
             // Step G: SkyCiv analysis
             // Re-run analysis for:
@@ -1979,10 +2013,8 @@ namespace IonFiltra.BagFilters.Application.Services.Bagfilters.BagfilterInputs
                 Inlet_Height = dto.Inlet_Height,
                 Hopper_Thickness = dto.Hopper_Thickness,
                 Hopper_Valley_Angle = dto.Hopper_Valley_Angle,
-                Access_Door_Type = dto.Access_Door_Type,
-                Access_Door_Qty = dto.Access_Door_Qty,
                 Rav_Maintainence_Pltform = dto.Rav_Maintainence_Pltform,
-                Hopper_Access_Stool = dto.Hopper_Access_Stool,
+                
                 Is_Distance_Piece = dto.Is_Distance_Piece,
                 Distance_Piece_Height = dto.Distance_Piece_Height,
                 Stiffening_Factor_Hopper = dto.Stiffening_Factor_Hopper,
@@ -1999,7 +2031,7 @@ namespace IonFiltra.BagFilters.Application.Services.Bagfilters.BagfilterInputs
                 Ground_Clearance = dto.Ground_Clearance,
                 Slide_Gate_Height = dto.Slide_Gate_Height, //new
                 Access_Type = dto.Access_Type,
-                Cage_Weight_Ladder = dto.Cage_Weight_Ladder,
+                //Cage_Weight_Ladder = dto.Cage_Weight_Ladder,
                 Mid_Landing_Pltform = dto.Mid_Landing_Pltform,
                 Platform_Weight = dto.Platform_Weight,
                 Staircase_Height = dto.Staircase_Height,
@@ -2010,6 +2042,7 @@ namespace IonFiltra.BagFilters.Application.Services.Bagfilters.BagfilterInputs
                 Blow_Pipe = dto.Blow_Pipe,
                 Pressure_Header = dto.Pressure_Header,
                 Distance_Piece = dto.Distance_Piece,
+                Hopper_Access_Stool = dto.Hopper_Access_Stool,
                 Access_Stool_Size_Mm = dto.Access_Stool_Size_Mm,
                 Access_Stool_Size_Kg = dto.Access_Stool_Size_Kg,
                 Roof_Door_Thickness = dto.Roof_Door_Thickness,
@@ -2469,10 +2502,7 @@ namespace IonFiltra.BagFilters.Application.Services.Bagfilters.BagfilterInputs
                 Inlet_Height = src.Inlet_Height,
                 Hopper_Thickness = src.Hopper_Thickness,
                 Hopper_Valley_Angle = src.Hopper_Valley_Angle,
-                Access_Door_Type = src.Access_Door_Type,
-                Access_Door_Qty = src.Access_Door_Qty,
                 Rav_Maintainence_Pltform = src.Rav_Maintainence_Pltform,
-                Hopper_Access_Stool = src.Hopper_Access_Stool,
                 Is_Distance_Piece = src.Is_Distance_Piece,
                 Distance_Piece_Height = src.Distance_Piece_Height,
                 Stiffening_Factor_Hopper = src.Stiffening_Factor_Hopper,
@@ -2574,7 +2604,7 @@ namespace IonFiltra.BagFilters.Application.Services.Bagfilters.BagfilterInputs
                 EnquiryId = enquiryId,
 
                 Access_Type = src.Access_Type,
-                Cage_Weight_Ladder = src.Cage_Weight_Ladder,
+                //Cage_Weight_Ladder = src.Cage_Weight_Ladder,
                 Total_Weight_Of_Cage_Ladder = src.Total_Weight_Of_Cage_Ladder,
                 Mid_Landing_Pltform = src.Mid_Landing_Pltform,
                 Platform_Weight = src.Platform_Weight,
@@ -2590,6 +2620,7 @@ namespace IonFiltra.BagFilters.Application.Services.Bagfilters.BagfilterInputs
                 Total_Weight_Of_Pressure_Header = src.Total_Weight_Of_Pressure_Header,
                 PressureHeader = src.PressureHeader,
                 DistancePiece = src.DistancePiece,
+                Hopper_Access_Stool = src.Hopper_Access_Stool,
                 Access_Stool_Size_Mm = src.Access_Stool_Size_Mm,
                 Access_Stool_Size_Kg = src.Access_Stool_Size_Kg,
 

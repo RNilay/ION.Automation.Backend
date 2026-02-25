@@ -16,7 +16,7 @@ namespace IonFiltra.BagFilters.Application.Mappers.Bagfilters.Sections.Access_Gr
                 AccessGroup = new AccessGroupDto
                 {
                     Access_Type = entity.Access_Type,
-                    Cage_Weight_Ladder = entity.Cage_Weight_Ladder,
+                    //Cage_Weight_Ladder = entity.Cage_Weight_Ladder,
                     Total_Weight_Of_Cage_Ladder = entity.Total_Weight_Of_Cage_Ladder,
                     Mid_Landing_Pltform = entity.Mid_Landing_Pltform,
                     Platform_Weight = entity.Platform_Weight,
@@ -32,6 +32,7 @@ namespace IonFiltra.BagFilters.Application.Mappers.Bagfilters.Sections.Access_Gr
                     PressureHeader = entity.PressureHeader,
                     Total_Weight_Of_Pressure_Header = entity.Total_Weight_Of_Pressure_Header,
                     DistancePiece = entity.DistancePiece,
+                    Hopper_Access_Stool = entity.Hopper_Access_Stool,
                     Access_Stool_Size_Mm = entity.Access_Stool_Size_Mm,
                     Access_Stool_Size_Kg = entity.Access_Stool_Size_Kg,
                 },
@@ -48,7 +49,7 @@ namespace IonFiltra.BagFilters.Application.Mappers.Bagfilters.Sections.Access_Gr
                 EnquiryId = dto.EnquiryId,
                 BagfilterMasterId = dto.BagfilterMasterId,
                 Access_Type = dto.AccessGroup.Access_Type,
-                Cage_Weight_Ladder = dto.AccessGroup.Cage_Weight_Ladder,
+                //Cage_Weight_Ladder = dto.AccessGroup.Cage_Weight_Ladder,
                 Total_Weight_Of_Cage_Ladder = dto.AccessGroup.Total_Weight_Of_Cage_Ladder,
                 Mid_Landing_Pltform = dto.AccessGroup.Mid_Landing_Pltform,
                 Platform_Weight = dto.AccessGroup.Platform_Weight,
@@ -64,6 +65,7 @@ namespace IonFiltra.BagFilters.Application.Mappers.Bagfilters.Sections.Access_Gr
                 PressureHeader = dto.AccessGroup.PressureHeader,
                 Total_Weight_Of_Pressure_Header = dto.AccessGroup.Total_Weight_Of_Pressure_Header,
                 DistancePiece = dto.AccessGroup.DistancePiece,
+                Hopper_Access_Stool = dto.AccessGroup.Hopper_Access_Stool,
                 Access_Stool_Size_Mm = dto.AccessGroup.Access_Stool_Size_Mm,
                 Access_Stool_Size_Kg = dto.AccessGroup.Access_Stool_Size_Kg,
 

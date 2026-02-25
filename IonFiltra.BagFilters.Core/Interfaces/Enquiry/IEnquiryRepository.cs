@@ -15,6 +15,12 @@ namespace IonFiltra.BagFilters.Core.Interfaces.EnquiryRep
             string customer,
             int requiredBagFilters
         );
+
+        Task<bool> UpdateRequiredBagFiltersAsync(
+            int enquiryId,
+            int requiredBagFilters,
+            CancellationToken ct
+        );
     }
 }
     

@@ -192,10 +192,7 @@ SELECT
     HOP.Inlet_Height,
     HOP.Hopper_Thickness,
     HOP.Hopper_Valley_Angle,
-    HOP.Access_Door_Type,
-    HOP.Access_Door_Qty,
     HOP.Rav_Maintainence_Pltform,
-    HOP.Hopper_Access_Stool,
     HOP.Is_Distance_Piece,
     HOP.Distance_Piece_Height,
     HOP.Stiffening_Factor_Hopper,
@@ -237,7 +234,6 @@ SELECT
     AG.EnquiryId                         AS AccessGroup_EnquiryId,
     AG.BagfilterMasterId                 AS AccessGroup_BagfilterMasterId,
     AG.Access_Type,
-    AG.Cage_Weight_Ladder,
     AG.Total_Weight_Of_Cage_Ladder,
     AG.Mid_Landing_Pltform,
     AG.Platform_Weight,
@@ -252,6 +248,7 @@ SELECT
     AG.PressureHeader,
     AG.Total_Weight_Of_Pressure_Header,
     AG.DistancePiece,
+    AG.Hopper_Access_Stool,
     AG.Access_Stool_Size_Mm,
     AG.Access_Stool_Size_Kg,
 
@@ -903,10 +900,10 @@ SELECT
         WHEN 'VISIT_ENGINEERING_CHARGES' THEN 'Visit & Engineering Charges'
         WHEN 'SUPERVISION' THEN 'Supervision Free Man Days'
         WHEN 'SUPERVISION_FREE_TO_FRO' THEN 'Supervision Free Man Days To and Fro'
-        WHEN 'SUPERVISION_FREE_LODGING' THEN 'Supervision Free Man Days Lodiging & Boarding'
-        WHEN 'SUPERVISION_CHARGEABLE_BASES' THEN 'Supervision Chargeable Bases'
-        WHEN 'SUPERVISION_CHARGEABLE_TO_FRO' THEN 'Supervision Chargeable Bases To and Fro'
-        WHEN 'SUPERVISION_CHARGEABLE_LODGING' THEN 'Supervision Chargeable Bases Lodiging & Boarding'
+        WHEN 'SUPERVISION_FREE_LODGING' THEN 'Supervision Free Man Days Lodging & Boarding'
+        WHEN 'SUPERVISION_CHARGEABLE_BASES' THEN 'Supervision Chargeable Basis'
+        WHEN 'SUPERVISION_CHARGEABLE_TO_FRO' THEN 'Supervision Chargeable Basis To and Fro'
+        WHEN 'SUPERVISION_CHARGEABLE_LODGING' THEN 'Supervision Chargeable Basis Lodging & Boarding'
         ELSE s.MasterKey
     END AS Item,
 

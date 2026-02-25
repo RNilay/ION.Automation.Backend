@@ -129,6 +129,34 @@ namespace IonFiltra.BagFilters.Infrastructure.EnquiryRepo
             });
         }
 
+        public async Task<bool> UpdateRequiredBagFiltersAsync(
+        int enquiryId,
+        int requiredBagFilters,
+        CancellationToken ct)
+        {
+            return await _transactionHelper.ExecuteAsync(async dbContext =>
+            {
+                var enquiry = await dbContext.Enquirys
+                    .FirstOrDefaultAsync(e =>
+                        e.Id == enquiryId,
+                        ct);
 
+                if (enquiry == null)
+                {
+                    _logger.LogWarning(
+                        "Enquiry {EnquiryId} not found",
+                        enquiryId
+                    );
+                    return false;
+                }
+
+                enquiry.RequiredBagFilters = requiredBagFilters;
+                enquiry.UpdatedAt = DateTime.Now;
+
+                await dbContext.SaveChangesAsync(ct);
+
+                return true;
+            });
+        }
     }
 }

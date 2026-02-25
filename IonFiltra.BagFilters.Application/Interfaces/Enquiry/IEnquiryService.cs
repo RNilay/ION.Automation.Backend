@@ -16,5 +16,11 @@ namespace IonFiltra.BagFilters.Application.Interfaces.Enquiry
 
 
         Task<bool> UpdateByEnquiryIdAsync(EnquiryMainDto dto);
+
+        Task<bool> UpdateRequiredBagFiltersAsync(
+            int enquiryId,
+            int requiredBagFilters,
+            CancellationToken ct
+        );
     }
 }

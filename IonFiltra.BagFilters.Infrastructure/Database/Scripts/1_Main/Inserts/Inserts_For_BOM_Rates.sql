@@ -7,9 +7,9 @@ INSERT INTO ionfiltrabagfilters.BillOfMaterialRates (ItemKey, Rate, Unit) VALUES
   ('tubesheet',             55.00,   'kg'),
   ('air_header',           150.00,   'kg'),
   ('structure',             35.00,   'kg'),
-  ('hopper_access_stool', 86000.00,  'piece'),
-  ('mid_landing_platform', 86000.00, 'piece'),
-  ('maintenance_platform', 86000.00, 'piece'),
+  ('hopper_access_stool', 86.00,  'piece'),
+  ('mid_landing_platform', 86.00, 'piece'),
+  ('maintenance_platform', 86.00, 'piece'),
   ('cage',                 592.00,   'piece'),
   ('scrap_holes',          35.00,   '');
 

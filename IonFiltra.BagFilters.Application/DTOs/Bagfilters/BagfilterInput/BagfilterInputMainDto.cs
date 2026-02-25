@@ -66,5 +66,10 @@ namespace IonFiltra.BagFilters.Application.DTOs.Bagfilters.BagfilterInputs
 
         public DamperSizeInputsDto? DamperSizeInputs { get; set; }
         public ExplosionVentEntityDto? ExplosionVent { get; set; }
+
+
+
+        //
+        public int? UpdatedRequiredBagFilters { get; set; }
     }
 }

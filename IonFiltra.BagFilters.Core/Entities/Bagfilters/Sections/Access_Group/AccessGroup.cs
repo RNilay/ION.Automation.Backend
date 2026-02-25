@@ -6,7 +6,7 @@ namespace IonFiltra.BagFilters.Core.Entities.Bagfilters.Sections.Access_Group
         public int EnquiryId { get; set; }
         public int BagfilterMasterId { get; set; }
         public string? Access_Type { get; set; }
-        public decimal? Cage_Weight_Ladder { get; set; }
+        //public decimal? Cage_Weight_Ladder { get; set; }
         public decimal? Total_Weight_Of_Cage_Ladder { get; set; }
         public string? Mid_Landing_Pltform { get; set; }
         public decimal? Platform_Weight { get; set; }
@@ -22,6 +22,7 @@ namespace IonFiltra.BagFilters.Core.Entities.Bagfilters.Sections.Access_Group
         public decimal? PressureHeader { get; set; }
         public decimal? Total_Weight_Of_Pressure_Header { get; set; }
         public decimal? DistancePiece { get; set; }
+        public string? Hopper_Access_Stool { get; set; }
         public decimal? Access_Stool_Size_Mm { get; set; }
         public decimal? Access_Stool_Size_Kg { get; set; }
 

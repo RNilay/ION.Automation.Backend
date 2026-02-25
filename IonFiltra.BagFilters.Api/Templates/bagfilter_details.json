@@ -798,29 +798,11 @@
                                     "InlineCss": "{#USER}"
                                 },
                                 {
-                                    "Label": "Access Door Type",
-                                    "ValueKey": "Access_Door_Type",
-                                    "InlineCss": "{#USER}"
-                                },
-                                {
-                                    "Label": "Access Door Quantity (Qty)",
-                                    "ValueKey": "Access_Door_Qty",
-                                    "InlineCss": "{#USER}",
-                                    "VisibleWhen": {
-                                        "Key": "Access_Door_Type",
-                                        "Equals": "Yes"
-                                    }
-                                },
-                                {
                                     "Label": "RAV Maintenance Platform",
                                     "ValueKey": "Rav_Maintainence_Pltform",
                                     "InlineCss": "{#USER}"
                                 },
-                                {
-                                    "Label": "Hopper Access Stool",
-                                    "ValueKey": "Hopper_Access_Stool",
-                                    "InlineCss": "{#USER}"
-                                },
+
                                 {
                                     "Label": "Is Distance Piece?",
                                     "ValueKey": "Is_Distance_Piece",
@@ -1048,15 +1030,7 @@
                                     "ValueKey": "Access_Type",
                                     "InlineCss": "{#USER}"
                                 },
-                                {
-                                    "Label": "Weight Of Cage Ladder (kg/m)",
-                                    "ValueKey": "Cage_Weight_Ladder",
-                                    "InlineCss": "{#USER}",
-                                    "VisibleWhen": {
-                                        "Key": "Access_Type",
-                                        "Equals": "Cage Ladder"
-                                    }
-                                },
+
                                 {
                                     "Label": "Total Weight of Cage Ladder (kg)",
                                     "ValueKey": "Total_Weight_Of_Cage_Ladder",
@@ -1075,7 +1049,7 @@
                                         "Equals": "Cage Ladder"
                                     }
                                 },
-                               
+
                                 {
                                     "Label": "Staircase Height (m)",
                                     "ValueKey": "Staircase_Height",
@@ -1117,7 +1091,7 @@
                                     "ValueKey": "Maintainence_Pltform",
                                     "InlineCss": "{#USER}"
                                 },
-                                
+
                                 {
                                     "Label": "Total Weight Of Solenoid Valve Maintenance Platform (kg)",
                                     "ValueKey": "Total_Weight_Of_Maintainence_Pltform",
@@ -1153,14 +1127,27 @@
                                     "InlineCss": "{#CALC}"
                                 },
                                 {
+                                    "Label": "Hopper Access Stool",
+                                    "ValueKey": "Hopper_Access_Stool",
+                                    "InlineCss": "{#USER}"
+                                },
+                                {
                                     "Label": "Access Stool Size (mm)",
                                     "ValueKey": "Access_Stool_Size_Mm",
-                                    "InlineCss": "{#USER}"
+                                    "InlineCss": "{#USER}",
+                                    "VisibleWhen": {
+                                        "Key": "Hopper_Access_Stool",
+                                        "Equals": "Yes"
+                                    }
                                 },
                                 {
                                     "Label": "Access Stool Size (kg)",
                                     "ValueKey": "Access_Stool_Size_Kg",
-                                    "InlineCss": "{#CALC}"
+                                    "InlineCss": "{#CALC}",
+                                    "VisibleWhen": {
+                                        "Key": "Hopper_Access_Stool",
+                                        "Equals": "Yes"
+                                    }
                                 },
                                 //leave a blank row after each section
                                 {

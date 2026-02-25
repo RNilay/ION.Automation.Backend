@@ -60,10 +60,8 @@ namespace IonFiltra.BagFilters.Core.Entities.Bagfilters.BagfilterInputs
         public decimal? Inlet_Height { get; set; }
         public decimal? Hopper_Thickness { get; set; }
         public decimal? Hopper_Valley_Angle { get; set; }
-        public string? Access_Door_Type { get; set; }
-        public decimal? Access_Door_Qty { get; set; }
         public string? Rav_Maintainence_Pltform { get; set; }
-        public string? Hopper_Access_Stool { get; set; }
+        
         public string? Is_Distance_Piece { get; set; }
         public decimal? Distance_Piece_Height { get; set; }
         public decimal? Stiffening_Factor_Hopper { get; set; }
@@ -80,7 +78,7 @@ namespace IonFiltra.BagFilters.Core.Entities.Bagfilters.BagfilterInputs
         public decimal? Ground_Clearance { get; set; }
         public decimal? Slide_Gate_Height { get; set; }
         public string? Access_Type { get; set; }
-        public decimal? Cage_Weight_Ladder { get; set; }
+        //public decimal? Cage_Weight_Ladder { get; set; }
         public string? Mid_Landing_Pltform { get; set; }
         public decimal? Platform_Weight { get; set; }
         public decimal? Staircase_Height { get; set; }
@@ -91,6 +89,7 @@ namespace IonFiltra.BagFilters.Core.Entities.Bagfilters.BagfilterInputs
         public decimal? Blow_Pipe { get; set; }
         public decimal? Pressure_Header { get; set; }
         public decimal? Distance_Piece { get; set; }
+        public string? Hopper_Access_Stool { get; set; }
         public decimal? Access_Stool_Size_Mm { get; set; }
         public decimal? Access_Stool_Size_Kg { get; set; }
         public decimal? Roof_Door_Thickness { get; set; }

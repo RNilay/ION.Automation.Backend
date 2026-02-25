@@ -65,10 +65,9 @@ namespace IonFiltra.BagFilters.Application.Mappers.Bagfilters.BagfilterInputs
                     Inlet_Height = entity.Inlet_Height,
                     Hopper_Thickness = entity.Hopper_Thickness,
                     Hopper_Valley_Angle = entity.Hopper_Valley_Angle,
-                    Access_Door_Type = entity.Access_Door_Type,
-                    Access_Door_Qty = entity.Access_Door_Qty,
+                 
                     Rav_Maintainence_Pltform = entity.Rav_Maintainence_Pltform,
-                    Hopper_Access_Stool = entity.Hopper_Access_Stool,
+                   
                     Is_Distance_Piece = entity.Is_Distance_Piece,
                     Distance_Piece_Height = entity.Distance_Piece_Height,
                     Stiffening_Factor_Hopper = entity.Stiffening_Factor_Hopper,
@@ -85,7 +84,7 @@ namespace IonFiltra.BagFilters.Application.Mappers.Bagfilters.BagfilterInputs
                     Ground_Clearance = entity.Ground_Clearance,
                     Slide_Gate_Height = entity.Slide_Gate_Height, //new
                     Access_Type = entity.Access_Type,
-                    Cage_Weight_Ladder = entity.Cage_Weight_Ladder,
+                    //Cage_Weight_Ladder = entity.Cage_Weight_Ladder,
                     Mid_Landing_Pltform = entity.Mid_Landing_Pltform,
                     Platform_Weight = entity.Platform_Weight,
                     Staircase_Height = entity.Staircase_Height,
@@ -96,6 +95,7 @@ namespace IonFiltra.BagFilters.Application.Mappers.Bagfilters.BagfilterInputs
                     Blow_Pipe = entity.Blow_Pipe,
                     Pressure_Header = entity.Pressure_Header,
                     Distance_Piece = entity.Distance_Piece,
+                    Hopper_Access_Stool = entity.Hopper_Access_Stool,
                     Access_Stool_Size_Mm = entity.Access_Stool_Size_Mm,
                     Access_Stool_Size_Kg = entity.Access_Stool_Size_Kg,
                     Roof_Door_Thickness = entity.Roof_Door_Thickness,
@@ -174,10 +174,9 @@ namespace IonFiltra.BagFilters.Application.Mappers.Bagfilters.BagfilterInputs
                 Inlet_Height = dto.BagfilterInput.Inlet_Height,
                 Hopper_Thickness = dto.BagfilterInput.Hopper_Thickness,
                 Hopper_Valley_Angle = dto.BagfilterInput.Hopper_Valley_Angle,
-                Access_Door_Type = dto.BagfilterInput.Access_Door_Type,
-                Access_Door_Qty = dto.BagfilterInput.Access_Door_Qty,
+        
                 Rav_Maintainence_Pltform = dto.BagfilterInput.Rav_Maintainence_Pltform,
-                Hopper_Access_Stool = dto.BagfilterInput.Hopper_Access_Stool,
+                
                 Is_Distance_Piece = dto.BagfilterInput.Is_Distance_Piece,
                 Distance_Piece_Height = dto.BagfilterInput.Distance_Piece_Height,
                 Stiffening_Factor_Hopper = dto.BagfilterInput.Stiffening_Factor_Hopper,
@@ -194,7 +193,7 @@ namespace IonFiltra.BagFilters.Application.Mappers.Bagfilters.BagfilterInputs
                 Ground_Clearance = dto.BagfilterInput.Ground_Clearance,
                 Slide_Gate_Height = dto.BagfilterInput.Slide_Gate_Height, //new
                 Access_Type = dto.BagfilterInput.Access_Type,
-                Cage_Weight_Ladder = dto.BagfilterInput.Cage_Weight_Ladder,
+                //Cage_Weight_Ladder = dto.BagfilterInput.Cage_Weight_Ladder,
                 Mid_Landing_Pltform = dto.BagfilterInput.Mid_Landing_Pltform,
                 Platform_Weight = dto.BagfilterInput.Platform_Weight,
                 Staircase_Height = dto.BagfilterInput.Staircase_Height,
@@ -205,6 +204,7 @@ namespace IonFiltra.BagFilters.Application.Mappers.Bagfilters.BagfilterInputs
                 Blow_Pipe = dto.BagfilterInput.Blow_Pipe,
                 Pressure_Header = dto.BagfilterInput.Pressure_Header,
                 Distance_Piece = dto.BagfilterInput.Distance_Piece,
+                Hopper_Access_Stool = dto.BagfilterInput.Hopper_Access_Stool,
                 Access_Stool_Size_Mm = dto.BagfilterInput.Access_Stool_Size_Mm,
                 Access_Stool_Size_Kg = dto.BagfilterInput.Access_Stool_Size_Kg,
                 Roof_Door_Thickness = dto.BagfilterInput.Roof_Door_Thickness,

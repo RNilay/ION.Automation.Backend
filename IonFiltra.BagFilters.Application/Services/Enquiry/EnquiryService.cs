@@ -74,5 +74,26 @@ namespace IonFiltra.BagFilters.Application.Services.EnquiryService
             );
         }
 
+        public async Task<bool> UpdateRequiredBagFiltersAsync(
+        int enquiryId,
+        int requiredBagFilters,
+        CancellationToken ct)
+        {
+            if (enquiryId < 0)
+                throw new ArgumentException("Invalid enquiryId");
+
+            _logger.LogInformation(
+                "Updating RequiredBagFilters for Enquiry {EnquiryId} to {Quota}",
+                enquiryId,
+                requiredBagFilters
+            );
+
+            return await _repository.UpdateRequiredBagFiltersAsync(
+                enquiryId,
+                requiredBagFilters,
+                ct
+            );
+        }
+
     }
 }

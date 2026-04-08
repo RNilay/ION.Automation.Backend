@@ -839,8 +839,16 @@ namespace IonFiltra.BagFilters.Api.Controllers.Report
                     .Where(pv => pv != null)
                     .Select(pv => Convert.ToDouble(pv))
                     .Distinct()
-                    .OrderByDescending(v => v)
+                    .OrderBy(v => v)
                     .ToList();
+
+                //filter to a specific volume when user provides one
+                if (request.ProcessVolumeM3h.HasValue)
+                {
+                    processVolumes = processVolumes
+                        .Where(v => Math.Abs(v - request.ProcessVolumeM3h.Value) < 0.001)
+                        .ToList();
+                }
 
 
                 var nonVolumeDependentReports = new HashSet<string>(

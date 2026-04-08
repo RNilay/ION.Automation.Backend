@@ -516,7 +516,7 @@ ORDER BY
 
 
 
-    ------Painting COst view
+    ------Painting Cost view
 
     CREATE OR REPLACE VIEW ionfiltrabagfilters.vw_PaintingCostDetails AS
 WITH PiBm AS (

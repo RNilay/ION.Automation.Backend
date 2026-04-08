@@ -606,7 +606,7 @@ INSERT INTO ionfiltrabagfilters.CageMiscellaneousConfig
 (Item, Value, Unit)
 VALUES
 ('Packing Raw Material', 0.7, 'Kg'),
-('Square Tube for Packing', 60, '₹'),
+('Square Tube for Packing', 60, '₹/kg'),
 ('Tarpoline', 2, '₹/cage');
 
 INSERT INTO ionfiltrabagfilters.AdminCostConfig

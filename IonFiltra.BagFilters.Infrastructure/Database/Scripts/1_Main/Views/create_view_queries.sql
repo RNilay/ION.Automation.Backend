@@ -795,7 +795,7 @@ SELECT
         utm.Make, ev.Make, fh.Make, afr.Make,
         proxy.Make, prox.Make, zss.Make, jb.Make,
         vib.Make, tc.Make, th.Make, hhp.Make, hhc.Make,
-        ma.Make, rav.Make, hw.Item, timer.Make, cable.Make
+        ma.Make, rav.Make, hw.Item, timer.Make, cable.Make, cableJbInstr.Make, cableTimerJb.Make
     ) AS Make,
 
     COALESCE(fb.Material, sstub.Material) AS Material,
@@ -870,6 +870,11 @@ LEFT JOIN ionfiltrabagfilters.TimerEntity timer
   ON md.MasterKey = 'timer' AND timer.Id = bo.SelectedRowId
 LEFT JOIN ionfiltrabagfilters.Cable cable
   ON md.MasterKey = 'cable' AND cable.Id = bo.SelectedRowId
+
+LEFT JOIN ionfiltrabagfilters.CableTimerToJB cableTimerJb
+  ON md.MasterKey = 'cable_timer_to_jb' AND cableTimerJb.Id = bo.SelectedRowId
+LEFT JOIN ionfiltrabagfilters.CableJBToInstruments cableJbInstr
+  ON md.MasterKey = 'cable_jb_to_instr' AND cableJbInstr.Id = bo.SelectedRowId
 
 UNION ALL
 

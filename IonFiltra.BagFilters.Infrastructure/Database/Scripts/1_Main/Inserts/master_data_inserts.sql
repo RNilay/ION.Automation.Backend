@@ -262,17 +262,23 @@ INSERT INTO ionfiltrabagfilters.Cable
 ('JB to SV', 'Polycab', '1.5mm2 3core Type Flexible', 20, 79.00, 0),
 ('JB to SV', 'Polycab', '1.5mm2 3core Type Armoured', 20, 75.00, 0),
 ('JB to SV', 'Polycab', '1.5mm2 3core Type FRLS', 20, 53.86, 0),
-('JB to SV', 'Polycab', '1.5mm2 2core Type Flexible', 20, 60.18, 0),
+('JB to SV', 'Polycab', '1.5mm2 2core Type Flexible', 20, 60.18, 0);
 
+INSERT INTO ionfiltrabagfilters.CableTimerToJB 
+(Place, Make, CableType, MultiplyFactor, Rate, IsDefault) VALUES
+('None', 'None', 'None', 0, 0, 1),
 ('Timer to JB', 'Polycab', '1.5mm2x8core', 2, 143.62, 0),
 ('Timer to JB', 'Polycab', '1.5mm2x10core', 2, 207.00, 0),
 ('Timer to JB', 'Polycab', '1.5mm2x12core', 2, 235.47, 0),
 ('Timer to JB', 'Polycab', '1.5mm2x14core', 2, 200.00, 0),
 ('Timer to JB', 'Polycab', '1.5mm2x16core', 2, 215.00, 0),
-('Timer to JB', 'Polycab', '1.5mm2x24core', 2, 477.52, 0),
+('Timer to JB', 'Polycab', '1.5mm2x24core', 2, 477.52, 0);
 
+
+INSERT INTO ionfiltrabagfilters.CableJBToInstruments 
+(Place, Make, CableType, MultiplyFactor, Rate, IsDefault) VALUES
+('None', 'None', 'None', 0, 0, 1),
 ('JB to Instruments', 'Polycab',
  'Armoured, shielded, copper, multistranded, 1 pair x 1 mm2 cable',
  20, 73.20, 0),
-
 ('JB to Instruments', 'Polycab', '1.5mm2 3core Type Flexible', 5, 75.00, 0);

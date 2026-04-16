@@ -590,6 +590,57 @@ VALUES
     )
 );
 
+INSERT INTO ionfiltrabagfilters.MasterDefinitions
+(
+    MasterKey,
+    DisplayName,
+    ApiRoute,
+    SectionOrder,
+    IsActive,
+    ColumnsJson
+)
+VALUES
+(
+    'cable_timer_to_jb',
+    'Cable (Timer to JB)',
+    'CableTimerToJB',
+    30,
+    1,
+    JSON_ARRAY(
+        JSON_OBJECT('field', 'place', 'label', 'Place', 'type', 'string'),
+        JSON_OBJECT('field', 'make', 'label', 'Make', 'type', 'string'),
+        JSON_OBJECT('field', 'cabletype', 'label', 'Cable Type', 'type', 'string'),
+        JSON_OBJECT('field', 'multiplyfactor', 'label', 'Multiply Factor', 'type', 'number'),
+        JSON_OBJECT('field', 'rate', 'label', 'Rate', 'type', 'number')
+    )
+);
+
+
+INSERT INTO ionfiltrabagfilters.MasterDefinitions
+(
+    MasterKey,
+    DisplayName,
+    ApiRoute,
+    SectionOrder,
+    IsActive,
+    ColumnsJson
+)
+VALUES
+(
+    'cable_jb_to_instr',
+    'Cable (JB To Instruments)',
+    'CableJBToInstruments',
+    31,
+    1,
+    JSON_ARRAY(
+        JSON_OBJECT('field', 'place', 'label', 'Place', 'type', 'string'),
+        JSON_OBJECT('field', 'make', 'label', 'Make', 'type', 'string'),
+        JSON_OBJECT('field', 'cabletype', 'label', 'Cable Type', 'type', 'string'),
+        JSON_OBJECT('field', 'multiplyfactor', 'label', 'Multiply Factor', 'type', 'number'),
+        JSON_OBJECT('field', 'rate', 'label', 'Rate', 'type', 'number')
+    )
+);
+
 
 
 

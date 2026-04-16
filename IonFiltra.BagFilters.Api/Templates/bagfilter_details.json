@@ -1425,14 +1425,14 @@
                             ],
                             "RowStyle": { "FontSize": 10 }
                         },
-                        {
-                            "RowData": [
-                                "Purge Pipe",
-                                "{Outside_Area_Purge_Pipe_Mm2}",
-                                "{Outside_Area_Purge_Pipe_M2}"
-                            ],
-                            "RowStyle": { "FontSize": 10 }
-                        },
+                        //{
+                        //    "RowData": [
+                        //        "Purge Pipe",
+                        //        "{Outside_Area_Purge_Pipe_Mm2}",
+                        //        "{Outside_Area_Purge_Pipe_M2}"
+                        //    ],
+                        //    "RowStyle": { "FontSize": 10 }
+                        //},
                         {
                             "RowData": [
                                 "Roof Door",
@@ -1441,14 +1441,14 @@
                             ],
                             "RowStyle": { "FontSize": 10 }
                         },
-                        {
-                            "RowData": [
-                                "Tube Sheet",
-                                "{Outside_Area_Tube_Sheet_Mm2}",
-                                "{Outside_Area_Tube_Sheet_M2}"
-                            ],
-                            "RowStyle": { "FontSize": 10 }
-                        },
+                        //{
+                        //    "RowData": [
+                        //        "Tube Sheet",
+                        //        "{Outside_Area_Tube_Sheet_Mm2}",
+                        //        "{Outside_Area_Tube_Sheet_M2}"
+                        //    ],
+                        //    "RowStyle": { "FontSize": 10 }
+                        //},
                         {
                             "RowData": [
                                 "Total Outside Area",

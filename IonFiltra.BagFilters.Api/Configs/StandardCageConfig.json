@@ -137,6 +137,53 @@
                     "alias": "coilcost"
                 }
             ]
+        },
+        {
+            "target": "boughtoutcost",
+            "expression": "topbottomcost + venturicost + rivetcost",
+            "dependencies": [
+                {
+                    "type": "external",
+                    "table": "CageMaterialConfig",
+                    "match": { "material": "GI" },
+                    "field": "topbottomcost",
+                    "alias": "topbottomcost"
+                },
+                {
+                    "type": "external",
+                    "table": "CageMaterialConfig",
+                    "match": { "material": "GI" },
+                    "field": "venturicost",
+                    "alias": "venturicost"
+                },
+                {
+                    "type": "external",
+                    "table": "CageMaterialConfig",
+                    "match": { "material": "GI" },
+                    "field": "rivetcost",
+                    "alias": "rivetcost"
+                }
+            ]
+        },
+        {
+            "target": "packingcost",
+            "expression": "packingRaw * squareTube",
+            "dependencies": [
+                {
+                    "type": "external",
+                    "table": "CageMiscellaneousConfig",
+                    "match": { "item": "Packing Raw Material" },
+                    "field": "value",
+                    "alias": "packingRaw"
+                },
+                {
+                    "type": "external",
+                    "table": "CageMiscellaneousConfig",
+                    "match": { "item": "Square Tube for Packing" },
+                    "field": "value",
+                    "alias": "squareTube"
+                }
+            ]
         }
     ],
 

@@ -173,14 +173,11 @@ INSERT INTO ionfiltrabagfilters.LTMotor (Make, IsDefault) VALUES
 ('Siemens', 0);
 
 
-INSERT INTO ionfiltrabagfilters.TimerEntity (Make, Model, Cost, IsDefault) VALUES 
-('None', '', 0, 1),
-('Kana', 'Solid state', 0, 0),
-('Kana', 'Microprocessor based', 500, 0),
-('Kana', 'PLC', 100, 0),
-('Manik', 'Solid state', 0, 0),
-('Manik', 'Microprocessor based', 100, 0),
-('Manik', 'PLC', 500, 0);
+INSERT INTO ionfiltrabagfilters.TimerEntity (Model, IsDefault) VALUES 
+('None', 1),
+('Solid state', 0),
+('Microprocessor based', 0),
+('PLC', 0);
 
 --DU BUSH Bought Out Item
 INSERT INTO ionfiltrabagfilters.DUBush (Item, Cost, IsDefault) VALUES 
@@ -267,12 +264,12 @@ INSERT INTO ionfiltrabagfilters.Cable
 INSERT INTO ionfiltrabagfilters.CableTimerToJB 
 (Place, Make, CableType, MultiplyFactor, Rate, IsDefault) VALUES
 ('None', 'None', 'None', 0, 0, 1),
-('Timer to JB', 'Polycab', '1.5mm2x8core', 2, 143.62, 0),
-('Timer to JB', 'Polycab', '1.5mm2x10core', 2, 207.00, 0),
-('Timer to JB', 'Polycab', '1.5mm2x12core', 2, 235.47, 0),
-('Timer to JB', 'Polycab', '1.5mm2x14core', 2, 200.00, 0),
-('Timer to JB', 'Polycab', '1.5mm2x16core', 2, 215.00, 0),
-('Timer to JB', 'Polycab', '1.5mm2x24core', 2, 477.52, 0);
+('Timer to JB', 'Polycab', '1.5mm2x8core', 20, 143.62, 0),
+('Timer to JB', 'Polycab', '1.5mm2x10core', 20, 207.00, 0),
+('Timer to JB', 'Polycab', '1.5mm2x12core', 20, 235.47, 0),
+('Timer to JB', 'Polycab', '1.5mm2x14core', 20, 200.00, 0),
+('Timer to JB', 'Polycab', '1.5mm2x16core', 20, 215.00, 0),
+('Timer to JB', 'Polycab', '1.5mm2x24core', 20, 477.52, 0);
 
 
 INSERT INTO ionfiltrabagfilters.CableJBToInstruments 
@@ -281,4 +278,4 @@ INSERT INTO ionfiltrabagfilters.CableJBToInstruments
 ('JB to Instruments', 'Polycab',
  'Armoured, shielded, copper, multistranded, 1 pair x 1 mm2 cable',
  20, 73.20, 0),
-('JB to Instruments', 'Polycab', '1.5mm2 3core Type Flexible', 5, 75.00, 0);
+('JB to Instruments', 'Polycab', '1.5mm2 3core Type Flexible', 20, 75.00, 0);

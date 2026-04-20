@@ -542,28 +542,7 @@ VALUES
     )
 );
 
-INSERT INTO ionfiltrabagfilters.MasterDefinitions
-(
-    `MasterKey`,
-    `DisplayName`,
-    `ApiRoute`,
-    `SectionOrder`,
-    `IsActive`,
-    `ColumnsJson`
-)
-VALUES
-(
-    'timer',
-    'Timer',
-    'TimerEntity',
-    28,
-    1,
-    JSON_ARRAY(
-        JSON_OBJECT('field', 'make',  'label', 'Make',  'type', 'string'),
-        JSON_OBJECT('field', 'model', 'label', 'Model', 'type', 'string'),
-        JSON_OBJECT('field', 'cost',  'label', 'Cost',  'type', 'number')
-    )
-);
+
 
 INSERT INTO ionfiltrabagfilters.MasterDefinitions
 (
@@ -579,13 +558,13 @@ VALUES
     'cable',
     'Cable (JB To SV)',
     'Cable',
-    29,
+    28,
     1,
     JSON_ARRAY(
         JSON_OBJECT('field', 'place', 'label', 'Place', 'type', 'string'),
         JSON_OBJECT('field', 'make', 'label', 'Make', 'type', 'string'),
         JSON_OBJECT('field', 'cabletype', 'label', 'Cable Type', 'type', 'string'),
-        JSON_OBJECT('field', 'multiplyfactor', 'label', 'Multiply Factor', 'type', 'number'),
+        JSON_OBJECT('field', 'multiplyfactor', 'label', 'Length', 'type', 'number'),
         JSON_OBJECT('field', 'rate', 'label', 'Rate', 'type', 'number')
     )
 );
@@ -604,13 +583,13 @@ VALUES
     'cable_timer_to_jb',
     'Cable (Timer To JB)',
     'CableTimerToJB',
-    30,
+    29,
     1,
     JSON_ARRAY(
         JSON_OBJECT('field', 'place', 'label', 'Place', 'type', 'string'),
         JSON_OBJECT('field', 'make', 'label', 'Make', 'type', 'string'),
         JSON_OBJECT('field', 'cabletype', 'label', 'Cable Type', 'type', 'string'),
-        JSON_OBJECT('field', 'multiplyfactor', 'label', 'Multiply Factor', 'type', 'number'),
+        JSON_OBJECT('field', 'multiplyfactor', 'label', 'Length', 'type', 'number'),
         JSON_OBJECT('field', 'rate', 'label', 'Rate', 'type', 'number')
     )
 );
@@ -630,13 +609,13 @@ VALUES
     'cable_jb_to_instr',
     'Cable (JB To Instruments)',
     'CableJBToInstruments',
-    31,
+    30,
     1,
     JSON_ARRAY(
         JSON_OBJECT('field', 'place', 'label', 'Place', 'type', 'string'),
         JSON_OBJECT('field', 'make', 'label', 'Make', 'type', 'string'),
         JSON_OBJECT('field', 'cabletype', 'label', 'Cable Type', 'type', 'string'),
-        JSON_OBJECT('field', 'multiplyfactor', 'label', 'Multiply Factor', 'type', 'number'),
+        JSON_OBJECT('field', 'multiplyfactor', 'label', 'Length', 'type', 'number'),
         JSON_OBJECT('field', 'rate', 'label', 'Rate', 'type', 'number')
     )
 );

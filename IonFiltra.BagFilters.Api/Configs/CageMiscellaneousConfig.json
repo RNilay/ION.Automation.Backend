@@ -1,0 +1,61 @@
+{
+    "lookup_name": "CageMiscellaneous",
+    "display_name": "Cage Miscellaneous Configuration",
+    "setDefaultEnabled": false,
+
+    "columns": [
+        "id",
+        "item",
+        "value",
+        "unit"
+    ],
+
+    "columnLabels": {
+        "item": "Item",
+        "value": "Value",
+        "unit": "Unit"
+    },
+
+    "formFields": [
+        {
+            "name": "item",
+            "label": "Item",
+            "type": "text",
+            "required": true,
+            "placeholder": "Enter item name"
+        },
+        {
+            "name": "value",
+            "label": "Value",
+            "type": "number",
+            "required": true,
+            "placeholder": "Enter value",
+            "min": 0,
+            "step": 0.0001
+        },
+        {
+            "name": "unit",
+            "label": "Unit",
+            "type": "text",
+            "required": true,
+            "placeholder": "Enter unit (e.g., kg, mm, nos)"
+        }
+    ],
+
+    "idField": "id",
+
+    "searchPlaceholder": "Search Cage Miscellaneous...",
+    "addButtonText": "Add Miscellaneous Item",
+
+    "formTitle": {
+        "add": "Add Cage Miscellaneous Item",
+        "edit": "Edit Cage Miscellaneous Item"
+    },
+
+    "apiEndpoints": {
+        "getAll": "/views/CageMiscellaneousConfig",
+        "add": "/views/CageMiscellaneousConfig",
+        "update": "/views/CageMiscellaneousConfig/{id}",
+        "delete": "/views/CageMiscellaneousConfig/{id}"
+    }
+}

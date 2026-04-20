@@ -51,7 +51,7 @@ namespace IonFiltra.BagFilters.Application.Services.GenericView
 
             var id = await _repository.InsertAsync(tableName, data);
 
-            if (tableName == "CageMaterialConfig")
+            if (tableName == "CageMaterialConfig" || tableName == "CageMiscellaneous")
             {
                 await RecalculateStandardCage(id, data);
             }
@@ -66,7 +66,7 @@ namespace IonFiltra.BagFilters.Application.Services.GenericView
 
             var result = await _repository.UpdateAsync(tableName, id, data);
 
-            if (tableName == "CageMaterialConfig")
+            if (tableName == "CageMaterialConfig" || tableName == "CageMiscellaneousConfig")
             {
                 await RecalculateStandardCage(id, data); // 👈 pass updated row
             }
@@ -199,19 +199,23 @@ namespace IonFiltra.BagFilters.Application.Services.GenericView
 
             foreach (var cage in cages)
             {
-                Console.WriteLine($"Processing cage id: {cage["id"]}");
+       
 
                 var updated = await ApplyCalculations("StandardCageConfig", cage, cache);
 
-                Console.WriteLine($"New rawmaterialcost: {updated["rawmaterialcost"]}");
+                var updatePayload = new Dictionary<string, object>();
+
+                var config = ConfigLoader.Configs["StandardCageConfig"];
+
+                foreach (var calc in config.calculations)
+                {
+                    updatePayload[calc.Target] = updated[calc.Target];
+                }
 
                 await _repository.UpdateAsync(
                     "StandardCageConfig",
                     Convert.ToInt32(cage["id"]),
-                    new Dictionary<string, object>
-                    {
-                        { "rawmaterialcost", updated["rawmaterialcost"] }
-                    }
+                   updatePayload
                 );
             }
         }

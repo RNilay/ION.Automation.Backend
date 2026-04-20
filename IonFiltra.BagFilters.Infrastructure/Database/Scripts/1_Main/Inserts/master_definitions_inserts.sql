@@ -577,7 +577,7 @@ INSERT INTO ionfiltrabagfilters.MasterDefinitions
 VALUES
 (
     'cable',
-    'Cable',
+    'Cable (JB To SV)',
     'Cable',
     29,
     1,
@@ -602,7 +602,7 @@ INSERT INTO ionfiltrabagfilters.MasterDefinitions
 VALUES
 (
     'cable_timer_to_jb',
-    'Cable (Timer to JB)',
+    'Cable (Timer To JB)',
     'CableTimerToJB',
     30,
     1,

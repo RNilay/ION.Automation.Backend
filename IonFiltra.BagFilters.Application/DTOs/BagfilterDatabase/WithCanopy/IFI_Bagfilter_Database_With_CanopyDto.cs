@@ -30,13 +30,10 @@ namespace IonFiltra.BagFilters.Application.DTOs.BagfilterDatabase.WithCanopy
         public decimal? Bolts_Grade_of_Bolt { get; set; }
         public string? Bolts_Sleeve_Size_mm { get; set; }
         public decimal? Bolts_Embedded_Length_mm { get; set; }
-        public string? Bolt_CC_Distance_Confirguration_RCC { get; set; }
-        public string? Bolt_CC_Distance_Confirguration_Steel { get; set; }
-        public string? Base_Plate_Dimension_RCC { get; set; }
-        public string? Base_Plate_Dimension_Steel { get; set; }
+        public string? Bolt_CC_Distance_Configuration { get; set; }
+        public string? Base_Plate_Dimension { get; set; }
         public decimal? Weight_of_Base_Plate_kg { get; set; }
         public decimal? Total_Weight_of_Structure_kg { get; set; }
-        public decimal? Weight_of_Plates_kg { get; set; }
 
     }
 }

@@ -1,0 +1,149 @@
+﻿{
+    "lookup_name": "StandardCageConfig",
+    "display_name": "Standard Cage Configuration",
+    "setDefaultEnabled": false,
+
+    "columns": [
+        "id",
+        "cagespec",
+        "weightkg",
+        "rawmaterialcost",
+        "fixedfabricationcost",
+        "boughtoutcost",
+        "packingcost",
+        "paintcost",
+        "tarpolinecost",
+        "finalcostinr"
+    ],
+
+    "columnLabels": {
+        "cagespec": "Cage Specification",
+        "weightkg": "Weight",
+        "rawmaterialcost": "Raw Material Cost (₹)",
+        "fixedfabricationcost": "Fixed Fabrication Cost (₹)",
+        "boughtoutcost": "Bought Out Cost (₹)",
+        "packingcost": "Packing Cost (₹)",
+        "paintcost": "Paint Cost (₹)",
+        "tarpolinecost": "Tarpoline Cost (₹)",
+        "finalcostinr": "Final Cost (₹)"
+    },
+
+    "formFields": [
+        {
+            "name": "cagespec",
+            "label": "Cage Specification",
+            "type": "text",
+            "required": true,
+            "placeholder": "Enter cage specification"
+        },
+        {
+            "name": "weightkg",
+            "label": "Weight",
+            "type": "number",
+            "required": true,
+            "placeholder": "Enter weight",
+            "min": 0,
+            "step": 0.01
+        },
+        {
+            "name": "rawmaterialcost",
+            "label": "Raw Material Cost (₹)",
+            "type": "number",
+            "required": true,
+            "placeholder": "Enter raw material cost",
+            "min": 0,
+            "step": 0.01
+        },
+        {
+            "name": "fixedfabricationcost",
+            "label": "Fixed Fabrication Cost (₹)",
+            "type": "number",
+            "required": true,
+            "placeholder": "Enter fabrication cost",
+            "min": 0,
+            "step": 0.01
+        },
+        {
+            "name": "boughtoutcost",
+            "label": "Bought Out Cost (₹)",
+            "type": "number",
+            "required": true,
+            "placeholder": "Enter bought-out cost",
+            "min": 0,
+            "step": 0.01
+        },
+        {
+            "name": "packingcost",
+            "label": "Packing Cost (₹)",
+            "type": "number",
+            "required": true,
+            "placeholder": "Enter packing cost",
+            "min": 0,
+            "step": 0.01
+        },
+        {
+            "name": "paintcost",
+            "label": "Paint Cost (₹)",
+            "type": "number",
+            "required": true,
+            "placeholder": "Enter paint cost",
+            "min": 0,
+            "step": 0.0001
+        },
+        {
+            "name": "tarpolinecost",
+            "label": "Tarpoline Cost (₹)",
+            "type": "number",
+            "required": true,
+            "placeholder": "Enter tarpoline cost",
+            "min": 0,
+            "step": 0.01
+        },
+        {
+            "name": "finalcostinr",
+            "label": "Final Cost (₹)",
+            "type": "number",
+            "required": true,
+            "placeholder": "Enter final cost",
+            "min": 0,
+            "step": 0.01
+        }
+    ],
+
+    "idField": "id",
+
+    "searchPlaceholder": "Search Standard Cage...",
+    "addButtonText": "Add Standard Cage",
+
+    "formTitle": {
+        "add": "Add Standard Cage",
+        "edit": "Edit Standard Cage"
+    },
+
+    "calculations": [
+        {
+            "target": "rawmaterialcost",
+            "expression": "weightkg * coilcost",
+            "dependencies": [
+                {
+                    "type": "field",
+                    "name": "weightkg"
+                },
+                {
+                    "type": "external",
+                    "table": "CageMaterialConfig",
+                    "match": { "material": "GI" },
+                    "field": "coilcost",
+                    "alias": "coilcost"
+                }
+            ]
+        }
+    ],
+
+    "apiEndpoints": {
+        "getAll": "/views/StandardCageConfig",
+        "add": "/views/StandardCageConfig",
+        "update": "/views/StandardCageConfig/{id}",
+        "delete": "/views/StandardCageConfig/{id}"
+    }
+}

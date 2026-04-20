@@ -43,13 +43,13 @@ namespace IonFiltra.BagFilters.Application.Mappers.BagfilterDatabase.WithCanopy
                     Bolts_Grade_of_Bolt = entity.Bolts_Grade_of_Bolt,
                     Bolts_Sleeve_Size_mm = entity.Bolts_Sleeve_Size_mm,
                     Bolts_Embedded_Length_mm = entity.Bolts_Embedded_Length_mm,
-                    Bolt_CC_Distance_Confirguration_RCC = entity.Bolt_CC_Distance_Confirguration_RCC,
-                    Bolt_CC_Distance_Confirguration_Steel = entity.Bolt_CC_Distance_Confirguration_Steel,
-                    Base_Plate_Dimension_RCC = entity.Base_Plate_Dimension_RCC,
-                    Base_Plate_Dimension_Steel = entity.Base_Plate_Dimension_Steel,
+                    Bolt_CC_Distance_Configuration = entity.Bolt_CC_Distance_Configuration,
+                    
+                    Base_Plate_Dimension = entity.Base_Plate_Dimension,
+             
                     Weight_of_Base_Plate_kg = entity.Weight_of_Base_Plate_kg,
                     Total_Weight_of_Structure_kg = entity.Total_Weight_of_Structure_kg,
-                    Weight_of_Plates_kg = entity.Weight_of_Plates_kg,
+               
                 },
 
             };
@@ -91,13 +91,11 @@ namespace IonFiltra.BagFilters.Application.Mappers.BagfilterDatabase.WithCanopy
                 Bolts_Grade_of_Bolt = dto.IFI_Bagfilter_Database_With_Canopy.Bolts_Grade_of_Bolt,
                 Bolts_Sleeve_Size_mm = dto.IFI_Bagfilter_Database_With_Canopy.Bolts_Sleeve_Size_mm,
                 Bolts_Embedded_Length_mm = dto.IFI_Bagfilter_Database_With_Canopy.Bolts_Embedded_Length_mm,
-                Bolt_CC_Distance_Confirguration_RCC = dto.IFI_Bagfilter_Database_With_Canopy.Bolt_CC_Distance_Confirguration_RCC,
-                Bolt_CC_Distance_Confirguration_Steel = dto.IFI_Bagfilter_Database_With_Canopy.Bolt_CC_Distance_Confirguration_Steel,
-                Base_Plate_Dimension_RCC = dto.IFI_Bagfilter_Database_With_Canopy.Base_Plate_Dimension_RCC,
-                Base_Plate_Dimension_Steel = dto.IFI_Bagfilter_Database_With_Canopy.Base_Plate_Dimension_Steel,
+                Bolt_CC_Distance_Configuration = dto.IFI_Bagfilter_Database_With_Canopy.Bolt_CC_Distance_Configuration,
+                Base_Plate_Dimension = dto.IFI_Bagfilter_Database_With_Canopy.Base_Plate_Dimension,
+             
                 Weight_of_Base_Plate_kg = dto.IFI_Bagfilter_Database_With_Canopy.Weight_of_Base_Plate_kg,
                 Total_Weight_of_Structure_kg = dto.IFI_Bagfilter_Database_With_Canopy.Total_Weight_of_Structure_kg,
-                Weight_of_Plates_kg = dto.IFI_Bagfilter_Database_With_Canopy.Weight_of_Plates_kg,
 
             };
         }

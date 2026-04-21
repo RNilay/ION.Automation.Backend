@@ -78,6 +78,8 @@ SELECT
     PI.Mfg_Plant,
     PI.Destination_State,
     PI.Location,
+    PI.Transportation_Select,
+    PI.Transportation_Cost,
     PI.ProcessVolumeMin,
     PI.Process_Dust,
     PI.Process_Dustload_gmspm3,

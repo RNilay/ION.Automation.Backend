@@ -216,6 +216,20 @@
                                     "InlineCss": "{#USER}"
                                 },
                                 {
+                                    "Label": "Delivery Terms [EX works / DAP]",
+                                    "ValueKey": "Transportation_Select",
+                                    "InlineCss": "{#USER}"
+                                },
+                                {
+                                    "Label": "Total Transportation Cost",
+                                    "ValueKey": "Transportation_Cost",
+                                    "InlineCss": "{#USER}",
+                                    "VisibleWhen": {
+                                        "Key": "Transportation_Select",
+                                        "Equals": "DAP"
+                                    }
+                                },
+                                {
                                     "Label": "Process Volume Min (m<sup>3</sup>/min)",
                                     "ValueKey": "ProcessVolumeMin",
                                     "InlineCss": "{#CALC}"

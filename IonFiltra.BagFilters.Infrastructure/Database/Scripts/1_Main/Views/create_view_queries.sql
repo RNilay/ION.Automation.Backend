@@ -795,7 +795,7 @@ SELECT
         utm.Make, ev.Make, fh.Make, afr.Make,
         proxy.Make, prox.Make, zss.Make, jb.Make,
         vib.Make, tc.Make, th.Make, hhp.Make, hhc.Make,
-        ma.Make, rav.Make, hw.Item, timer.Make, cable.Make, cableJbInstr.Make, cableTimerJb.Make
+        ma.Make, rav.Make, hw.Item, cable.Make, cableJbInstr.Make, cableTimerJb.Make
     ) AS Make,
 
     COALESCE(fb.Material, sstub.Material) AS Material,
@@ -866,8 +866,6 @@ LEFT JOIN ionfiltrabagfilters.HardwareEntity hw
   ON md.MasterKey = 'hardware' AND hw.Id = bo.SelectedRowId
 LEFT JOIN ionfiltrabagfilters.SStubing sstub
   ON md.MasterKey = 'sstubing' AND sstub.Id = bo.SelectedRowId
-LEFT JOIN ionfiltrabagfilters.TimerEntity timer
-  ON md.MasterKey = 'timer' AND timer.Id = bo.SelectedRowId
 LEFT JOIN ionfiltrabagfilters.Cable cable
   ON md.MasterKey = 'cable' AND cable.Id = bo.SelectedRowId
 
@@ -894,6 +892,7 @@ SELECT
         WHEN 'SCREW_CONVEYOR' THEN 'Screw Conveyor'
         WHEN 'DRAG_CHAIN_CONVEYOR' THEN 'Drag Chain Conveyor'
         WHEN 'LT_MOTOR' THEN 'LT Motor'
+        WHEN 'TIMER' THEN 'Timer'
         WHEN 'EXP_JOINT_INLET' THEN 'Expansion Joint - Inlet'
         WHEN 'EXP_JOINT_OUTLET' THEN 'Expansion Joint - Outlet'
         WHEN 'EXP_JOINT_RAV' THEN 'Expansion Joint - RAV'

@@ -184,6 +184,49 @@
                     "alias": "squareTube"
                 }
             ]
+        },
+        {
+            "target": "tarpolinecost",
+            "expression": "tarpoline",
+            "dependencies": [
+                {
+                    "type": "external",
+                    "table": "CageMiscellaneousConfig",
+                    "match": { "item": "Tarpoline" },
+                    "field": "value",
+                    "alias": "tarpoline"
+                }
+            ]
+        },
+        {
+            "target": "finalcostinr",
+            "expression": "rawmaterialcost + fixedfabricationcost + boughtoutcost + packingcost + paintcost + tarpolinecost",
+            "dependencies": [
+                {
+                    "type": "field",
+                    "name": "rawmaterialcost"
+                },
+                {
+                    "type": "field",
+                    "name": "fixedfabricationcost"
+                },
+                {
+                    "type": "field",
+                    "name": "boughtoutcost"
+                },
+                {
+                    "type": "field",
+                    "name": "packingcost"
+                },
+                {
+                    "type": "field",
+                    "name": "paintcost"
+                },
+                {
+                    "type": "field",
+                    "name": "tarpolinecost"
+                }
+            ]
         }
     ],
 

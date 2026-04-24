@@ -107,7 +107,7 @@ namespace IonFiltra.BagFilters.Application.Services.Report
             if (reportTemplate.Rows == null) return Task.CompletedTask;
 
             // local helpers (kept mostly as your original implementations)
-           
+
 
             static string EvaluatePlaceholdersSync(string templateText, Dictionary<string, object> item)
             {
@@ -356,7 +356,7 @@ namespace IonFiltra.BagFilters.Application.Services.Report
                     bool isDamperCost = reportTemplate.ReportName?.Equals("Damper Cost", StringComparison.OrdinalIgnoreCase) == true;
                     bool isCageCosting = reportTemplate.ReportName?.Equals("Cage Costing", StringComparison.OrdinalIgnoreCase) == true;
                     bool isBoughtOutDetails = reportTemplate.ReportName?.Equals("Bought Out Details", StringComparison.OrdinalIgnoreCase) == true;
-
+                    bool isExecutiveSummary = reportTemplate.ReportName?.Equals("Executive Summary", StringComparison.OrdinalIgnoreCase) == true;
                     // For each record in the source list, render the group's ChildRows (in order)
                     for (int idx = 0; idx < sourceList.Count; idx++)
                     {
@@ -383,10 +383,10 @@ namespace IonFiltra.BagFilters.Application.Services.Report
                                     newRowsList.Add(expandedTable);
                                 }
                                 // --- 1b) Bill Of Material: nested RepeatRow using record["BomRows"] ---
-                                else if (isBillOfMaterial
-                                         && clonedChild.RepeatRow != null
-                                         && string.Equals(clonedChild.RepeatRow.SourceKey, "BomRows",
-                                                          StringComparison.OrdinalIgnoreCase))
+                                else if ((isBillOfMaterial || isExecutiveSummary)
+          && clonedChild.RepeatRow != null
+          && string.Equals(clonedChild.RepeatRow.SourceKey, "BomRows",
+                           StringComparison.OrdinalIgnoreCase))
                                 {
                                     var nestedRepeat = clonedChild.RepeatRow;
 
@@ -703,7 +703,7 @@ namespace IonFiltra.BagFilters.Application.Services.Report
                             {
                                 if (block == null) continue;
 
-                                
+
 
                                 if (block.IsHeader)
                                 {
@@ -948,6 +948,83 @@ namespace IonFiltra.BagFilters.Application.Services.Report
 
         // Expand a table that has RepeatRow, but where the source list
         // comes from a *nested* collection (e.g. record["BomRows"])
+        //        List<TableRow> ExpandNestedRepeatTable(
+        //            ReportRow tableRow,
+        //            RepeatRowDefinition repeat,
+        //            List<Dictionary<string, object>> sourceList)
+        //        {
+        //            var originalRows = tableRow.Rows ?? new List<TableRow>();
+        //            var templateIdx = Math.Clamp(repeat.TemplateRowIndex, 0, Math.Max(0, originalRows.Count - 1));
+
+        //            var templateRow = originalRows.ElementAtOrDefault(templateIdx)
+        //                             ?? new TableRow
+        //                             {
+        //                                 RowData = repeat.Columns?.Select(_ => "").ToList()
+        //                                           ?? new List<string>()
+        //                             };
+
+        //            var expandedRows = new List<TableRow>();
+        //            var sumMap = new Dictionary<string, double>(StringComparer.OrdinalIgnoreCase);
+
+        //            foreach (var item in sourceList)
+        //            {
+
+
+        //                // You can support __BLOCK__ here if ever needed for nested tables.
+        //                // Bill Of Material doesn't use __BLOCK__, so we only do the
+        //                // simple column-wise expansion.
+        //                var newRow = new TableRow
+        //                {
+        //                    RowStyle = CloneRowStyle(templateRow.RowStyle),
+        //                    RowData = new List<string>()
+        //                };
+
+        //                foreach (var colKey in repeat.Columns ?? Enumerable.Empty<string>())
+        //                {
+        //                    if (item.TryGetValue(colKey, out var val) && val != null)
+        //                    {
+        //                        string s = FormatValue(val);
+        //                        newRow.RowData.Add(s);
+
+        //                        if (double.TryParse(s, out var dbl))
+        //                        {
+        //                            if (!sumMap.ContainsKey(colKey)) sumMap[colKey] = 0;
+        //                            sumMap[colKey] += dbl;
+        //                        }
+        //                    }
+        //                    else
+        //                    {
+        //                        newRow.RowData.Add(MissingValuePlaceholder);
+        //                    }
+        //                }
+
+
+        //                if (item.TryGetValue("Item", out var itemVal))
+        //{
+        //    var itemText = itemVal?.ToString()?.Trim() ?? "";
+
+        //    if (itemText.Equals("Total", StringComparison.OrdinalIgnoreCase) ||
+        //        itemText.StartsWith("GRAND TOTAL", StringComparison.OrdinalIgnoreCase))
+        //    {
+        //        newRow.RowStyle ??= new ReportRowStyle();
+        //        newRow.RowStyle.InlineCss = "font-weight:bold; background-color:#E8EBF5;";
+        //    }
+        //}
+
+        //                expandedRows.Add(newRow);
+        //            }
+
+        //            // splice into original: keep header rows before, footer rows after
+        //            var before = originalRows.Take(templateIdx).ToList();
+        //            var after = originalRows.Skip(templateIdx + 1).ToList();
+
+        //            var finalRows = new List<TableRow>();
+        //            finalRows.AddRange(before);
+        //            finalRows.AddRange(expandedRows);
+        //            finalRows.AddRange(after);
+
+        //            return finalRows;
+        //        }
         List<TableRow> ExpandNestedRepeatTable(
             ReportRow tableRow,
             RepeatRowDefinition repeat,
@@ -968,9 +1045,29 @@ namespace IonFiltra.BagFilters.Application.Services.Report
 
             foreach (var item in sourceList)
             {
-                // You can support __BLOCK__ here if ever needed for nested tables.
-                // Bill Of Material doesn't use __BLOCK__, so we only do the
-                // simple column-wise expansion.
+                // ✅ NEW: HANDLE SECTION HEADER (NO BREAK IN LOGIC)
+                if (item.TryGetValue("Item", out var itemVal))
+                {
+                    var itemText = itemVal?.ToString()?.Trim() ?? "";
+
+                    if (itemText.StartsWith("—") && itemText.EndsWith("—"))
+                    {
+                        expandedRows.Add(new TableRow
+                        {
+                            RowStyle = new ReportRowStyle
+                            {
+                                Bold = true,
+                                InlineCss = "background-color:#dfe6f1; font-weight:bold; padding:6px;"
+                            },
+                            RowData = new List<string> { itemText }, // only ONE cell
+                            ColumnSpan = repeat.Columns?.Count ?? 1
+                        });
+
+                        continue; // 🔥 IMPORTANT: skip normal row logic
+                    }
+                }
+
+                // 🔽 EXISTING LOGIC (UNCHANGED)
                 var newRow = new TableRow
                 {
                     RowStyle = CloneRowStyle(templateRow.RowStyle),
@@ -996,21 +1093,22 @@ namespace IonFiltra.BagFilters.Application.Services.Report
                     }
                 }
 
-               
-                if (item.TryGetValue("Item", out var itemVal) &&
-                    itemVal?.ToString()?.Trim().Equals("Total", StringComparison.OrdinalIgnoreCase) == true)
+                // 🔽 EXISTING TOTAL ROW STYLING (UNCHANGED)
+                if (item.TryGetValue("Item", out var totalItemVal))
                 {
-                    // Make the row bold + highlight background if needed
-                    newRow.RowStyle ??= new ReportRowStyle();
-                    newRow.RowStyle.InlineCss = "font-weight:bold; background-color:#E8EBF5;";
-                }
-              
+                    var itemText = totalItemVal?.ToString()?.Trim() ?? "";
 
+                    if (itemText.Equals("Total", StringComparison.OrdinalIgnoreCase) ||
+                        itemText.StartsWith("GRAND TOTAL", StringComparison.OrdinalIgnoreCase))
+                    {
+                        newRow.RowStyle ??= new ReportRowStyle();
+                        newRow.RowStyle.InlineCss = "font-weight:bold; background-color:#FEF3C7;";
+                    }
+                }
 
                 expandedRows.Add(newRow);
             }
 
-            // splice into original: keep header rows before, footer rows after
             var before = originalRows.Take(templateIdx).ToList();
             var after = originalRows.Skip(templateIdx + 1).ToList();
 
@@ -1021,7 +1119,6 @@ namespace IonFiltra.BagFilters.Application.Services.Report
 
             return finalRows;
         }
-
 
         private ReportRowStyle CreateCellStyleFromToken(string? token, ReportRowStyle? baseStyle)
         {
@@ -1157,7 +1254,8 @@ namespace IonFiltra.BagFilters.Application.Services.Report
             rowValues ??= new Dictionary<string, object>();
             headerValues ??= new Dictionary<string, object>();
 
-            ReportTemplateModelDto template = new ReportTemplateModelDto() {
+            ReportTemplateModelDto template = new ReportTemplateModelDto()
+            {
                 Id = templateArgs.Id,
                 Order = templateArgs.Order,
                 ReportName = templateArgs.ReportName,
@@ -1271,7 +1369,7 @@ namespace IonFiltra.BagFilters.Application.Services.Report
             }
         }
 
-        
+
 
         private async Task<string> EvaluateAllEmbeddedPlaceholdersAsync(string input, Dictionary<string, object> inputValues)
         {
@@ -1336,7 +1434,7 @@ namespace IonFiltra.BagFilters.Application.Services.Report
 
             return await Task.FromResult(text);
         }
-        
+
         private string GetVariableValueAsString(string variableName, Dictionary<string, object> inputValues)
         {
             if (inputValues != null && inputValues.TryGetValue(variableName, out var value))
@@ -1481,6 +1579,54 @@ namespace IonFiltra.BagFilters.Application.Services.Report
 
                 // this is what the group in the template will iterate
                 rowValues["bom_groups"] = bomGroups;
+            }
+            // AFTER — builds executive_summary_groups exactly like bom_groups:
+            else if (string.Equals(template.EntityDbName, "vw_ExecutiveSummary",
+                                   StringComparison.OrdinalIgnoreCase)
+                  || string.Equals(template.Title, "Executive Summary",
+                                   StringComparison.OrdinalIgnoreCase))
+            {
+                var execGroups = listData
+                    .GroupBy(d => d.TryGetValue("EnquiryId", out var eid) ? eid : null)
+                    .Select(g =>
+                    {
+                        var first = g.First();
+                        var groupDict = new Dictionary<string, object>();
+
+                        // ── Summary card values (from first row — same on all rows) ──
+                        if (first.TryGetValue("EnquiryId", out var enq)) groupDict["EnquiryId"] = enq;
+                        if (first.TryGetValue("Enquiry_ExternalId", out var extId)) groupDict["Enquiry_ExternalId"] = extId;
+                        if (first.TryGetValue("Customer", out var cust)) groupDict["Customer"] = cust;
+                        if (first.TryGetValue("Total_Bag_Filters", out var tbf)) groupDict["Total_Bag_Filters"] = tbf;
+                        if (first.TryGetValue("Total_No_Of_Bags", out var tnob)) groupDict["Total_No_Of_Bags"] = tnob;
+                        if (first.TryGetValue("Total_Structural_Weight", out var tsw)) groupDict["Total_Structural_Weight"] = tsw;
+                        // ── NEW: 3 computed fields from view ──────────────
+                        if (first.TryGetValue("Grand_Total_Cost", out var gtc)) groupDict["Grand_Total_Cost"] = gtc;
+                        if (first.TryGetValue("Avg_Cost_Per_BF", out var acpbf)) groupDict["Avg_Cost_Per_BF"] = acpbf;
+                        if (first.TryGetValue("Avg_Cost_Per_Bag", out var acpb)) groupDict["Avg_Cost_Per_Bag"] = acpb;
+                        // ── BOM rows (all 17 lines, same as BomRows in Bill Of Material) ──
+                        groupDict["BomRows"] = g
+                            .OrderBy(r => r.TryGetValue("SortOrder", out var so)
+                                          ? Convert.ToInt32(so) : 0)
+                            .Select(r => new Dictionary<string, object>
+                            {
+                                ["SortOrder"] = r.GetValueOrDefault("SortOrder") ?? "",
+                                ["Item"] = r.GetValueOrDefault("Item") ?? "",
+                                ["Material"] = r.GetValueOrDefault("Material") ?? "",
+                                ["Total_Weight"] = r.GetValueOrDefault("Total_Weight") ?? "",
+                                ["Units"] = r.GetValueOrDefault("Units") ?? "",
+                                ["Rate"] = r.GetValueOrDefault("Rate") ?? "",
+                                ["Total_Cost"] = r.GetValueOrDefault("Total_Cost") ?? "",
+                                ["Section_Label"] = r.GetValueOrDefault("Section_Label") ?? "",
+                                ["Is_Summary_Row"] = r.GetValueOrDefault("Is_Summary_Row") ?? 0
+                            })
+                            .ToList();
+
+                        return groupDict;
+                    })
+                    .ToList();
+
+                rowValues["executive_summary_groups"] = execGroups;
             }
             else if (
             string.Equals(template.EntityDbName, "vw_TransportationCostDetails",

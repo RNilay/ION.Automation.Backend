@@ -5,6 +5,7 @@ using IonFiltra.BagFilters.Application.Interfaces.BoughtOutItems;
 using IonFiltra.BagFilters.Application.Interfaces.Enquiry;
 using IonFiltra.BagFilters.Application.Interfaces.GenericView;
 using IonFiltra.BagFilters.Application.Interfaces.MasterData.Master_Definition;
+using IonFiltra.BagFilters.Application.Interfaces.PaintScheme;
 using IonFiltra.BagFilters.Application.Interfaces.Report;
 using IonFiltra.BagFilters.Application.Interfaces.Users.User;
 using IonFiltra.BagFilters.Application.Services.Assignment;
@@ -42,6 +43,7 @@ using IonFiltra.BagFilters.Application.Services.MasterData.FilterBagData;
 using IonFiltra.BagFilters.Application.Services.MasterData.Master_Definition;
 using IonFiltra.BagFilters.Application.Services.MasterData.SolenoidValveData;
 using IonFiltra.BagFilters.Application.Services.MasterData.TimerData;
+using IonFiltra.BagFilters.Application.Services.PaintScheme;
 using IonFiltra.BagFilters.Application.Services.Report;
 using IonFiltra.BagFilters.Application.Services.SkyCiv;
 using IonFiltra.BagFilters.Application.Services.Users.User;
@@ -50,6 +52,7 @@ using IonFiltra.BagFilters.Core.Interfaces.Bagfilters.BagfilterMasters;
 using IonFiltra.BagFilters.Core.Interfaces.EnquiryRep;
 using IonFiltra.BagFilters.Core.Interfaces.GenericView;
 using IonFiltra.BagFilters.Core.Interfaces.MasterData.Master_Definition;
+using IonFiltra.BagFilters.Core.Interfaces.PaintScheme;
 using IonFiltra.BagFilters.Core.Interfaces.Repositories.Assignment;
 using IonFiltra.BagFilters.Core.Interfaces.Repositories.BagfilterDatabase.WithCanopy;
 using IonFiltra.BagFilters.Core.Interfaces.Repositories.BagfilterDatabase.WithoutCanopy;
@@ -118,6 +121,7 @@ using IonFiltra.BagFilters.Infrastructure.Repositories.MasterData.FilterBagData;
 using IonFiltra.BagFilters.Infrastructure.Repositories.MasterData.Master_Definition;
 using IonFiltra.BagFilters.Infrastructure.Repositories.MasterData.SolenoidValveData;
 using IonFiltra.BagFilters.Infrastructure.Repositories.MasterData.TimerData;
+using IonFiltra.BagFilters.Infrastructure.Repositories.PaintScheme;
 using IonFiltra.BagFilters.Infrastructure.Repositories.SkyCiv;
 using IonFiltra.BagFilters.Infrastructure.Repositories.Users.User;
 using IonFiltra.BagFilters.Infrastructure.Repositories.Users.UserRoles;
@@ -276,6 +280,10 @@ namespace IonFiltra.BagFilters.Infrastructure
 
             services.AddScoped<IApplicationRolesService, ApplicationRolesService>();
             services.AddScoped<IApplicationRolesRepository, ApplicationRolesRepository>();
+
+            //paint scheme
+            services.AddScoped<IEnquiryPaintSchemeRepository, EnquiryPaintSchemeRepository>();
+            services.AddScoped<IPaintSchemeService, PaintSchemeService>();
 
             return services;
         }

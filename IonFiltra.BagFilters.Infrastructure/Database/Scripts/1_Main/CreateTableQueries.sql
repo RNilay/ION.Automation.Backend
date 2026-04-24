@@ -1424,5 +1424,166 @@ CREATE TABLE
     );
 
 
+-----------------Painting MAster tables
 
+CREATE TABLE ionfiltrabagfilters.PrimerMaster (
+    Id INT AUTO_INCREMENT PRIMARY KEY,
+
+    Model VARCHAR(255) NOT NULL,
+    CostPerLiter DECIMAL(10,2) NOT NULL DEFAULT 0,
+
+    CreatedAt DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    UpdatedAt DATETIME NULL ON UPDATE CURRENT_TIMESTAMP,
+    IsDeleted TINYINT(1) NOT NULL DEFAULT 0
+);
+
+CREATE TABLE ionfiltrabagfilters.IntermediateCoatingMaster (
+    Id INT AUTO_INCREMENT PRIMARY KEY,
+
+    Model VARCHAR(255) NOT NULL,
+    CostPerLiter DECIMAL(10,2) NOT NULL DEFAULT 0,
+
+    CreatedAt DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    UpdatedAt DATETIME NULL ON UPDATE CURRENT_TIMESTAMP,
+    IsDeleted TINYINT(1) NOT NULL DEFAULT 0
+);
+
+CREATE TABLE ionfiltrabagfilters.FinalCoatingMaster (
+    Id INT AUTO_INCREMENT PRIMARY KEY,
+
+    Model VARCHAR(255) NOT NULL,
+    CostPerLiter DECIMAL(10,2) NOT NULL DEFAULT 0,
+
+    CreatedAt DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    UpdatedAt DATETIME NULL ON UPDATE CURRENT_TIMESTAMP,
+    IsDeleted TINYINT(1) NOT NULL DEFAULT 0
+);
+
+CREATE TABLE ionfiltrabagfilters.PaintingSchemeMaster (
+    Id INT AUTO_INCREMENT PRIMARY KEY,
+
+    SchemeName VARCHAR(255) NOT NULL,
+    CostPerKg DECIMAL(10,2) NOT NULL DEFAULT 0,
+
+    CreatedAt DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    UpdatedAt DATETIME NULL ON UPDATE CURRENT_TIMESTAMP,
+    IsDeleted TINYINT(1) NOT NULL DEFAULT 0
+);
+
+
+-----------tables to save use selected paint scheme
+
+CREATE TABLE ionfiltrabagfilters.EnquiryPaintScheme (
+    Id                  INT            AUTO_INCREMENT PRIMARY KEY,
+    EnquiryId           INT            NOT NULL,            -- FK → Enquiry.Id
+    PaintingSchemeId    INT            NULL,                -- FK → PaintingSchemeMaster.Id (nullable: user may skip)
+    CreatedAt           DATETIME       NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    UpdatedAt           DATETIME       NULL     ON UPDATE CURRENT_TIMESTAMP,
+    IsDeleted           TINYINT(1)     NOT NULL DEFAULT 0,
+
+    CONSTRAINT fk_eps_enquiry
+        FOREIGN KEY (EnquiryId)        REFERENCES ionfiltrabagfilters.Enquiry(Id)
+            ON DELETE CASCADE,
+
+    CONSTRAINT fk_eps_scheme
+        FOREIGN KEY (PaintingSchemeId) REFERENCES ionfiltrabagfilters.PaintingSchemeMaster(Id)
+            ON DELETE SET NULL,
+
+    -- only one active paint scheme record per enquiry
+    UNIQUE INDEX uq_eps_enquiry (EnquiryId, IsDeleted)
+);
+
+CREATE TABLE ionfiltrabagfilters.EnquiryPaintSchemeSection (
+    Id                    INT              AUTO_INCREMENT PRIMARY KEY,
+    EnquiryPaintSchemeId  INT              NOT NULL,        -- FK → EnquiryPaintScheme.Id
+    SectionKey            VARCHAR(30)      NOT NULL,        -- 'primer' | 'intermediate' | 'finalCoat'
+    ItemMasterId          INT              NOT NULL,        -- PK of the selected row in the relevant master table
     
+    ItemModel             VARCHAR(255)     NULL,            -- denormalized label for fast read
+    CostPerLiter          DECIMAL(10, 2)   NOT NULL DEFAULT 0.00,
+    NoOfCoats             INT              NOT NULL DEFAULT 1,
+    CreatedAt             DATETIME         NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    UpdatedAt             DATETIME         NULL     ON UPDATE CURRENT_TIMESTAMP,
+
+    CONSTRAINT fk_epss_scheme
+        FOREIGN KEY (EnquiryPaintSchemeId) REFERENCES ionfiltrabagfilters.EnquiryPaintScheme(Id)
+            ON DELETE CASCADE,
+
+    -- one section row per sectionKey per paint scheme record
+    UNIQUE INDEX uq_epss_section (EnquiryPaintSchemeId, SectionKey),
+
+    INDEX idx_epss_scheme   (EnquiryPaintSchemeId),
+    INDEX idx_epss_section  (SectionKey)
+);
+
+CREATE TABLE ionfiltrabagfilters.EnquiryPaintSchemeBfAssignment (
+    Id                    INT              AUTO_INCREMENT PRIMARY KEY,
+    EnquiryPaintSchemeId  INT              NOT NULL,        -- FK → EnquiryPaintScheme.Id
+    BagfilterMasterId     INT              NULL,            -- FK → BagfilterMaster.Id (optional, populated after batch save)
+    BfName                VARCHAR(20)      NOT NULL,        -- e.g. '001', '002', '003'
+    AssignmentType        ENUM(
+                            'global',      -- uses the enquiry-level global scheme
+                            'custom',      -- uses a BF-specific override (rows in table 4)
+                            'none'         -- explicitly excluded from painting cost
+                          ) NOT NULL DEFAULT 'global',
+    CreatedAt             DATETIME         NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    UpdatedAt             DATETIME         NULL     ON UPDATE CURRENT_TIMESTAMP,
+
+    CONSTRAINT fk_epsbfa_scheme
+        FOREIGN KEY (EnquiryPaintSchemeId) REFERENCES ionfiltrabagfilters.EnquiryPaintScheme(Id)
+            ON DELETE CASCADE,
+
+    CONSTRAINT fk_epsbfa_bfmaster
+        FOREIGN KEY (BagfilterMasterId)    REFERENCES ionfiltrabagfilters.BagfilterMaster(BagfilterMasterId)
+            ON DELETE SET NULL,
+
+    -- one assignment row per BF name per paint scheme record
+    UNIQUE INDEX uq_epsbfa_bf (EnquiryPaintSchemeId, BfName),
+
+    INDEX idx_epsbfa_scheme      (EnquiryPaintSchemeId),
+    INDEX idx_epsbfa_bf_master   (BagfilterMasterId),
+    INDEX idx_epsbfa_assignment  (AssignmentType)
+);
+
+CREATE TABLE ionfiltrabagfilters.EnquiryPaintSchemeOverride (
+    Id                    INT              AUTO_INCREMENT PRIMARY KEY,
+    BfAssignmentId        INT              NOT NULL,        -- FK → EnquiryPaintSchemeBfAssignment.Id
+    PaintingSchemeId      INT              NULL,            -- FK → PaintingSchemeMaster.Id
+    CreatedAt             DATETIME         NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    UpdatedAt             DATETIME         NULL     ON UPDATE CURRENT_TIMESTAMP,
+
+    CONSTRAINT fk_epso_assignment
+        FOREIGN KEY (BfAssignmentId)   REFERENCES ionfiltrabagfilters.EnquiryPaintSchemeBfAssignment(Id)
+            ON DELETE CASCADE,
+
+    CONSTRAINT fk_epso_scheme
+        FOREIGN KEY (PaintingSchemeId) REFERENCES ionfiltrabagfilters.PaintingSchemeMaster(Id)
+            ON DELETE SET NULL,
+
+    -- one override header per assignment
+    UNIQUE INDEX uq_epso_assignment (BfAssignmentId),
+
+    INDEX idx_epso_assignment (BfAssignmentId)
+);
+
+CREATE TABLE ionfiltrabagfilters.EnquiryPaintSchemeOverrideSection (
+    Id                    INT              AUTO_INCREMENT PRIMARY KEY,
+    OverrideId            INT              NOT NULL,        -- FK → EnquiryPaintSchemeOverride.Id
+    SectionKey            VARCHAR(30)      NOT NULL,        -- 'primer' | 'intermediate' | 'finalCoat'
+    ItemMasterId          INT              NOT NULL,        -- PK of selected row in the relevant master table
+    ItemModel             VARCHAR(255)     NULL,
+    CostPerLiter          DECIMAL(10, 2)   NOT NULL DEFAULT 0.00,
+    NoOfCoats             INT              NOT NULL DEFAULT 1,
+    CreatedAt             DATETIME         NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    UpdatedAt             DATETIME         NULL     ON UPDATE CURRENT_TIMESTAMP,
+
+    CONSTRAINT fk_epsos_override
+        FOREIGN KEY (OverrideId) REFERENCES ionfiltrabagfilters.EnquiryPaintSchemeOverride(Id)
+            ON DELETE CASCADE,
+
+    -- one section row per sectionKey per override
+    UNIQUE INDEX uq_epsos_section (OverrideId, SectionKey),
+
+    INDEX idx_epsos_override (OverrideId),
+    INDEX idx_epsos_section  (SectionKey)
+);

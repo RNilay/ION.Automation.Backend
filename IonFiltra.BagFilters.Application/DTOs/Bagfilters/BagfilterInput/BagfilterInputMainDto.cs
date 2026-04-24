@@ -46,7 +46,7 @@ namespace IonFiltra.BagFilters.Application.DTOs.Bagfilters.BagfilterInputs
         public List<BillOfMaterialDto>? BillOfMaterial { get; set; }
         = new List<BillOfMaterialDto>();
 
-        public PaintingCostDto? PaintingCost { get; set; }
+        //public PaintingCostDto? PaintingCost { get; set; }
 
         public List<BoughtOutItemSelectionDto>? BoughtOutItems { get; set; }
          = new List<BoughtOutItemSelectionDto>();

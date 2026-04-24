@@ -924,3 +924,231 @@ FROM DistinctVolumes dv
 JOIN ionfiltrabagfilters.SecondaryBoughtOutItems s
   ON s.EnquiryId = dv.EnquiryId
  AND s.BagfilterMasterId = dv.BagfilterMasterId;
+
+
+ CREATE OR REPLACE VIEW ionfiltrabagfilters.vw_ExecutiveSummary AS
+
+WITH
+
+-- ── Summary Card Aggregations ──────────────────────────────
+SummaryCards AS (
+    SELECT
+        E.Id                                        AS EnquiryId,
+        E.EnquiryId                                 AS Enquiry_ExternalId,
+        E.Customer,
+        E.RequiredBagFilters,
+
+        COUNT(DISTINCT BM.BagfilterMasterId)        AS Total_Bag_Filters,
+
+        COALESCE((
+            SELECT SUM(BI2.agg_bags)
+            FROM (
+                SELECT EnquiryId, BagfilterMasterId, SUM(Bag_Per_Row) AS agg_bags
+                FROM ionfiltrabagfilters.BagfilterInput
+                GROUP BY EnquiryId, BagfilterMasterId
+            ) BI2
+            WHERE BI2.EnquiryId = E.Id
+        ), 0)                                       AS Total_No_Of_Bags,
+
+        COALESCE(SUM(DISTINCT WS.agg_weight), 0)    AS Total_Structural_Weight
+
+    FROM ionfiltrabagfilters.Enquiry E
+
+    LEFT JOIN ionfiltrabagfilters.BagfilterMaster BM
+        ON BM.EnquiryId = E.Id
+
+    LEFT JOIN (
+        SELECT
+            EnquiryId,
+            BagfilterMasterId,
+            SUM(Structure_Weight) AS agg_weight
+        FROM ionfiltrabagfilters.WeightSummary
+        GROUP BY EnquiryId, BagfilterMasterId
+    ) WS
+        ON WS.EnquiryId          = E.Id
+        AND WS.BagfilterMasterId = BM.BagfilterMasterId
+
+    GROUP BY
+        E.Id,
+        E.EnquiryId,
+        E.Customer,
+        E.RequiredBagFilters
+),
+
+-- ── Consolidated BOM Lines ─────────────────────────────────
+AggregatedBOM AS (
+    SELECT
+        bom.EnquiryId,
+        MIN(bom.SortOrder)      AS SortOrder,
+
+        CASE
+            WHEN bom.Item = 'Total'
+            THEN 'GRAND TOTAL (All Bag Filters Combined)'
+            ELSE bom.Item
+        END                     AS Item,
+
+        bom.Material,
+        bom.Units,
+        bom.Rate,
+        SUM(bom.Weight)         AS Total_Weight,
+        SUM(bom.Cost)           AS Total_Cost,
+
+        CASE
+            WHEN bom.Item IN (
+                'Inside Painting Cost',
+                'Outside Painting Cost'
+            )                                           THEN 'PAINTING COST'
+            WHEN bom.Item = 'Cage Cost (Total)'         THEN 'CAGE COST'
+            WHEN bom.Item = 'Transportation Cost'       THEN 'TRANSPORTATION COST'
+            WHEN bom.Item = 'Bought Out Items (Total)'  THEN 'BOUGHT OUT ITEMS'
+            WHEN bom.Item = 'Total'                     THEN 'TOTAL'
+            ELSE                                             'STRUCTURAL ITEMS'
+        END                     AS Section_Label,
+
+        CASE
+            WHEN bom.Item IN (
+                'Inside Painting Cost',
+                'Outside Painting Cost',
+                'Cage Cost (Total)',
+                'Transportation Cost',
+                'Bought Out Items (Total)',
+                'Total'
+            ) THEN 1
+            ELSE 0
+        END                     AS Is_Summary_Row
+
+    FROM ionfiltrabagfilters.BillOfMaterial bom
+    GROUP BY
+        bom.EnquiryId,
+        bom.Item,
+        bom.Material,
+        bom.Units,
+        bom.Rate
+),
+
+-- ── Grand Total Cost — always 1 row per EnquiryId ──────────
+GrandTotalCost AS (
+    SELECT
+        EnquiryId,
+        SUM(Cost)               AS Grand_Total_Cost
+    FROM ionfiltrabagfilters.BillOfMaterial
+    WHERE Item = 'Total'
+    GROUP BY EnquiryId
+)
+
+-- ── Final SELECT with section header rows injected ─────────
+SELECT * FROM (
+
+    -- ✅ REAL BOM DATA ROWS (unchanged)
+    SELECT
+        SC.EnquiryId,
+        SC.Enquiry_ExternalId,
+        SC.Customer,
+        SC.RequiredBagFilters,
+        SC.Total_Bag_Filters,
+        SC.Total_No_Of_Bags,
+        SC.Total_Structural_Weight,
+        COALESCE(GT.Grand_Total_Cost, 0)            AS Grand_Total_Cost,
+        CASE
+            WHEN SC.Total_Bag_Filters > 0
+            THEN COALESCE(GT.Grand_Total_Cost, 0) / SC.Total_Bag_Filters
+            ELSE 0
+        END                                         AS Avg_Cost_Per_BF,
+        CASE
+            WHEN SC.Total_No_Of_Bags > 0
+            THEN COALESCE(GT.Grand_Total_Cost, 0) / SC.Total_No_Of_Bags
+            ELSE 0
+        END                                         AS Avg_Cost_Per_Bag,
+        BOM.SortOrder,
+        BOM.Item,
+        BOM.Material,
+        BOM.Units,
+        BOM.Rate,
+        BOM.Total_Weight,
+        BOM.Total_Cost,
+        BOM.Section_Label,
+        BOM.Is_Summary_Row
+    FROM SummaryCards SC
+    JOIN AggregatedBOM BOM
+        ON BOM.EnquiryId = SC.EnquiryId
+    LEFT JOIN GrandTotalCost GT
+        ON GT.EnquiryId = SC.EnquiryId
+
+    UNION ALL
+
+    -- ✅ HEADER ROW 1: "— STRUCTURAL ITEMS —"
+    --    SortOrder = 0 so it appears before Casing (SortOrder 1)
+    SELECT
+        SC.EnquiryId,
+        SC.Enquiry_ExternalId,
+        SC.Customer,
+        SC.RequiredBagFilters,
+        SC.Total_Bag_Filters,
+        SC.Total_No_Of_Bags,
+        SC.Total_Structural_Weight,
+        COALESCE(GT.Grand_Total_Cost, 0)            AS Grand_Total_Cost,
+        CASE
+            WHEN SC.Total_Bag_Filters > 0
+            THEN COALESCE(GT.Grand_Total_Cost, 0) / SC.Total_Bag_Filters
+            ELSE 0
+        END                                         AS Avg_Cost_Per_BF,
+        CASE
+            WHEN SC.Total_No_Of_Bags > 0
+            THEN COALESCE(GT.Grand_Total_Cost, 0) / SC.Total_No_Of_Bags
+            ELSE 0
+        END                                         AS Avg_Cost_Per_Bag,
+        0                                           AS SortOrder,
+        '— STRUCTURAL ITEMS —'                      AS Item,
+        ''                                          AS Material,
+        ''                                          AS Units,
+        NULL                                        AS Rate,
+        NULL                                        AS Total_Weight,
+        NULL                                        AS Total_Cost,
+        'SECTION_HEADER'                            AS Section_Label,
+        0                                           AS Is_Summary_Row
+    FROM SummaryCards SC
+    LEFT JOIN GrandTotalCost GT
+        ON GT.EnquiryId = SC.EnquiryId
+
+    UNION ALL
+
+    -- ✅ HEADER ROW 2: "— COST COMPONENTS —"
+    --    SortOrder = 11.5 so it appears after structural items
+    --    (max SortOrder ~11) and before painting cost (SortOrder 12)
+    SELECT
+        SC.EnquiryId,
+        SC.Enquiry_ExternalId,
+        SC.Customer,
+        SC.RequiredBagFilters,
+        SC.Total_Bag_Filters,
+        SC.Total_No_Of_Bags,
+        SC.Total_Structural_Weight,
+        COALESCE(GT.Grand_Total_Cost, 0)            AS Grand_Total_Cost,
+        CASE
+            WHEN SC.Total_Bag_Filters > 0
+            THEN COALESCE(GT.Grand_Total_Cost, 0) / SC.Total_Bag_Filters
+            ELSE 0
+        END                                         AS Avg_Cost_Per_BF,
+        CASE
+            WHEN SC.Total_No_Of_Bags > 0
+            THEN COALESCE(GT.Grand_Total_Cost, 0) / SC.Total_No_Of_Bags
+            ELSE 0
+        END                                         AS Avg_Cost_Per_Bag,
+        11.5                                        AS SortOrder,
+        '— COST COMPONENTS —'                       AS Item,
+        ''                                          AS Material,
+        ''                                          AS Units,
+        NULL                                        AS Rate,
+        NULL                                        AS Total_Weight,
+        NULL                                        AS Total_Cost,
+        'SECTION_HEADER'                            AS Section_Label,
+        0                                           AS Is_Summary_Row
+    FROM SummaryCards SC
+    LEFT JOIN GrandTotalCost GT
+        ON GT.EnquiryId = SC.EnquiryId
+
+) AS FinalResult
+
+ORDER BY
+    EnquiryId,
+    SortOrder;

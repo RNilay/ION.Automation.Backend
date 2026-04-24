@@ -32,6 +32,7 @@ using IonFiltra.BagFilters.Core.Entities.MasterData.FilterBagData;
 using IonFiltra.BagFilters.Core.Entities.MasterData.Master_Definition;
 using IonFiltra.BagFilters.Core.Entities.MasterData.SolenoidValveData;
 using IonFiltra.BagFilters.Core.Entities.MasterData.TimerData;
+using IonFiltra.BagFilters.Core.Entities.PaintScheme;
 using IonFiltra.BagFilters.Core.Entities.SkyCivEntities;
 using IonFiltra.BagFilters.Core.Entities.Users.User;
 using IonFiltra.BagFilters.Core.Entities.Users.UserRoles;
@@ -118,6 +119,17 @@ namespace IonFiltra.BagFilters.Infrastructure.Data
         public DbSet<UserAccount> Users { get; set; }
         public DbSet<UserRole> UserRoles { get; set; }
         public DbSet<UserOtp> UserOtps { get; set; } // Add the UserOtp table
+
+
+        //Paint Scheme tables
+
+        public DbSet<EnquiryPaintScheme> EnquiryPaintSchemes { get; set; }
+        public DbSet<EnquiryPaintSchemeSection> EnquiryPaintSchemeSections { get; set; }
+        public DbSet<EnquiryPaintSchemeBfAssignment> EnquiryPaintSchemeBfAssignments { get; set; }
+        public DbSet<EnquiryPaintSchemeOverride> EnquiryPaintSchemeOverrides { get; set; }
+        public DbSet<EnquiryPaintSchemeOverrideSection> EnquiryPaintSchemeOverrideSections { get; set; }
+
+        public DbSet<PaintingSchemeMaster> PaintingSchemeMasters { get; set; }
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
@@ -392,6 +404,104 @@ namespace IonFiltra.BagFilters.Infrastructure.Data
                     .HasForeignKey(otp => otp.UserId)
                     .OnDelete(DeleteBehavior.Cascade);
             });
+
+
+            //paint scheme 
+
+            // ── EnquiryPaintScheme ────────────────────────────────────────────────────
+            modelBuilder.Entity<EnquiryPaintScheme>(entity =>
+            {
+                entity.ToTable("EnquiryPaintScheme", GlobalConstants.IONFILTRA_SCHEMA);
+                entity.HasKey(e => e.Id);
+                entity.Property(e => e.EnquiryId).IsRequired();
+                entity.Property(e => e.PaintingSchemeId).IsRequired(false);
+                entity.Property(e => e.IsDeleted).HasDefaultValue(false);
+                entity.Property(e => e.CreatedAt).IsRequired();
+                entity.Property(e => e.UpdatedAt).IsRequired(false);
+            });
+
+            // ── EnquiryPaintSchemeSection ─────────────────────────────────────────────
+            modelBuilder.Entity<EnquiryPaintSchemeSection>(entity =>
+            {
+                entity.ToTable("EnquiryPaintSchemeSection", GlobalConstants.IONFILTRA_SCHEMA);
+                entity.HasKey(e => e.Id);
+                entity.Property(e => e.EnquiryPaintSchemeId).IsRequired();
+                entity.Property(e => e.SectionKey).IsRequired().HasMaxLength(30);
+                entity.Property(e => e.ItemMasterId).IsRequired();
+                entity.Property(e => e.ItemModel).HasMaxLength(255).IsRequired(false);
+                entity.Property(e => e.CostPerLiter).HasColumnType("decimal(10,2)").HasDefaultValue(0.00m);
+                entity.Property(e => e.NoOfCoats).HasDefaultValue(1);
+                entity.Property(e => e.CreatedAt).IsRequired();
+                entity.Property(e => e.UpdatedAt).IsRequired(false);
+
+                entity.HasIndex(e => new { e.EnquiryPaintSchemeId, e.SectionKey })
+                      .IsUnique()
+                      .HasDatabaseName("uq_epss_section");
+            });
+
+            // ── EnquiryPaintSchemeBfAssignment ────────────────────────────────────────
+            modelBuilder.Entity<EnquiryPaintSchemeBfAssignment>(entity =>
+            {
+                entity.ToTable("EnquiryPaintSchemeBfAssignment", GlobalConstants.IONFILTRA_SCHEMA);
+                entity.HasKey(e => e.Id);
+                entity.Property(e => e.EnquiryPaintSchemeId).IsRequired();
+                entity.Property(e => e.BagfilterMasterId).IsRequired(false);
+                entity.Property(e => e.BfName).IsRequired().HasMaxLength(20);
+                entity.Property(e => e.AssignmentType)
+                      .IsRequired()
+                      .HasMaxLength(10)
+                      .HasDefaultValue("global");
+                entity.Property(e => e.CreatedAt).IsRequired();
+                entity.Property(e => e.UpdatedAt).IsRequired(false);
+
+                entity.HasIndex(e => new { e.EnquiryPaintSchemeId, e.BfName })
+                      .IsUnique()
+                      .HasDatabaseName("uq_epsbfa_bf");
+            });
+
+            // ── EnquiryPaintSchemeOverride ────────────────────────────────────────────
+            modelBuilder.Entity<EnquiryPaintSchemeOverride>(entity =>
+            {
+                entity.ToTable("EnquiryPaintSchemeOverride", GlobalConstants.IONFILTRA_SCHEMA);
+                entity.HasKey(e => e.Id);
+                entity.Property(e => e.BfAssignmentId).IsRequired();
+                entity.Property(e => e.PaintingSchemeId).IsRequired(false);
+                entity.Property(e => e.CreatedAt).IsRequired();
+                entity.Property(e => e.UpdatedAt).IsRequired(false);
+
+                entity.HasIndex(e => e.BfAssignmentId)
+                      .IsUnique()
+                      .HasDatabaseName("uq_epso_assignment");
+
+                // ── [NotMapped] transient property used only during Save/Update ────────
+                entity.Ignore(e => e.BfName);
+            });
+
+            // ── EnquiryPaintSchemeOverrideSection ─────────────────────────────────────
+            modelBuilder.Entity<EnquiryPaintSchemeOverrideSection>(entity =>
+            {
+                entity.ToTable("EnquiryPaintSchemeOverrideSection", GlobalConstants.IONFILTRA_SCHEMA);
+                entity.HasKey(e => e.Id);
+                entity.Property(e => e.OverrideId).IsRequired();
+                entity.Property(e => e.SectionKey).IsRequired().HasMaxLength(30);
+                entity.Property(e => e.ItemMasterId).IsRequired();
+                entity.Property(e => e.ItemModel).HasMaxLength(255).IsRequired(false);
+                entity.Property(e => e.CostPerLiter).HasColumnType("decimal(10,2)").HasDefaultValue(0.00m);
+                entity.Property(e => e.NoOfCoats).HasDefaultValue(1);
+                entity.Property(e => e.CreatedAt).IsRequired();
+                entity.Property(e => e.UpdatedAt).IsRequired(false);
+
+                entity.HasIndex(e => new { e.OverrideId, e.SectionKey })
+                      .IsUnique()
+                      .HasDatabaseName("uq_epsos_section");
+            });
+
+            modelBuilder.Entity<PaintingSchemeMaster>(entity =>
+            {
+                entity.ToTable("PaintingSchemeMaster", GlobalConstants.IONFILTRA_SCHEMA);
+                entity.HasKey(u => u.Id);
+            });
+
         }
     }
 }

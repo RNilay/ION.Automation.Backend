@@ -92,7 +92,7 @@ namespace IonFiltra.BagFilters.Application.Services.Bagfilters.BagfilterInputs
         private readonly IPaintingAreaRepository _paintingAreaRepository;
 
         private readonly IBillOfMaterialRepository _billOfMaterialRepository;
-        private readonly IPaintingCostRepository _paintingCostRepository;
+        //private readonly IPaintingCostRepository _paintingCostRepository;
 
         private readonly IBoughtOutItemSelectionRepository _boughtOutRepo;
         private readonly IMasterDefinitionsRepository _masterDefinitionsRepository;
@@ -130,7 +130,7 @@ namespace IonFiltra.BagFilters.Application.Services.Bagfilters.BagfilterInputs
             IRoofDoorRepository roofDoorRepository,
             IPaintingAreaRepository paintingAreaRepository,
             IBillOfMaterialRepository billOfMaterialRepository,
-            IPaintingCostRepository paintingCostRepository,
+            //IPaintingCostRepository paintingCostRepository,
             IBoughtOutItemSelectionRepository boughtOutRepo,
             IMasterDefinitionsRepository masterDefinitionsRepository,
             IGenericViewRepository genericViewRepository,
@@ -163,7 +163,7 @@ namespace IonFiltra.BagFilters.Application.Services.Bagfilters.BagfilterInputs
             _roofDoorRepository = roofDoorRepository ?? throw new ArgumentNullException(nameof(roofDoorRepository));
             _paintingAreaRepository = paintingAreaRepository ?? throw new ArgumentNullException(nameof(paintingAreaRepository));
             _billOfMaterialRepository = billOfMaterialRepository ?? throw new ArgumentNullException(nameof(billOfMaterialRepository));
-            _paintingCostRepository = paintingCostRepository ?? throw new ArgumentNullException(nameof(paintingCostRepository));
+            //_paintingCostRepository = paintingCostRepository ?? throw new ArgumentNullException(nameof(paintingCostRepository));
             _boughtOutRepo = boughtOutRepo;
             _masterDefinitionsRepository = masterDefinitionsRepository;
             _genericViewRepository = genericViewRepository;
@@ -520,12 +520,12 @@ namespace IonFiltra.BagFilters.Application.Services.Bagfilters.BagfilterInputs
             upsertRange: (entities, token) => _paintingAreaRepository.UpsertRangeAsync(entities, token),
             ct);
 
-            await BatchUpsertChildAsync<PaintingCost>(dtos, masterIdByIndex,
-            hasChildDto: dto => dto.PaintingCost != null,
-            getExistingByMasterIds: (masterIds, token) => _paintingCostRepository.GetByMasterIdsAsync(masterIds, token),
-            mapEntity: (dto, masterId, existing) => MapPaintingCost(dto, masterId, existing),
-            upsertRange: (entities, token) => _paintingCostRepository.UpsertRangeAsync(entities, token),
-            ct);
+            //await BatchUpsertChildAsync<PaintingCost>(dtos, masterIdByIndex,
+            //hasChildDto: dto => dto.PaintingCost != null,
+            //getExistingByMasterIds: (masterIds, token) => _paintingCostRepository.GetByMasterIdsAsync(masterIds, token),
+            //mapEntity: (dto, masterId, existing) => MapPaintingCost(dto, masterId, existing),
+            //upsertRange: (entities, token) => _paintingCostRepository.UpsertRangeAsync(entities, token),
+            //ct);
 
             await BatchUpsertChildAsync<DamperSizeInputs>(
             dtos,
@@ -1272,12 +1272,12 @@ namespace IonFiltra.BagFilters.Application.Services.Bagfilters.BagfilterInputs
             upsertRange: (entities, token) => _paintingAreaRepository.UpsertRangeAsync(entities, token),
             ct);
 
-            await BatchUpsertChildAsync<PaintingCost>(dtos, masterIdByIndex,
-            hasChildDto: dto => dto.PaintingCost != null,
-            getExistingByMasterIds: (masterIds, token) => _paintingCostRepository.GetByMasterIdsAsync(masterIds, token),
-            mapEntity: (dto, masterId, existing) => MapPaintingCost(dto, masterId, existing),
-            upsertRange: (entities, token) => _paintingCostRepository.UpsertRangeAsync(entities, token),
-            ct);
+            //await BatchUpsertChildAsync<PaintingCost>(dtos, masterIdByIndex,
+            //hasChildDto: dto => dto.PaintingCost != null,
+            //getExistingByMasterIds: (masterIds, token) => _paintingCostRepository.GetByMasterIdsAsync(masterIds, token),
+            //mapEntity: (dto, masterId, existing) => MapPaintingCost(dto, masterId, existing),
+            //upsertRange: (entities, token) => _paintingCostRepository.UpsertRangeAsync(entities, token),
+            //ct);
 
             await BatchUpsertChildAsync<DamperSizeInputs>(
            dtos,
@@ -2745,41 +2745,41 @@ namespace IonFiltra.BagFilters.Application.Services.Bagfilters.BagfilterInputs
             return entity;
         }
 
-        private PaintingCost MapPaintingCost(
-         BagfilterInputMainDto dto,
-         int bagfilterMasterId,
-         PaintingCost existing = null)
-        {
-            if (dto == null || dto.PaintingCost == null)
-                return null;
+        //private PaintingCost MapPaintingCost(
+        // BagfilterInputMainDto dto,
+        // int bagfilterMasterId,
+        // PaintingCost existing = null)
+        //{
+        //    if (dto == null || dto.PaintingCost == null)
+        //        return null;
 
-            var src = dto.PaintingCost;
+        //    var src = dto.PaintingCost;
 
-            // Choose how to determine EnquiryId.
-            var enquiryId =
-                (int?)dto.BagfilterInput?.EnquiryId ??
-                dto.BagfilterMaster?.EnquiryId ??
-                existing?.EnquiryId ??
-                0;
+        //    // Choose how to determine EnquiryId.
+        //    var enquiryId =
+        //        (int?)dto.BagfilterInput?.EnquiryId ??
+        //        dto.BagfilterMaster?.EnquiryId ??
+        //        existing?.EnquiryId ??
+        //        0;
 
-            var entity = new PaintingCost
-            {
-                BagfilterMasterId = bagfilterMasterId,
-                EnquiryId = enquiryId,
+        //    var entity = new PaintingCost
+        //    {
+        //        BagfilterMasterId = bagfilterMasterId,
+        //        EnquiryId = enquiryId,
 
-                PaintingTableJson = src.PaintingTableJson,
+        //        PaintingTableJson = src.PaintingTableJson,
 
-                // CreatedAt / UpdatedAt handled in repo
-            };
+        //        // CreatedAt / UpdatedAt handled in repo
+        //    };
 
-            if (existing != null)
-            {
-                entity.Id = existing.Id;
-                entity.CreatedAt = existing.CreatedAt;
-            }
+        //    if (existing != null)
+        //    {
+        //        entity.Id = existing.Id;
+        //        entity.CreatedAt = existing.CreatedAt;
+        //    }
 
-            return entity;
-        }
+        //    return entity;
+        //}
 
 
 

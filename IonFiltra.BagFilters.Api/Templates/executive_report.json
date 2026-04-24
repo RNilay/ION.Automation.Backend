@@ -1,0 +1,136 @@
+﻿{
+    "Id": 10,
+    "Order": 10,
+    "ReportName": "Executive Summary",
+    "Title": "Executive Summary",
+    "EntityDbName": "vw_ExecutiveSummary",
+    "Logo": "wwwroot/images/company.png",
+
+    "Layout": {
+        "Columns": 1,
+        "ColumnWidths": [ "100%" ],
+        "ReportWidth": "210mm"
+    },
+
+    "Header": {
+        "TextRows": [
+            "<div style='background-color:#F2F2F2; padding:6px; border:1px solid #000;'>",
+            "<table style='width:100%; font-size:12px;'><tr><th style='text-align:left'>{Title}</th><th style='text-align:right'>{Enquiry_ExternalId}</th></tr></table>",
+            "</div>"
+        ]
+    },
+
+    "Footer": {
+        "TextRows": [ "{Logo}", "Page Footer" ]
+    },
+
+    "Rows": [
+        {
+            "Type": "group",
+            "RepeatRow": {
+                "SourceKey": "executive_summary_groups",
+                "TemplateRowIndex": 0
+            },
+            "ChildRows": [
+
+                {
+                    "Type": "table",
+                    "LayoutColumns": [ "","", "", "" ,"" ,""],
+                    "ColumnWidths": [ 33,33, 34, 33 ,33 ,33],
+                    "Rows": [
+                        {
+                            "RowData": [
+                                "GRAND TOTAL COST (₹)",
+                                "TOTAL BAG FILTERS",
+                                "TOTAL NO. OF BAGS",
+                                "TOTAL STRUCTURAL WEIGHT (kg)",
+                                "AVG. COST PER BF (₹)",
+                                "AVG. COST PER BAG (₹)"
+                            ],
+                            "RowStyle": {
+                                "FontSize": 9,
+                                "Bold": true,
+                                "InlineCss": "background-color:#008fd8; font-weight:bolder; color:#ffffff; text-align:center;"
+                            }
+                        },
+                        {
+                            "RowData": [
+                                "{Grand_Total_Cost}",
+                                "{Total_Bag_Filters}",
+                                "{Total_No_Of_Bags}",
+                                "{Total_Structural_Weight}",
+                                "{Avg_Cost_Per_BF}",
+                                "{Avg_Cost_Per_Bag}"
+                            ],
+                            "RowStyle": {
+                                "FontSize": 20,
+                                "Bold": true,
+                                "InlineCss": "text-align:center; font-weight:bold; color:#1a3a5c; padding:10px;"
+                            }
+                        }
+                    ]
+                },
+                {
+                    "Type": "heading",
+                    "Text": "Consolidated Bill of Material",
+                    "Style": {
+                        "Bold": true,
+                        "InlineCss": "font-weight:bolder; font-size:10px;"
+                    }
+                },
+                {
+                    "Type": "table",
+                    "LayoutColumns": [ "#", "ITEM", "MATERIAL", "TOTAL WEIGHT", "UNITS", "RATE (₹)", "TOTAL COST (₹)" ],
+                    "ColumnWidths": [ 5, 30, 12, 13, 8, 13, 19 ],
+                    "Rows": [
+                        {
+                            "RowData": [
+                                "#",
+                                "ITEM",
+                                "MATERIAL",
+                                "TOTAL WEIGHT",
+                                "UNITS",
+                                "RATE (₹)",
+                                "TOTAL COST (₹)"
+                            ],
+                            "RowStyle": {
+                                "FontSize": 9,
+                                "Bold": true,
+                                "InlineCss": "background-color:#008fd8; color:#ffffff; font-weight:bolder;"
+                            }
+                        },
+                        {
+                            "RowData": [
+                                "{SortOrder}",
+                                "{Item}",
+                                "{Material}",
+                                "{Total_Weight}",
+                                "{Units}",
+                                "{Rate}",
+                                "{Total_Cost}"
+                            ],
+                            "RowStyle": {
+                                "FontSize": 9,
+                                "InlineCss": "font-size:9px; padding:4px;"
+                            }
+                        }
+                    ],
+                    "RepeatRow": {
+                        "SourceKey": "BomRows",
+                        "TemplateRowIndex": 1,
+                        "Columns": [
+                            "SortOrder",
+                            "Item",
+                            "Material",
+                            "Total_Weight",
+                            "Units",
+                            "Rate",
+                            "Total_Cost"
+                        ]
+                    }
+                }
+
+            ]
+        }
+    ]
+}

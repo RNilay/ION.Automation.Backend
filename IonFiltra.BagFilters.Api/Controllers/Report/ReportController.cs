@@ -794,8 +794,15 @@ namespace IonFiltra.BagFilters.Api.Controllers.Report
                     .ThenBy(t => t.Title, StringComparer.OrdinalIgnoreCase) // secondary: stable deterministic
                     .ToList();
 
-                // 2) Apply Summary / Detailed logic
-                if (string.Equals(request.ReportType, "Summary", StringComparison.OrdinalIgnoreCase))
+                // 2) Apply Summary / Detailed / Executive Summary logic
+                if (string.Equals(request.ReportType, "Executive Summary", StringComparison.OrdinalIgnoreCase))
+                {
+                    // Executive Summary - only show Executive Summary report
+                    templates = templates
+                        .Where(t => string.Equals(t.ReportName, "Executive Summary", StringComparison.OrdinalIgnoreCase))
+                        .ToList();
+                }
+                else if (string.Equals(request.ReportType, "Summary", StringComparison.OrdinalIgnoreCase))
                 {
                     templates = templates
                         .Where(t =>
@@ -807,7 +814,8 @@ namespace IonFiltra.BagFilters.Api.Controllers.Report
                 var summaryTemplates = templates
                  .Where(t =>
                      string.Equals(t.ReportName, "Process Volume Summary", StringComparison.OrdinalIgnoreCase)
-                     || string.Equals(t.ReportName, "Weight Summary", StringComparison.OrdinalIgnoreCase))
+                     || string.Equals(t.ReportName, "Weight Summary", StringComparison.OrdinalIgnoreCase)
+                     || string.Equals(t.ReportName, "Executive Summary", StringComparison.OrdinalIgnoreCase))
                  .ToList();
 
 
@@ -854,7 +862,7 @@ namespace IonFiltra.BagFilters.Api.Controllers.Report
                 var nonVolumeDependentReports = new HashSet<string>(
                     StringComparer.OrdinalIgnoreCase)
                 {
-                    "Weight Summary"
+                    "Weight Summary", "Executive Summary"
                 };
 
                 var headerDict =
@@ -913,7 +921,7 @@ namespace IonFiltra.BagFilters.Api.Controllers.Report
                                 page.Header().Element(header =>
                                 {
                                     header.Border(1)
-                                          .Background("#E5E5EA")
+                                          .Background("#E3F2FD")
                                           .Padding(10)
                                           .Column(col =>
                                           {

@@ -279,3 +279,35 @@ INSERT INTO ionfiltrabagfilters.CableJBToInstruments
  'Armoured, shielded, copper, multistranded, 1 pair x 1 mm2 cable',
  20, 73.20, 0),
 ('JB to Instruments', 'Polycab', '1.5mm2 3core Type Flexible', 20, 75.00, 0);
+
+
+----Painting Master Tables
+
+INSERT INTO ionfiltrabagfilters.PrimerMaster (Model, CostPerLiter) VALUES
+('(Type: Synthetic Enamel) Asian Paints Apcolite 100 Grey (Colour: Red Oxide)', 208),
+('(Type: Synthetic Enamel) Asian Paints Apcolite Zinc Phosphate Primer Grey', 205),
+('(Type: Epoxy) Paint EP 102 Epoxy Primer Surfacer Grey (Zinc Phosphate Primer)', 254),
+('(Type: PU) Asian Paints EP 102 Epoxy Primer Surfacer Grey (Zinc Phosphate Primer)', 220),
+('(Type: Epoxy) Asian Paints Epoxy Zinc Rich Primer Grey', 694),
+('(Type: PU) Asian Paints Epoxy Zinc Rich Primer Grey', 694),
+('(Type: Sigmacover) Sigmacover Asian Paints 620 DA Grey (with Thinner 91-92)', 487),
+('None', 0);
+
+INSERT INTO ionfiltrabagfilters.IntermediateCoatingMaster (Model, CostPerLiter) VALUES
+('(Type: Epoxy) HB MIO Grey', 258),
+('None', 0);
+
+
+INSERT INTO ionfiltrabagfilters.FinalCoatingMaster (Model, CostPerLiter) VALUES
+('(Type: Synthetic Enamel) Asian Paints Light Grey (RAL: 7035)', 258),
+('(Type: Synthetic Enamel) Asian Paints Traffic Grey (RAL: 7043)', 223),
+('(Type: Epoxy) Asian Paints Colour: Smoke Grey (RAL: IS 692)', 288),
+('(Type: PU) Asian Paints Apcothane CF674 (RAL: 7000)', 450),
+('(Type: Sigmacover) Sigmadur 550 (with Primer 21-06)', 670),
+('HRA Paint (250°C)', 252),
+('None', 0);
+
+INSERT INTO  ionfiltrabagfilters.PaintingSchemeMaster (SchemeName, CostPerKg) VALUES
+('Sand Blasting + Primer + Finish Paint', 4.50),
+('Wire Brush + Primer + Finish Paint', 2.50),
+('Wire Brush + Primer', 1.50);

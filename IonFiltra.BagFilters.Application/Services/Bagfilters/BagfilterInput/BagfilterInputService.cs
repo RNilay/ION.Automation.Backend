@@ -19,6 +19,7 @@ using IonFiltra.BagFilters.Core.Entities.Bagfilters.Sections.Casing_Inputs;
 using IonFiltra.BagFilters.Core.Entities.Bagfilters.Sections.DamperSize;
 using IonFiltra.BagFilters.Core.Entities.Bagfilters.Sections.EV;
 using IonFiltra.BagFilters.Core.Entities.Bagfilters.Sections.Hopper_Trough;
+using IonFiltra.BagFilters.Core.Entities.Bagfilters.Sections.PaintCostSummary;
 using IonFiltra.BagFilters.Core.Entities.Bagfilters.Sections.Painting;
 using IonFiltra.BagFilters.Core.Entities.Bagfilters.Sections.Process_Info;
 using IonFiltra.BagFilters.Core.Entities.Bagfilters.Sections.Roof_Door;
@@ -33,6 +34,7 @@ using IonFiltra.BagFilters.Core.Entities.BOM.Transp_Cost;
 using IonFiltra.BagFilters.Core.Entities.EnquiryEntity;
 using IonFiltra.BagFilters.Core.Entities.MasterData.BoughtOutItems;
 using IonFiltra.BagFilters.Core.Interfaces.Bagfilters.BagfilterMasters;
+using IonFiltra.BagFilters.Core.Interfaces.Bagfilters.Sections.PaintCostSummary;
 using IonFiltra.BagFilters.Core.Interfaces.EnquiryRep;
 using IonFiltra.BagFilters.Core.Interfaces.GenericView;
 using IonFiltra.BagFilters.Core.Interfaces.MasterData.Master_Definition;
@@ -94,6 +96,8 @@ namespace IonFiltra.BagFilters.Application.Services.Bagfilters.BagfilterInputs
         private readonly IBillOfMaterialRepository _billOfMaterialRepository;
         //private readonly IPaintingCostRepository _paintingCostRepository;
 
+        private readonly IBagfilterPaintingCostRepository _bagfilterPaintingCostRepository;
+
         private readonly IBoughtOutItemSelectionRepository _boughtOutRepo;
         private readonly IMasterDefinitionsRepository _masterDefinitionsRepository;
 
@@ -131,6 +135,7 @@ namespace IonFiltra.BagFilters.Application.Services.Bagfilters.BagfilterInputs
             IPaintingAreaRepository paintingAreaRepository,
             IBillOfMaterialRepository billOfMaterialRepository,
             //IPaintingCostRepository paintingCostRepository,
+            IBagfilterPaintingCostRepository bagfilterPaintingCostRepository,
             IBoughtOutItemSelectionRepository boughtOutRepo,
             IMasterDefinitionsRepository masterDefinitionsRepository,
             IGenericViewRepository genericViewRepository,
@@ -164,6 +169,7 @@ namespace IonFiltra.BagFilters.Application.Services.Bagfilters.BagfilterInputs
             _paintingAreaRepository = paintingAreaRepository ?? throw new ArgumentNullException(nameof(paintingAreaRepository));
             _billOfMaterialRepository = billOfMaterialRepository ?? throw new ArgumentNullException(nameof(billOfMaterialRepository));
             //_paintingCostRepository = paintingCostRepository ?? throw new ArgumentNullException(nameof(paintingCostRepository));
+            _bagfilterPaintingCostRepository = bagfilterPaintingCostRepository ?? throw new ArgumentNullException(nameof(bagfilterPaintingCostRepository));
             _boughtOutRepo = boughtOutRepo;
             _masterDefinitionsRepository = masterDefinitionsRepository;
             _genericViewRepository = genericViewRepository;
@@ -520,12 +526,35 @@ namespace IonFiltra.BagFilters.Application.Services.Bagfilters.BagfilterInputs
             upsertRange: (entities, token) => _paintingAreaRepository.UpsertRangeAsync(entities, token),
             ct);
 
-            //await BatchUpsertChildAsync<PaintingCost>(dtos, masterIdByIndex,
-            //hasChildDto: dto => dto.PaintingCost != null,
-            //getExistingByMasterIds: (masterIds, token) => _paintingCostRepository.GetByMasterIdsAsync(masterIds, token),
-            //mapEntity: (dto, masterId, existing) => MapPaintingCost(dto, masterId, existing),
-            //upsertRange: (entities, token) => _paintingCostRepository.UpsertRangeAsync(entities, token),
-            //ct);
+
+            //new Painting Cost code
+
+
+            // === Painting Cost Summary (Batch) ===
+            {
+                var entities = new List<BagfilterPaintingCostSummary>();
+
+                for (int i = 0; i < dtos.Count; i++)
+                {
+                    var dto = dtos[i];
+
+                    if (dto.PaintingCostSummary == null)
+                        continue;
+
+                    var masterId = masterIdByIndex[i];
+                    if (masterId <= 0)
+                        continue;
+
+                    entities.Add(MapPaintingCostSummary(dto, masterId, null));
+                }
+
+                if (entities.Count > 0)
+                {
+                    await _bagfilterPaintingCostRepository.UpsertRangeAsync(entities);
+                }
+            }
+
+
 
             await BatchUpsertChildAsync<DamperSizeInputs>(
             dtos,
@@ -803,40 +832,64 @@ namespace IonFiltra.BagFilters.Application.Services.Bagfilters.BagfilterInputs
                 }
             }
 
-            var optimizationBag = new ConcurrentBag<SkyCivOptimizationDto>();
-            //call for sky civ for unmatched items only
+            //var optimizationBag = new ConcurrentBag<SkyCivOptimizationDto>();
+            ////call for sky civ for unmatched items only
+            //if (unmatchedPairIndices.Any())
+            //{
+            //    const int maxConcurrency = 2;
+            //    using var sem = new SemaphoreSlim(maxConcurrency);
+            //    var tasks = new List<Task>();
+
+
+            //    foreach (var originalPairIndex in unmatchedPairIndices)
+            //    {
+            //        // create a local copy to avoid closed-over loop variable bugs
+            //        var pairIndex = originalPairIndex;
+
+            //        // start the processing task directly (no Task.Run)
+            //        tasks.Add(ProcessPairAsync(pairIndex, pairs, pairGroupKeys, createdInputIds, groupMatchMap, optimizationBag, sem, ct));
+            //    }
+
+
+            //    try
+            //    {
+            //        await Task.WhenAll(tasks).ConfigureAwait(false);
+            //    }
+            //    catch (Exception ex)
+            //    {
+            //        _logger?.LogError(ex, "One or more SkyCiv analysis tasks failed.");
+            //        throw; // or aggregate and return a partial result as your policy dictates
+            //    }
+            //}
+
+
+            //result.Optimizations = optimizationBag.Any()
+            //       ? optimizationBag.ToList()
+            //       : new List<SkyCivOptimizationDto>();
+
+
+            // For unmatched pairs: seed the master database tables (With/Without Canopy)
+            // if the input's Process_Volume does not already exist in the relevant table.
+            // SkyCiv is no longer called here.
             if (unmatchedPairIndices.Any())
             {
-                const int maxConcurrency = 2;
-                using var sem = new SemaphoreSlim(maxConcurrency);
-                var tasks = new List<Task>();
-
-
-                foreach (var originalPairIndex in unmatchedPairIndices)
+                // Deduplicate by group key so we only seed once per distinct group.
+                var seededGroupKeys = new HashSet<string>();
+                foreach (var pairIndex in unmatchedPairIndices)
                 {
-                    // create a local copy to avoid closed-over loop variable bugs
-                    var pairIndex = originalPairIndex;
+                    var groupKey = pairGroupKeys[pairIndex];
+                    if (!seededGroupKeys.Add(groupKey))
+                        continue; // already handled this group
 
-                    // start the processing task directly (no Task.Run)
-                    tasks.Add(ProcessPairAsync(pairIndex, pairs, pairGroupKeys, createdInputIds, groupMatchMap, optimizationBag, sem, ct));
-                }
+                    var inputEntity = pairs[pairIndex].Input;
+                    var support = pairs[pairIndex].Support;
 
-               
-                try
-                {
-                    await Task.WhenAll(tasks).ConfigureAwait(false);
-                }
-                catch (Exception ex)
-                {
-                    _logger?.LogError(ex, "One or more SkyCiv analysis tasks failed.");
-                    throw; // or aggregate and return a partial result as your policy dictates
+                    await SeedDatabaseFromInputAsync(inputEntity, support, ct).ConfigureAwait(false);
                 }
             }
 
-
-            result.Optimizations = optimizationBag.Any()
-                   ? optimizationBag.ToList()
-                   : new List<SkyCivOptimizationDto>();
+            // Optimizations are no longer produced (SkyCiv is not called for unmatched pairs).
+            result.Optimizations = new List<SkyCivOptimizationDto>();
 
             return result;
         }
@@ -1272,12 +1325,56 @@ namespace IonFiltra.BagFilters.Application.Services.Bagfilters.BagfilterInputs
             upsertRange: (entities, token) => _paintingAreaRepository.UpsertRangeAsync(entities, token),
             ct);
 
-            //await BatchUpsertChildAsync<PaintingCost>(dtos, masterIdByIndex,
-            //hasChildDto: dto => dto.PaintingCost != null,
-            //getExistingByMasterIds: (masterIds, token) => _paintingCostRepository.GetByMasterIdsAsync(masterIds, token),
-            //mapEntity: (dto, masterId, existing) => MapPaintingCost(dto, masterId, existing),
-            //upsertRange: (entities, token) => _paintingCostRepository.UpsertRangeAsync(entities, token),
-            //ct);
+
+            //new Painting Cost
+
+            // === Painting Cost Summary (Batch) ===
+            {
+                var masterIds = masterIdByIndex
+                    .Where(x => x > 0)
+                    .Distinct()
+                    .ToList();
+
+                var existingList = new List<BagfilterPaintingCostSummary>();
+
+                if (masterIds.Count > 0)
+                {
+                    // Fetch all existing in ONE go (avoid per-id calls)
+                    var all = await _bagfilterPaintingCostRepository
+                        .GetByEnquiryIdAsync(dtos.First().BagfilterInput.EnquiryId ?? 0);
+
+                    existingList = all
+                        .Where(x => masterIds.Contains(x.BagfilterMasterId))
+                        .ToList();
+                }
+
+                var existingMap = existingList
+                    .ToDictionary(x => x.BagfilterMasterId, x => x);
+
+                var entities = new List<BagfilterPaintingCostSummary>();
+
+                for (int i = 0; i < dtos.Count; i++)
+                {
+                    var dto = dtos[i];
+
+                    if (dto.PaintingCostSummary == null)
+                        continue;
+
+                    var masterId = masterIdByIndex[i];
+                    if (masterId <= 0)
+                        continue;
+
+                    existingMap.TryGetValue(masterId, out var existing);
+
+                    entities.Add(MapPaintingCostSummary(dto, masterId, existing));
+                }
+
+                if (entities.Count > 0)
+                {
+                    await _bagfilterPaintingCostRepository.UpsertRangeAsync(entities);
+                }
+            }
+
 
             await BatchUpsertChildAsync<DamperSizeInputs>(
            dtos,
@@ -1527,78 +1624,109 @@ namespace IonFiltra.BagFilters.Application.Services.Bagfilters.BagfilterInputs
             }
 
 
-            // Step G: SkyCiv analysis
-            // Re-run analysis for:
-            // - newly inserted inputs
-            // - updated inputs where S3D model differs from DB (we need to fetch previous model to determine if changed)
-            var skycivCandidates = new List<int>(); // inputIds to run analysis for
-
-            // Add all created ones
-            skycivCandidates.AddRange(createdIdsAll);
-
-            // For updates: detect changed S3D models (we need to fetch original DB inputs for comparison; use 'candidates' list earlier)
-            // Build dictionary of candidate input id -> original S3dModel (if we have it from earlier candidate fetch)
-            var existingIds = updates.Values.Select(u => u.ExistingInputId).Distinct().ToList();
-
-            var beforeUpdateInputs = await _repository.GetByIdsAsync(existingIds);
-
-            var candidateModelMap = beforeUpdateInputs
-                .ToDictionary(x => x.BagfilterInputId, x => x.S3dModel ?? string.Empty);
-
-
-            foreach (var kv in updates)
+            // Step G: Seed master database tables for newly inserted unmatched pairs.
+            // SkyCiv is no longer called. For each newly created input that belongs to an
+            // unmatched group, we seed With/Without Canopy table if the process volume is absent.
             {
-                var intent = kv.Value;
-                var existingId = intent.ExistingInputId;
-                // find the input after update to get current S3dModel
-                var after = inputsAfterOps.FirstOrDefault(x => x.BagfilterInputId == existingId);
-                var afterModel = after?.S3dModel ?? string.Empty;
-                candidateModelMap.TryGetValue(existingId, out var beforeModel);
-
-                if (!string.Equals(beforeModel ?? string.Empty, afterModel ?? string.Empty, StringComparison.Ordinal))
+                var seededGroupKeys = new HashSet<string>();
+                foreach (var kv in createdInputIdsForInserts)
                 {
-                    skycivCandidates.Add(existingId);
+                    var pairIndex = kv.Key;
+                    if (pairIndex < 0 || pairIndex >= pairs.Count) continue;
+
+                    var groupKey = pairGroupKeys[pairIndex];
+
+                    // Only seed for unmatched groups (matched ones already have DB rows).
+                    if (groupMatchMap.TryGetValue(groupKey, out var gm) && gm.IsMatched)
+                        continue;
+
+                    // Deduplicate: one seed attempt per distinct group.
+                    if (!seededGroupKeys.Add(groupKey))
+                        continue;
+
+                    var inputEntity = pairs[pairIndex].Input;
+                    var support = pairs[pairIndex].support;
+
+                    await SeedDatabaseFromInputAsync(inputEntity, support, ct).ConfigureAwait(false);
                 }
             }
 
             var optimizationBag = new ConcurrentBag<SkyCivOptimizationDto>();
-            // Run SkyCiv for the skycivCandidates (same ProcessPairAsync helper as AddRange, but we will pass the list)
-            if (skycivCandidates.Any())
-            {
-                const int maxConcurrency = 2;
-                using var sem = new SemaphoreSlim(maxConcurrency);
-                var tasks = new List<Task>();
-                foreach (var inputId in skycivCandidates.Distinct())
-                {
-                    // find pairIndex for this inputId
-                    var pairIndex = -1;
-                    // created ones are in createdInputIdsForInserts mapping
-                    var kvCreated = createdInputIdsForInserts.FirstOrDefault(kv2 => kv2.Value == inputId);
-                    if (!kvCreated.Equals(default(KeyValuePair<int, int>))) pairIndex = kvCreated.Key;
-                    else
-                    {
-                        // updated ones: find matching updates entry
-                        var upd = updates.Values.FirstOrDefault(u => u.ExistingInputId == inputId);
-                        if (upd != null) pairIndex = upd.PairIndex;
-                    }
 
-                    if (pairIndex < 0) continue;
 
-                    tasks.Add(ProcessPairAsync(pairIndex, pairs, pairGroupKeys, allIdsToFetch.ToList(), groupMatchMap, optimizationBag, sem, ct));
-                }
+            //// Step G: SkyCiv analysis
+            //// Re-run analysis for:
+            //// - newly inserted inputs
+            //// - updated inputs where S3D model differs from DB (we need to fetch previous model to determine if changed)
+            //var skycivCandidates = new List<int>(); // inputIds to run analysis for
 
-                
+            //// Add all created ones
+            //skycivCandidates.AddRange(createdIdsAll);
 
-                try
-                {
-                    await Task.WhenAll(tasks).ConfigureAwait(false);
-                }
-                catch (Exception ex)
-                {
-                    _logger?.LogError(ex, "SkyCiv analysis failed during UpdateRangeAsync.");
-                    throw;
-                }
-            }
+            //// For updates: detect changed S3D models (we need to fetch original DB inputs for comparison; use 'candidates' list earlier)
+            //// Build dictionary of candidate input id -> original S3dModel (if we have it from earlier candidate fetch)
+            //var existingIds = updates.Values.Select(u => u.ExistingInputId).Distinct().ToList();
+
+            //var beforeUpdateInputs = await _repository.GetByIdsAsync(existingIds);
+
+            //var candidateModelMap = beforeUpdateInputs
+            //    .ToDictionary(x => x.BagfilterInputId, x => x.S3dModel ?? string.Empty);
+
+
+            //foreach (var kv in updates)
+            //{
+            //    var intent = kv.Value;
+            //    var existingId = intent.ExistingInputId;
+            //    // find the input after update to get current S3dModel
+            //    var after = inputsAfterOps.FirstOrDefault(x => x.BagfilterInputId == existingId);
+            //    var afterModel = after?.S3dModel ?? string.Empty;
+            //    candidateModelMap.TryGetValue(existingId, out var beforeModel);
+
+            //    if (!string.Equals(beforeModel ?? string.Empty, afterModel ?? string.Empty, StringComparison.Ordinal))
+            //    {
+            //        skycivCandidates.Add(existingId);
+            //    }
+            //}
+
+            //var optimizationBag = new ConcurrentBag<SkyCivOptimizationDto>();
+            //// Run SkyCiv for the skycivCandidates (same ProcessPairAsync helper as AddRange, but we will pass the list)
+            //if (skycivCandidates.Any())
+            //{
+            //    const int maxConcurrency = 2;
+            //    using var sem = new SemaphoreSlim(maxConcurrency);
+            //    var tasks = new List<Task>();
+            //    foreach (var inputId in skycivCandidates.Distinct())
+            //    {
+            //        // find pairIndex for this inputId
+            //        var pairIndex = -1;
+            //        // created ones are in createdInputIdsForInserts mapping
+            //        var kvCreated = createdInputIdsForInserts.FirstOrDefault(kv2 => kv2.Value == inputId);
+            //        if (!kvCreated.Equals(default(KeyValuePair<int, int>))) pairIndex = kvCreated.Key;
+            //        else
+            //        {
+            //            // updated ones: find matching updates entry
+            //            var upd = updates.Values.FirstOrDefault(u => u.ExistingInputId == inputId);
+            //            if (upd != null) pairIndex = upd.PairIndex;
+            //        }
+
+            //        if (pairIndex < 0) continue;
+
+            //        tasks.Add(ProcessPairAsync(pairIndex, pairs, pairGroupKeys, allIdsToFetch.ToList(), groupMatchMap, optimizationBag, sem, ct));
+            //    }
+
+
+
+            //    try
+            //    {
+            //        await Task.WhenAll(tasks).ConfigureAwait(false);
+            //    }
+            //    catch (Exception ex)
+            //    {
+            //        _logger?.LogError(ex, "SkyCiv analysis failed during UpdateRangeAsync.");
+            //        throw;
+            //    }
+            //}
+
 
             // Step H: Prepare result DTO
             var result = new UpdateRangeResultDto
@@ -1608,9 +1736,12 @@ namespace IonFiltra.BagFilters.Application.Services.Bagfilters.BagfilterInputs
                 Matches = groupMatchMap.Values.ToList()
             };
 
-            result.Optimizations = optimizationBag.Any()
-            ? optimizationBag.ToList()
-            : new List<SkyCivOptimizationDto>();
+            //result.Optimizations = optimizationBag.Any()
+            //? optimizationBag.ToList()
+            //: new List<SkyCivOptimizationDto>();
+
+            // Optimizations are no longer produced (SkyCiv is not called).
+            result.Optimizations = new List<SkyCivOptimizationDto>();
 
             return result;
         }
@@ -1642,6 +1773,225 @@ namespace IonFiltra.BagFilters.Application.Services.Bagfilters.BagfilterInputs
                 arr[3]?["sections"]?.ToString()
             );
         }
+
+
+
+
+        // -----------------------------------------------------------------------
+        // SeedDatabaseFromInputAsync
+        // -----------------------------------------------------------------------
+        // Called for every UNMATCHED pair (one call per distinct group key).
+        //
+        // Logic:
+        //   1. If Process_Volume_M3h is null → skip (nothing to seed).
+        //   2. Choose the right table based on the Canopy flag.
+        //   3. If the exact volume already exists in that table → do nothing.
+        //   4. Otherwise, find the row with the next-greater volume and clone it,
+        //      replacing only Process_Volume_m3hr with the input's value, then insert.
+        //   5. If no next-greater row exists → log a warning and skip (no crash).
+        //   All exceptions are caught and logged so the main flow is never interrupted.
+        // -----------------------------------------------------------------------
+        private async Task SeedDatabaseFromInputAsync(
+            BagfilterInput inputEntity,
+            SupportStructureDto? support,
+            CancellationToken ct)
+        {
+            if (inputEntity == null)
+            {
+                _logger?.LogWarning("[SeedDatabase] inputEntity is null. Skipping.");
+                return;
+            }
+
+            if (!inputEntity.Process_Volume_M3h.HasValue)
+            {
+                _logger?.LogInformation("[SeedDatabase] Process_Volume_M3h is null for input. Skipping seed.");
+                return;
+            }
+
+            var inputVolume = inputEntity.Process_Volume_M3h.Value;
+            var inputVolumeStr = inputVolume.ToString(System.Globalization.CultureInfo.InvariantCulture);
+            bool isCanopy = string.Equals(inputEntity.Canopy, "Yes", StringComparison.OrdinalIgnoreCase);
+
+            try
+            {
+                ct.ThrowIfCancellationRequested();
+
+                if (isCanopy)
+                {
+                    // ── With-Canopy path ─────────────────────────────────────────────────
+                    bool alreadyExists = await _withCanopyRepo
+                        .ExistsByProcessVolumeAsync(inputVolumeStr)
+                        .ConfigureAwait(false);
+
+                    if (alreadyExists)
+                    {
+                        _logger?.LogInformation(
+                            "[SeedDatabase] Process_Volume={Volume} already present in With_Canopy table. No action needed.",
+                            inputVolumeStr);
+                        return;
+                    }
+
+                    // Find the reference row (next greater volume).
+                    var reference = await _withCanopyRepo
+                        .GetByNextGreaterVolumeAsync(inputVolume)
+                        .ConfigureAwait(false);
+
+                    if (reference == null)
+                    {
+                        _logger?.LogWarning(
+                            "[SeedDatabase] No row with a volume greater than {Volume} found in With_Canopy table. " +
+                            "Cannot seed a new row.",
+                            inputVolumeStr);
+                        return;
+                    }
+
+                    // Clone the reference row and replace only the process volume.
+                    var newRow = new IFI_Bagfilter_Database_With_Canopy
+                    {
+                        // ── Identity / timestamps ──────────────────────────────────────
+                        // Id = 0  → EF will auto-generate a new PK
+                        CreatedAt = DateTime.UtcNow,
+                        UpdatedAt = null,
+
+                        // ── Key field: use the INPUT's volume ─────────────────────────
+                        Process_Volume_m3hr = inputVolumeStr,
+
+                        // ── All structural fields: copied from the reference row ───────
+                        Hopper_type = reference.Hopper_type,
+                        Number_of_columns = reference.Number_of_columns,
+                        Number_of_bays_in_X_direction = reference.Number_of_bays_in_X_direction,
+                        Number_of_bays_in_Y_direction = reference.Number_of_bays_in_Y_direction,
+                        Foot_Print_Column_CC_Header_Side_mm_x = reference.Foot_Print_Column_CC_Header_Side_mm_x,
+                        Foot_Print_Column_CC_Other_Side_mm_y = reference.Foot_Print_Column_CC_Other_Side_mm_y,
+                        Ht_of_Supp_Structure_mm_Hopper_Bottom = reference.Ht_of_Supp_Structure_mm_Hopper_Bottom,
+                        Ht_of_Supp_Structure_mm_Column = reference.Ht_of_Supp_Structure_mm_Column,
+                        Ht_of_Supp_Structure_mm_Tube_Sheet = reference.Ht_of_Supp_Structure_mm_Tube_Sheet,
+                        Ht_of_Supp_Structure_mm_Capsule_Top = reference.Ht_of_Supp_Structure_mm_Capsule_Top,
+                        Ht_of_Supp_Structure_mm_Shed_Height = reference.Ht_of_Supp_Structure_mm_Shed_Height,
+                        Member_Sizes_Column = reference.Member_Sizes_Column,
+                        Member_Sizes_Beam = reference.Member_Sizes_Beam,
+                        Member_Sizes_Bracing_Ties = reference.Member_Sizes_Bracing_Ties,
+                        Member_Sizes_RAV = reference.Member_Sizes_RAV,
+                        Member_Sizes_Staging_Beam = reference.Member_Sizes_Staging_Beam,
+                        Member_Sizes_mm_Shed_Column_Rafter = reference.Member_Sizes_mm_Shed_Column_Rafter,
+                        Member_Sizes_mm_Shed_Girt_and_Purlin_along_X_axis = reference.Member_Sizes_mm_Shed_Girt_and_Purlin_along_X_axis,
+                        Member_Sizes_mm_Shed_Girt_Purlin_and_Ridge_along_Y_axis = reference.Member_Sizes_mm_Shed_Girt_Purlin_and_Ridge_along_Y_axis,
+                        Member_Sizes_mm_Shed_Shed_Bracings = reference.Member_Sizes_mm_Shed_Shed_Bracings,
+               
+                        Bolts_No_of_Bolt = reference.Bolts_No_of_Bolt,
+                        Bolts_Dia_of_Bolt = reference.Bolts_Dia_of_Bolt,
+                        Bolts_Grade_of_Bolt = reference.Bolts_Grade_of_Bolt,
+                        Bolts_Sleeve_Size_mm = reference.Bolts_Sleeve_Size_mm,
+                        Bolts_Embedded_Length_mm = reference.Bolts_Embedded_Length_mm,
+                        Bolt_CC_Distance_Configuration = reference.Bolt_CC_Distance_Configuration,
+                        Base_Plate_Dimension = reference.Base_Plate_Dimension,
+                        Weight_of_Base_Plate_kg = reference.Weight_of_Base_Plate_kg,
+                        Total_Weight_of_Structure_kg = reference.Total_Weight_of_Structure_kg,
+                    };
+
+                    var insertedId = await _withCanopyRepo.AddAsync(newRow).ConfigureAwait(false);
+                    _logger?.LogInformation(
+                        "[SeedDatabase] Inserted With_Canopy row id={Id} for Process_Volume={Volume} " +
+                        "(cloned from reference id={RefId} with volume={RefVolume}).",
+                        insertedId, inputVolumeStr, reference.Id, reference.Process_Volume_m3hr);
+                }
+                else
+                {
+                    // ── Without-Canopy path ──────────────────────────────────────────────
+                    bool alreadyExists = await _withoutCanopyRepo
+                        .ExistsByProcessVolumeAsync(inputVolumeStr)
+                        .ConfigureAwait(false);
+
+                    if (alreadyExists)
+                    {
+                        _logger?.LogInformation(
+                            "[SeedDatabase] Process_Volume={Volume} already present in Without_Canopy table. No action needed.",
+                            inputVolumeStr);
+                        return;
+                    }
+
+                    // Find the reference row (next greater volume).
+                    var reference = await _withoutCanopyRepo
+                        .GetByNextGreaterVolumeAsync(inputVolume)
+                        .ConfigureAwait(false);
+
+                    if (reference == null)
+                    {
+                        _logger?.LogWarning(
+                            "[SeedDatabase] No row with a volume greater than {Volume} found in Without_Canopy table. " +
+                            "Cannot seed a new row.",
+                            inputVolumeStr);
+                        return;
+                    }
+
+                    // Clone the reference row and replace only the process volume.
+                    var newRow = new IFI_Bagfilter_Database_Without_Canopy
+                    {
+                        // ── Identity / timestamps ──────────────────────────────────────
+                        // Id = 0  → EF will auto-generate a new PK
+                        CreatedAt = DateTime.UtcNow,
+                        UpdatedAt = null,
+
+                        // ── Key field: use the INPUT's volume ─────────────────────────
+                        Process_Volume_m3hr = inputVolumeStr,
+
+                        // ── All structural fields: copied from the reference row ───────
+                        Hopper_type = reference.Hopper_type,
+                        Number_of_columns = reference.Number_of_columns,
+                        Number_of_bays_in_X_direction = reference.Number_of_bays_in_X_direction,
+                        Number_of_bays_in_Y_direction = reference.Number_of_bays_in_Y_direction,
+                        Column_CC_distance_in_X_direction_mm = reference.Column_CC_distance_in_X_direction_mm,
+                        Column_CC_distance_in_Y_direction_mm = reference.Column_CC_distance_in_Y_direction_mm,
+                        Clearance_Below_Hopper_Flange_mm = reference.Clearance_Below_Hopper_Flange_mm,
+                        Height_upto_mm_Column = reference.Height_upto_mm_Column,
+                        Height_upto_mm_Tube_Sheet = reference.Height_upto_mm_Tube_Sheet,
+                        Height_upto_mm_Capsule_Top = reference.Height_upto_mm_Capsule_Top,
+                        Member_Sizes_Column = reference.Member_Sizes_Column,
+                        Member_Sizes_Beam = reference.Member_Sizes_Beam,
+                        Member_Sizes_Bracing_and_Ties = reference.Member_Sizes_Bracing_and_Ties,
+                        Member_Sizes_RAV = reference.Member_Sizes_RAV,
+                        Member_Sizes_Staging_Beam = reference.Member_Sizes_Staging_Beam,
+                        Member_Sizes_Grid_Beam = reference.Member_Sizes_Grid_Beam,
+                        Bolts_No_of_Bolt = reference.Bolts_No_of_Bolt,
+                        Bolts_Dia_of_Bolt = reference.Bolts_Dia_of_Bolt,
+                        Bolts_Grade_of_Bolt = reference.Bolts_Grade_of_Bolt,
+                        Bolts_Sleeve_Size_mm = reference.Bolts_Sleeve_Size_mm,
+                        Bolts_Embedded_Length_mm = reference.Bolts_Embedded_Length_mm,
+                        Bolt_CC_Distance_Configuration_RCC = reference.Bolt_CC_Distance_Configuration_RCC,
+                        Bolt_CC_Distance_Configuration_Steel = reference.Bolt_CC_Distance_Configuration_Steel,
+                        Base_Plate_Dimension_RCC = reference.Base_Plate_Dimension_RCC,
+                        Base_Plate_Dimension_Steel = reference.Base_Plate_Dimension_Steel,
+                        Weight_of_Base_Plate_kg = reference.Weight_of_Base_Plate_kg,
+                        Total_Weight_of_Structure_kg = reference.Total_Weight_of_Structure_kg,
+                    };
+
+                    var insertedId = await _withoutCanopyRepo.AddAsync(newRow).ConfigureAwait(false);
+                    _logger?.LogInformation(
+                        "[SeedDatabase] Inserted Without_Canopy row id={Id} for Process_Volume={Volume} " +
+                        "(cloned from reference id={RefId} with volume={RefVolume}).",
+                        insertedId, inputVolumeStr, reference.Id, reference.Process_Volume_m3hr);
+                }
+            }
+            catch (OperationCanceledException)
+            {
+                // Propagate cancellation so the caller's token is respected.
+                throw;
+            }
+            catch (Exception ex)
+            {
+                // Log but never crash the main flow.
+                _logger?.LogError(
+                    ex,
+                    "[SeedDatabase] Unexpected error while seeding {Table} table for Process_Volume={Volume}. " +
+                    "The main save operation has already completed successfully.",
+                    isCanopy ? "With_Canopy" : "Without_Canopy",
+                    inputVolumeStr);
+            }
+        }
+
+
+
+
 
 
         private async Task ProcessPairAsync(
@@ -2800,6 +3150,7 @@ namespace IonFiltra.BagFilters.Application.Services.Bagfilters.BagfilterInputs
                 Material = dto.Material,
                 Weight = dto.Weight,
                 Units = dto.Units,
+                LabourCharge = dto.LabourCharge,
                 Rate = dto.Rate,
                 Cost = dto.Cost,
                 SortOrder = dto.SortOrder ?? sortOrder,
@@ -3237,6 +3588,27 @@ namespace IonFiltra.BagFilters.Application.Services.Bagfilters.BagfilterInputs
             return entity;
         }
 
+
+        private BagfilterPaintingCostSummary MapPaintingCostSummary(
+    BagfilterInputMainDto dto,
+    int masterId,
+    BagfilterPaintingCostSummary? existing)
+        {
+            var src = dto.PaintingCostSummary!;
+
+            return new BagfilterPaintingCostSummary
+            {
+                Id = existing?.Id ?? 0,
+                BagfilterMasterId = masterId,
+                EnquiryId = dto.BagfilterInput.EnquiryId ?? 0,
+                SchemeName = src.SchemeName,
+                GrandTotal = src.GrandTotal,
+                CreatedAt = existing?.CreatedAt ?? DateTime.UtcNow,
+                UpdatedAt = DateTime.UtcNow,
+                IsDeleted = false
+            };
+        }
+
         private static decimal? ResolveNumberOfColumns(
         string? supportStructType,
         decimal? inputNoOfColumns,
@@ -3252,14 +3624,6 @@ namespace IonFiltra.BagFilters.Application.Services.Bagfilters.BagfilterInputs
             if (!baysX.HasValue || !baysZ.HasValue)
                 return null;
 
-            //return (baysX.Value, baysZ.Value) switch
-            //{
-            //    (1, 1) => 4,
-            //    (2, 1) => 6,
-            //    (2, 2) => 9,
-            //    (3, 2) => 12,
-            //    _ => null
-            //};
             return (baysX.Value + 1) * (baysZ.Value + 1);
         }
 

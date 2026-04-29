@@ -549,6 +549,7 @@ CREATE TABLE
     Material         VARCHAR(50)  NULL,
     Weight           DECIMAL(18,2) NULL,
     Units            VARCHAR(20)  NULL,
+    LabourCharge     DECIMAL(18,2) NULL,
     Rate             DECIMAL(18,2) NULL,
     Cost             DECIMAL(18,2) NULL,
     SortOrder        INT NULL,   -- to keep the same order as UI
@@ -559,17 +560,6 @@ CREATE TABLE
     
 );
 
-CREATE TABLE
-    ionfiltrabagfilters.PaintingCost (
-        Id INT AUTO_INCREMENT PRIMARY KEY,
-        EnquiryId INT NOT NULL,
-        BagfilterMasterId INT NOT NULL, -- FK to BagfilterMaster row
-        PaintingTableJson JSON,
-        CreatedAt DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
-        UpdatedAt DATETIME NULL ON UPDATE CURRENT_TIMESTAMP,
-        FOREIGN KEY (EnquiryId) REFERENCES ionfiltrabagfilters.Enquiry (Id) ON DELETE CASCADE,
-        FOREIGN KEY (BagfilterMasterId) REFERENCES ionfiltrabagfilters.bagfiltermaster(BagfilterMasterId) ON DELETE CASCADE
-    );
 
      ---------Transportation cost-----------
     CREATE TABLE ionfiltrabagfilters.TransportationCostEntity (
@@ -765,20 +755,6 @@ CREATE TABLE ionfiltrabagfilters.BillOfMaterialRates (
     CreatedAt DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
     UpdatedAt DATETIME NULL ON UPDATE CURRENT_TIMESTAMP,
     IsDeleted TINYINT(1) NOT NULL DEFAULT 0,
-);
-
-CREATE TABLE ionfiltrabagfilters.PaintingCostConfig (
-    Id INT AUTO_INCREMENT PRIMARY KEY,
-    Code VARCHAR(50) NOT NULL UNIQUE,      -- e.g. 'inside_primer'
-    Section VARCHAR(50) NOT NULL,          -- 'Material Cost Inside' / 'Material Cost Outside' / ''
-    Item VARCHAR(100) NOT NULL,            -- 'Primer Cost', 'Intermediate Paint', etc.
-    InrPerLtr DECIMAL(10,2) NULL,
-    SqmPerLtr DECIMAL(10,2) NULL,
-    Coats DECIMAL(10,2) NULL,
-    LabourRate DECIMAL(10,2) NULL,
-    IsDeleted TINYINT(1) NOT NULL DEFAULT 0,
-    CreatedAt DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
-    UpdatedAt DATETIME NULL ON UPDATE CURRENT_TIMESTAMP
 );
 
 ----master data tables (Bought-Out Items)
@@ -1424,6 +1400,33 @@ CREATE TABLE
     );
 
 
+-- ============================================================
+-- Plates Configuration Table
+-- ============================================================
+CREATE TABLE ionfiltrabagfilters.PlatesMaterialConfig (
+    Id          INT AUTO_INCREMENT PRIMARY KEY,
+    Material    VARCHAR(100) NOT NULL,
+    Density     DECIMAL(10, 2) NULL,
+    RatePerKg   DECIMAL(10, 2) NOT NULL,
+    CreatedAt   DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    UpdatedAt   DATETIME NULL ON UPDATE CURRENT_TIMESTAMP,
+    IsDeleted   TINYINT(1) NOT NULL DEFAULT 0
+);
+
+-- ============================================================
+-- Structures (SHS, ISMC) Configuration Table
+-- ============================================================
+CREATE TABLE ionfiltrabagfilters.StructuresMaterialConfig (
+    Id          INT AUTO_INCREMENT PRIMARY KEY,
+    Material    VARCHAR(100) NOT NULL,
+    Density     DECIMAL(10, 2) NULL,
+    RatePerKg   DECIMAL(10, 2) NOT NULL,
+    CreatedAt   DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    UpdatedAt   DATETIME NULL ON UPDATE CURRENT_TIMESTAMP,
+    IsDeleted   TINYINT(1) NOT NULL DEFAULT 0
+);
+
+
 -----------------Painting MAster tables
 
 CREATE TABLE ionfiltrabagfilters.PrimerMaster (
@@ -1586,4 +1589,59 @@ CREATE TABLE ionfiltrabagfilters.EnquiryPaintSchemeOverrideSection (
 
     INDEX idx_epsos_override (OverrideId),
     INDEX idx_epsos_section  (SectionKey)
+);
+
+
+-------
+CREATE TABLE ionfiltrabagfilters.BagfilterPaintingCostSummary (
+    Id                INT             AUTO_INCREMENT PRIMARY KEY,
+    BagfilterMasterId INT             NOT NULL,          -- FK → BagfilterMaster.BagfilterMasterId
+    EnquiryId         INT             NOT NULL,          -- FK → Enquiry.Id  (denormalized for fast reads)
+    SchemeName        VARCHAR(255)    NULL,              -- e.g. "Standard Epoxy"
+    GrandTotal        DECIMAL(12, 2)  NOT NULL DEFAULT 0.00,
+    CreatedAt         DATETIME        NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    UpdatedAt         DATETIME        NULL     ON UPDATE CURRENT_TIMESTAMP,
+    IsDeleted         TINYINT(1)      NOT NULL DEFAULT 0,
+
+    CONSTRAINT fk_bpcs_master
+        FOREIGN KEY (BagfilterMasterId)
+            REFERENCES ionfiltrabagfilters.BagfilterMaster(BagfilterMasterId)
+            ON DELETE CASCADE,
+
+    CONSTRAINT fk_bpcs_enquiry
+        FOREIGN KEY (EnquiryId)
+            REFERENCES ionfiltrabagfilters.Enquiry(Id)
+            ON DELETE CASCADE,
+
+    -- one active summary per BF
+    UNIQUE INDEX uq_bpcs_master (BagfilterMasterId, IsDeleted),
+
+    INDEX idx_bpcs_enquiry (EnquiryId)
+);
+
+
+CREATE TABLE ionfiltrabagfilters.EnquirySupervisionCharges (
+    Id                          INT             AUTO_INCREMENT PRIMARY KEY,
+    EnquiryId                   INT             NOT NULL,           -- FK → Enquiry.Id
+    VisitEngineeringCharges     DECIMAL(12, 2)  NOT NULL DEFAULT 0.00,  -- ₹
+    FreeManDays                 DECIMAL(10, 2)  NOT NULL DEFAULT 0.00,  -- No's
+    FreeManDaysRate             DECIMAL(12, 2)  NOT NULL DEFAULT 0.00,  -- ₹
+    FreeManDaysToAndFro         DECIMAL(12, 2)  NOT NULL DEFAULT 0.00,  -- ₹
+    FreeManDaysLodgingBoarding  DECIMAL(12, 2)  NOT NULL DEFAULT 0.00,  -- ₹
+    ChargeableDays              DECIMAL(10, 2)  NOT NULL DEFAULT 0.00,  -- No's
+    ChargeableRate              DECIMAL(12, 2)  NOT NULL DEFAULT 0.00,  -- ₹
+    ChargeableToAndFro          DECIMAL(12, 2)  NOT NULL DEFAULT 0.00,  -- ₹
+    ChargeableLodgingBoarding   DECIMAL(12, 2)  NOT NULL DEFAULT 0.00,  -- ₹
+    CreatedAt                   DATETIME        NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    UpdatedAt                   DATETIME        NULL     ON UPDATE CURRENT_TIMESTAMP,
+    IsDeleted                   TINYINT(1)      NOT NULL DEFAULT 0,
+
+    CONSTRAINT fk_esc_enquiry
+        FOREIGN KEY (EnquiryId) REFERENCES ionfiltrabagfilters.Enquiry(Id)
+            ON DELETE CASCADE,
+
+    -- one active supervision record per enquiry
+    UNIQUE INDEX uq_esc_enquiry (EnquiryId, IsDeleted),
+
+    INDEX idx_esc_enquiry (EnquiryId)
 );

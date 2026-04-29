@@ -12,6 +12,7 @@ using IonFiltra.BagFilters.Core.Entities.Bagfilters.Sections.Casing_Inputs;
 using IonFiltra.BagFilters.Core.Entities.Bagfilters.Sections.DamperSize;
 using IonFiltra.BagFilters.Core.Entities.Bagfilters.Sections.EV;
 using IonFiltra.BagFilters.Core.Entities.Bagfilters.Sections.Hopper_Trough;
+using IonFiltra.BagFilters.Core.Entities.Bagfilters.Sections.PaintCostSummary;
 using IonFiltra.BagFilters.Core.Entities.Bagfilters.Sections.Painting;
 using IonFiltra.BagFilters.Core.Entities.Bagfilters.Sections.Process_Info;
 using IonFiltra.BagFilters.Core.Entities.Bagfilters.Sections.Roof_Door;
@@ -34,6 +35,7 @@ using IonFiltra.BagFilters.Core.Entities.MasterData.SolenoidValveData;
 using IonFiltra.BagFilters.Core.Entities.MasterData.TimerData;
 using IonFiltra.BagFilters.Core.Entities.PaintScheme;
 using IonFiltra.BagFilters.Core.Entities.SkyCivEntities;
+using IonFiltra.BagFilters.Core.Entities.Supervision_Charges;
 using IonFiltra.BagFilters.Core.Entities.Users.User;
 using IonFiltra.BagFilters.Core.Entities.Users.UserRoles;
 using Microsoft.EntityFrameworkCore;
@@ -130,6 +132,10 @@ namespace IonFiltra.BagFilters.Infrastructure.Data
         public DbSet<EnquiryPaintSchemeOverrideSection> EnquiryPaintSchemeOverrideSections { get; set; }
 
         public DbSet<PaintingSchemeMaster> PaintingSchemeMasters { get; set; }
+
+        public DbSet<BagfilterPaintingCostSummary> BagfilterPaintingCostSummaries { get; set; }
+
+        public DbSet<EnquirySupervisionCharges> EnquirySupervisionCharges { get; set; }
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
@@ -500,6 +506,66 @@ namespace IonFiltra.BagFilters.Infrastructure.Data
             {
                 entity.ToTable("PaintingSchemeMaster", GlobalConstants.IONFILTRA_SCHEMA);
                 entity.HasKey(u => u.Id);
+            });
+
+
+            modelBuilder.Entity<BagfilterPaintingCostSummary>(entity =>
+            {
+                entity.ToTable("BagfilterPaintingCostSummary", GlobalConstants.IONFILTRA_SCHEMA);
+                entity.HasKey(e => e.Id);
+
+                entity.Property(e => e.BagfilterMasterId).IsRequired();
+                entity.Property(e => e.EnquiryId).IsRequired();
+                entity.Property(e => e.SchemeName).HasMaxLength(255).IsRequired(false);
+                entity.Property(e => e.GrandTotal)
+                      .HasColumnType("decimal(12,2)")
+                      .HasDefaultValue(0.00m);
+                entity.Property(e => e.IsDeleted).HasDefaultValue(false);
+                entity.Property(e => e.CreatedAt).IsRequired();
+                entity.Property(e => e.UpdatedAt).IsRequired(false);
+
+                entity.HasIndex(e => new { e.BagfilterMasterId, e.IsDeleted })
+                      .IsUnique()
+                      .HasDatabaseName("uq_bpcs_master");
+
+                entity.HasIndex(e => e.EnquiryId)
+                      .HasDatabaseName("idx_bpcs_enquiry");
+            });
+
+
+            modelBuilder.Entity<EnquirySupervisionCharges>(entity =>
+            {
+                entity.ToTable("EnquirySupervisionCharges", GlobalConstants.IONFILTRA_SCHEMA);
+                entity.HasKey(e => e.Id);
+                entity.Property(e => e.EnquiryId).IsRequired();
+                entity.Property(e => e.VisitEngineeringCharges)
+                      .HasColumnType("decimal(12,2)").HasDefaultValue(0.00m);
+                entity.Property(e => e.FreeManDays)
+                      .HasColumnType("decimal(10,2)").HasDefaultValue(0.00m);
+                entity.Property(e => e.FreeManDaysRate)
+                      .HasColumnType("decimal(12,2)").HasDefaultValue(0.00m);
+                entity.Property(e => e.FreeManDaysToAndFro)
+                      .HasColumnType("decimal(12,2)").HasDefaultValue(0.00m);
+                entity.Property(e => e.FreeManDaysLodgingBoarding)
+                      .HasColumnType("decimal(12,2)").HasDefaultValue(0.00m);
+                entity.Property(e => e.ChargeableDays)
+                      .HasColumnType("decimal(10,2)").HasDefaultValue(0.00m);
+                entity.Property(e => e.ChargeableRate)
+                      .HasColumnType("decimal(12,2)").HasDefaultValue(0.00m);
+                entity.Property(e => e.ChargeableToAndFro)
+                      .HasColumnType("decimal(12,2)").HasDefaultValue(0.00m);
+                entity.Property(e => e.ChargeableLodgingBoarding)
+                      .HasColumnType("decimal(12,2)").HasDefaultValue(0.00m);
+                entity.Property(e => e.IsDeleted).HasDefaultValue(false);
+                entity.Property(e => e.CreatedAt).IsRequired();
+                entity.Property(e => e.UpdatedAt).IsRequired(false);
+
+                entity.HasIndex(e => new { e.EnquiryId, e.IsDeleted })
+                      .IsUnique()
+                      .HasDatabaseName("uq_esc_enquiry");
+
+                entity.HasIndex(e => e.EnquiryId)
+                      .HasDatabaseName("idx_esc_enquiry");
             });
 
         }

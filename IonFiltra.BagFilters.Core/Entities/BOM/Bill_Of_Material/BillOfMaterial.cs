@@ -9,6 +9,7 @@ namespace IonFiltra.BagFilters.Core.Entities.BOM.Bill_Of_Material
         public string? Material { get; set; }
         public decimal? Weight { get; set; }
         public string? Units { get; set; }
+        public decimal? LabourCharge { get; set; }
         public decimal? Rate { get; set; }
         public decimal? Cost { get; set; }
         public int? SortOrder { get; set; }

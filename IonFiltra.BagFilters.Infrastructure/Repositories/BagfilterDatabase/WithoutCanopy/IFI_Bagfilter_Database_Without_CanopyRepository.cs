@@ -1,4 +1,4 @@
-using IonFiltra.BagFilters.Core.Entities.BagfilterDatabase.WithoutCanopy;
+﻿using IonFiltra.BagFilters.Core.Entities.BagfilterDatabase.WithoutCanopy;
 using IonFiltra.BagFilters.Core.Interfaces.Repositories.BagfilterDatabase.WithoutCanopy;
 using IonFiltra.BagFilters.Infrastructure.Data;
 using Microsoft.EntityFrameworkCore;
@@ -65,38 +65,175 @@ namespace IonFiltra.BagFilters.Infrastructure.Repositories.BagfilterDatabase.Wit
         }
 
 
-        public async Task<IFI_Bagfilter_Database_Without_Canopy?> GetByMatchAsync(string? processVolume, string? hopperType, decimal? numberOfColumns)
+        //public async Task<IFI_Bagfilter_Database_Without_Canopy?> GetByMatchAsync(string? processVolume, string? hopperType, decimal? numberOfColumns)
+        //{
+        //    return await _transactionHelper.ExecuteAsync(async dbContext =>
+        //    {
+        //        _logger.LogInformation("Fetching IFI_Bagfilter by match criteria in repo.");
+
+        //        // Start query
+        //        var query = dbContext.IFI_Bagfilter_Database_Without_Canopys.AsNoTracking().AsQueryable();
+
+        //        // Only add conditions for provided values (AND semantics across provided fields)
+        //        if (!string.IsNullOrWhiteSpace(processVolume))
+        //        {
+        //            var pv = processVolume.Trim().ToLower();
+        //            query = query.Where(x => x.Process_Volume_m3hr != null && x.Process_Volume_m3hr.ToLower() == pv);
+        //        }
+
+        //        if (!string.IsNullOrWhiteSpace(hopperType))
+        //        {
+        //            var ht = hopperType.Trim().ToLower();
+        //            query = query.Where(x => x.Hopper_type != null && x.Hopper_type.ToLower() == ht);
+        //        }
+
+        //        if (numberOfColumns.HasValue)
+        //        {
+        //            query = query.Where(x => x.Number_of_columns == numberOfColumns.Value);
+        //        }
+
+        //        // return latest matching record if multiple exist
+        //        return await query.OrderByDescending(x => x.CreatedAt).FirstOrDefaultAsync();
+        //    });
+        //}
+
+        public async Task<IFI_Bagfilter_Database_Without_Canopy?> GetByMatchAsync(
+         string? processVolume,
+         string? hopperType,
+         decimal? numberOfColumns)
         {
             return await _transactionHelper.ExecuteAsync(async dbContext =>
             {
-                _logger.LogInformation("Fetching IFI_Bagfilter by match criteria in repo.");
+                _logger.LogInformation("Fetching IFI_Bagfilter_Without_Canopy by match criteria (3-param).");
 
-                // Start query
-                var query = dbContext.IFI_Bagfilter_Database_Without_Canopys.AsNoTracking().AsQueryable();
+                // ── Step 1: exact volume + all filters ─────────────────────────────
+                var exactResult = await BuildQueryWithoutCanopy(dbContext, processVolume, hopperType, numberOfColumns)
+                    .OrderByDescending(x => x.CreatedAt)
+                    .FirstOrDefaultAsync();
 
-                // Only add conditions for provided values (AND semantics across provided fields)
-                if (!string.IsNullOrWhiteSpace(processVolume))
+                if (exactResult != null)
+                    return exactResult;
+
+                // ── Step 2: fallback — resolve next-greater volume ──────────────────
+                if (string.IsNullOrWhiteSpace(processVolume))
+                    return null;
+
+                if (!decimal.TryParse(
+                        processVolume.Trim(),
+                        System.Globalization.NumberStyles.Any,
+                        System.Globalization.CultureInfo.InvariantCulture,
+                        out var inputVolumeDecimal))
                 {
-                    var pv = processVolume.Trim().ToLower();
-                    query = query.Where(x => x.Process_Volume_m3hr != null && x.Process_Volume_m3hr.ToLower() == pv);
+                    _logger.LogWarning(
+                        "Cannot parse processVolume '{Value}' as decimal. Skipping fallback.", processVolume);
+                    return null;
                 }
 
-                if (!string.IsNullOrWhiteSpace(hopperType))
+                var allRows = await dbContext.IFI_Bagfilter_Database_Without_Canopys
+                    .AsNoTracking()
+                    .Where(x => x.Process_Volume_m3hr != null)
+                    .ToListAsync();
+
+                var nextGreaterVolumeStr = allRows
+                    .Select(x => new
+                    {
+                        VolumeStr = x.Process_Volume_m3hr!,
+                        Parsed = decimal.TryParse(
+                                        x.Process_Volume_m3hr,
+                                        System.Globalization.NumberStyles.Any,
+                                        System.Globalization.CultureInfo.InvariantCulture,
+                                        out var v) ? v : (decimal?)null
+                    })
+                    .Where(x => x.Parsed.HasValue && x.Parsed.Value > inputVolumeDecimal)
+                    .OrderBy(x => x.Parsed!.Value)
+                    .Select(x => x.VolumeStr)
+                    .FirstOrDefault();
+
+                if (nextGreaterVolumeStr == null)
                 {
-                    var ht = hopperType.Trim().ToLower();
-                    query = query.Where(x => x.Hopper_type != null && x.Hopper_type.ToLower() == ht);
+                    _logger.LogInformation(
+                        "No next-greater volume found above '{Volume}' in Without_Canopy table.", processVolume);
+                    return null;
                 }
 
-                if (numberOfColumns.HasValue)
+                _logger.LogInformation(
+                    "Exact volume '{Exact}' not found. Attempting fallback with next-greater volume '{Next}'.",
+                    processVolume, nextGreaterVolumeStr);
+
+                // ── Step 3: next-greater volume + all filters ───────────────────────
+                var result = await BuildQueryWithoutCanopy(dbContext, nextGreaterVolumeStr, hopperType, numberOfColumns)
+                    .OrderByDescending(x => x.CreatedAt)
+                    .FirstOrDefaultAsync();
+                if (result != null)
                 {
-                    query = query.Where(x => x.Number_of_columns == numberOfColumns.Value);
+                    _logger.LogInformation("Fallback matched on next-greater volume + all filters.");
+                    return result;
                 }
 
-                // return latest matching record if multiple exist
-                return await query.OrderByDescending(x => x.CreatedAt).FirstOrDefaultAsync();
+                // ── Step 4: next-greater volume + hopperType only ───────────────────
+                result = await BuildQueryWithoutCanopy(dbContext, nextGreaterVolumeStr, hopperType, numberOfColumns: null)
+                    .OrderByDescending(x => x.CreatedAt)
+                    .FirstOrDefaultAsync();
+                if (result != null)
+                {
+                    _logger.LogInformation("Fallback matched on next-greater volume + hopperType only.");
+                    return result;
+                }
+
+                // ── Step 5: next-greater volume + numberOfColumns only ──────────────
+                result = await BuildQueryWithoutCanopy(dbContext, nextGreaterVolumeStr, hopperType: null, numberOfColumns)
+                    .OrderByDescending(x => x.CreatedAt)
+                    .FirstOrDefaultAsync();
+                if (result != null)
+                {
+                    _logger.LogInformation("Fallback matched on next-greater volume + numberOfColumns only.");
+                    return result;
+                }
+
+                // ── Step 6: next-greater volume alone ───────────────────────────────
+                result = await BuildQueryWithoutCanopy(dbContext, nextGreaterVolumeStr, hopperType: null, numberOfColumns: null)
+                    .OrderByDescending(x => x.CreatedAt)
+                    .FirstOrDefaultAsync();
+
+                if (result != null)
+                    _logger.LogInformation("Fallback matched on next-greater volume alone.");
+                else
+                    _logger.LogWarning(
+                        "No row found even with next-greater volume '{Next}' and all filters relaxed.",
+                        nextGreaterVolumeStr);
+
+                return result;
             });
         }
 
+        // shared query builder — pass null to skip a filter
+        private static IQueryable<IFI_Bagfilter_Database_Without_Canopy> BuildQueryWithoutCanopy(
+            AppDbContext dbContext,
+            string? processVolume,
+            string? hopperType,
+            decimal? numberOfColumns)
+        {
+            var query = dbContext.IFI_Bagfilter_Database_Without_Canopys
+                .AsNoTracking()
+                .AsQueryable();
+
+            if (!string.IsNullOrWhiteSpace(processVolume))
+            {
+                var pv = processVolume.Trim().ToLower();
+                query = query.Where(x => x.Process_Volume_m3hr != null && x.Process_Volume_m3hr.ToLower() == pv);
+            }
+
+            if (!string.IsNullOrWhiteSpace(hopperType))
+            {
+                var ht = hopperType.Trim().ToLower();
+                query = query.Where(x => x.Hopper_type != null && x.Hopper_type.ToLower() == ht);
+            }
+
+            if (numberOfColumns.HasValue)
+                query = query.Where(x => x.Number_of_columns == numberOfColumns.Value);
+
+            return query;
+        }
 
         public async Task<IFI_Bagfilter_Database_Without_Canopy?> GetByMatchAsync(
         string? processVolume,
@@ -140,6 +277,66 @@ namespace IonFiltra.BagFilters.Infrastructure.Repositories.BagfilterDatabase.Wit
             });
         }
 
+
+
+        /// <summary>
+        /// Checks whether a row with the exact processVolume already exists in the table.
+        /// Returns true if found, false otherwise.
+        /// </summary>
+        public async Task<bool> ExistsByProcessVolumeAsync(string processVolume)
+        {
+            return await _transactionHelper.ExecuteAsync(async dbContext =>
+            {
+                _logger.LogInformation("Checking existence of Process_Volume_m3hr={ProcessVolume} in Without_Canopy table.", processVolume);
+
+                if (string.IsNullOrWhiteSpace(processVolume))
+                    return false;
+
+                var pv = processVolume.Trim().ToLower();
+                return await dbContext.IFI_Bagfilter_Database_Without_Canopys
+                    .AsNoTracking()
+                    .AnyAsync(x => x.Process_Volume_m3hr != null && x.Process_Volume_m3hr.ToLower() == pv);
+            });
+        }
+
+        /// <summary>
+        /// Returns the row whose Process_Volume_m3hr is the next greater value above the supplied
+        /// processVolume (numeric comparison). Returns null if no greater value exists.
+        /// </summary>
+        public async Task<IFI_Bagfilter_Database_Without_Canopy?> GetByNextGreaterVolumeAsync(decimal processVolume)
+        {
+            return await _transactionHelper.ExecuteAsync(async dbContext =>
+            {
+                _logger.LogInformation(
+                    "Fetching next-greater Process_Volume row above {ProcessVolume} in Without_Canopy table.",
+                    processVolume);
+
+                // Retrieve all rows so we can do numeric parsing in memory.
+                // The column is stored as string, so we pull the candidates and parse.
+                var candidates = await dbContext.IFI_Bagfilter_Database_Without_Canopys
+                    .AsNoTracking()
+                    .Where(x => x.Process_Volume_m3hr != null)
+                    .ToListAsync();
+
+                // Parse each row's volume to decimal; keep only those strictly greater than input.
+                var nextRow = candidates
+                    .Select(x => new
+                    {
+                        Row = x,
+                        Parsed = decimal.TryParse(
+                            x.Process_Volume_m3hr,
+                            System.Globalization.NumberStyles.Any,
+                            System.Globalization.CultureInfo.InvariantCulture,
+                            out var v) ? v : (decimal?)null
+                    })
+                    .Where(x => x.Parsed.HasValue && x.Parsed.Value > processVolume)
+                    .OrderBy(x => x.Parsed!.Value)          // smallest of those that are greater
+                    .ThenByDescending(x => x.Row.CreatedAt) // latest record if duplicates
+                    .FirstOrDefault();
+
+                return nextRow?.Row;
+            });
+        }
     }
 }
     

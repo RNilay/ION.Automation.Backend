@@ -503,6 +503,7 @@ SELECT
     bom.Material,
     bom.Weight,
     bom.Units,
+    bom.LabourCharge,
     bom.Rate,
     bom.Cost,
     bom.SortOrder
@@ -516,62 +517,6 @@ ORDER BY
     dv.BagfilterMasterId,
     bom.SortOrder;
 
-
-
-    ------Painting Cost view
-
-    CREATE OR REPLACE VIEW ionfiltrabagfilters.vw_PaintingCostDetails AS
-WITH PiBm AS (
-    SELECT
-        e.Id                 AS EnquiryId,
-        bm.BagfilterMasterId AS BagfilterMasterId,
-        pi.Process_Volume_M3h,
-        e.RequiredBagFilters AS Enquiry_RequiredBagFilters,
-
-        -- choose a single BagfilterMaster per (Enquiry, Process_Volume_M3h)
-        ROW_NUMBER() OVER (
-            PARTITION BY e.Id, pi.Process_Volume_M3h
-            ORDER BY bm.BagfilterMasterId
-        ) AS RnPerVolume
-    FROM ionfiltrabagfilters.ProcessInfo      pi
-    JOIN ionfiltrabagfilters.BagfilterMaster bm
-          ON bm.BagfilterMasterId = pi.BagfilterMasterId
-         AND bm.EnquiryId          = pi.EnquiryId
-    JOIN ionfiltrabagfilters.Enquiry         e
-          ON e.Id                  = pi.EnquiryId
-    WHERE pi.Process_Volume_M3h IS NOT NULL
-),
-DistinctVolumes AS (
-    SELECT
-        EnquiryId,
-        BagfilterMasterId,
-        Process_Volume_M3h,
-        Enquiry_RequiredBagFilters,
-
-        -- running number of DISTINCT process volumes for this enquiry
-        ROW_NUMBER() OVER (
-            PARTITION BY EnquiryId
-            ORDER BY Process_Volume_M3h, BagfilterMasterId
-        ) AS Qty
-    FROM PiBm
-    WHERE RnPerVolume = 1      -- keep only one BagfilterMaster per volume
-)
-SELECT
-    dv.EnquiryId,
-    dv.BagfilterMasterId,
-    dv.Process_Volume_M3h,
-    dv.Enquiry_RequiredBagFilters,
-    dv.Qty,
-    pc.Id               AS PaintingCostId,
-    pc.PaintingTableJson
-FROM DistinctVolumes dv
-JOIN ionfiltrabagfilters.PaintingCost pc
-      ON pc.EnquiryId         = dv.EnquiryId
-     AND pc.BagfilterMasterId = dv.BagfilterMasterId
-ORDER BY
-    dv.EnquiryId,
-    dv.Process_Volume_M3h,
-    dv.BagfilterMasterId;
 
     -----transportation cost view--:
 
@@ -903,13 +848,6 @@ SELECT
         WHEN 'CO2_SUPPRESSION_SYSTEM' THEN 'CO₂ Suppression System'
         WHEN 'CABLE_TRAY' THEN 'Cable Tray'
         WHEN 'COMPRESSED_AIR_PIPING' THEN 'Compressed Air Piping'
-        WHEN 'VISIT_ENGINEERING_CHARGES' THEN 'Visit & Engineering Charges'
-        WHEN 'SUPERVISION' THEN 'Supervision Free Man Days'
-        WHEN 'SUPERVISION_FREE_TO_FRO' THEN 'Supervision Free Man Days To and Fro'
-        WHEN 'SUPERVISION_FREE_LODGING' THEN 'Supervision Free Man Days Lodging & Boarding'
-        WHEN 'SUPERVISION_CHARGEABLE_BASES' THEN 'Supervision Chargeable Basis'
-        WHEN 'SUPERVISION_CHARGEABLE_TO_FRO' THEN 'Supervision Chargeable Basis To and Fro'
-        WHEN 'SUPERVISION_CHARGEABLE_LODGING' THEN 'Supervision Chargeable Basis Lodging & Boarding'
         ELSE s.MasterKey
     END AS Item,
 
@@ -926,20 +864,18 @@ JOIN ionfiltrabagfilters.SecondaryBoughtOutItems s
  AND s.BagfilterMasterId = dv.BagfilterMasterId;
 
 
- CREATE OR REPLACE VIEW ionfiltrabagfilters.vw_ExecutiveSummary AS
 
+
+CREATE OR REPLACE VIEW ionfiltrabagfilters.vw_ExecutiveSummary AS
 WITH
-
--- ── Summary Card Aggregations ──────────────────────────────
+-- ── Summary Card Aggregations ──────────────────────────────────────────────
 SummaryCards AS (
     SELECT
         E.Id                                        AS EnquiryId,
         E.EnquiryId                                 AS Enquiry_ExternalId,
         E.Customer,
         E.RequiredBagFilters,
-
         COUNT(DISTINCT BM.BagfilterMasterId)        AS Total_Bag_Filters,
-
         COALESCE((
             SELECT SUM(BI2.agg_bags)
             FROM (
@@ -949,14 +885,10 @@ SummaryCards AS (
             ) BI2
             WHERE BI2.EnquiryId = E.Id
         ), 0)                                       AS Total_No_Of_Bags,
-
         COALESCE(SUM(DISTINCT WS.agg_weight), 0)    AS Total_Structural_Weight
-
     FROM ionfiltrabagfilters.Enquiry E
-
     LEFT JOIN ionfiltrabagfilters.BagfilterMaster BM
         ON BM.EnquiryId = E.Id
-
     LEFT JOIN (
         SELECT
             EnquiryId,
@@ -967,7 +899,6 @@ SummaryCards AS (
     ) WS
         ON WS.EnquiryId          = E.Id
         AND WS.BagfilterMasterId = BM.BagfilterMasterId
-
     GROUP BY
         E.Id,
         E.EnquiryId,
@@ -975,48 +906,58 @@ SummaryCards AS (
         E.RequiredBagFilters
 ),
 
--- ── Consolidated BOM Lines ─────────────────────────────────
+-- ── Consolidated BOM Lines ─────────────────────────────────────────────────
 AggregatedBOM AS (
     SELECT
         bom.EnquiryId,
-        MIN(bom.SortOrder)      AS SortOrder,
-
+        MIN(bom.SortOrder)              AS SortOrder,
         CASE
             WHEN bom.Item = 'Total'
             THEN 'GRAND TOTAL (All Bag Filters Combined)'
             ELSE bom.Item
-        END                     AS Item,
-
+        END                             AS Item,
         bom.Material,
         bom.Units,
         bom.Rate,
-        SUM(bom.Weight)         AS Total_Weight,
-        SUM(bom.Cost)           AS Total_Cost,
-
+        SUM(bom.Weight)                 AS Total_Weight,
+        -- ── NEW: sum LabourCharge across all BFs for this line item ──────
+        SUM(bom.LabourCharge)           AS Total_Labour_Charge,
+        -- ── Cost: Grand Total row gets supervision charges added ─────────
         CASE
-            WHEN bom.Item IN (
-                'Inside Painting Cost',
-                'Outside Painting Cost'
-            )                                           THEN 'PAINTING COST'
+            WHEN bom.Item = 'Total'
+            THEN SUM(bom.Cost) + COALESCE((
+                SELECT
+                    COALESCE(sv.VisitEngineeringCharges,              0)
+                    + COALESCE(sv.FreeManDays    * sv.FreeManDaysRate,   0)
+                    + COALESCE(sv.FreeManDaysToAndFro,                0)
+                    + COALESCE(sv.FreeManDaysLodgingBoarding,         0)
+                    + COALESCE(sv.ChargeableDays * sv.ChargeableRate,    0)
+                    + COALESCE(sv.ChargeableToAndFro,                 0)
+                    + COALESCE(sv.ChargeableLodgingBoarding,          0)
+                FROM ionfiltrabagfilters.EnquirySupervisionCharges sv
+                WHERE sv.EnquiryId = bom.EnquiryId
+                  AND sv.IsDeleted = 0
+            ), 0)
+            ELSE SUM(bom.Cost)
+        END                             AS Total_Cost,
+        CASE
+            WHEN bom.Item = 'Painting Cost'             THEN 'PAINTING COST'
             WHEN bom.Item = 'Cage Cost (Total)'         THEN 'CAGE COST'
             WHEN bom.Item = 'Transportation Cost'       THEN 'TRANSPORTATION COST'
             WHEN bom.Item = 'Bought Out Items (Total)'  THEN 'BOUGHT OUT ITEMS'
             WHEN bom.Item = 'Total'                     THEN 'TOTAL'
             ELSE                                             'STRUCTURAL ITEMS'
-        END                     AS Section_Label,
-
+        END                             AS Section_Label,
         CASE
             WHEN bom.Item IN (
-                'Inside Painting Cost',
-                'Outside Painting Cost',
+                'Painting Cost',
                 'Cage Cost (Total)',
                 'Transportation Cost',
                 'Bought Out Items (Total)',
                 'Total'
             ) THEN 1
             ELSE 0
-        END                     AS Is_Summary_Row
-
+        END                             AS Is_Summary_Row
     FROM ionfiltrabagfilters.BillOfMaterial bom
     GROUP BY
         bom.EnquiryId,
@@ -1026,129 +967,279 @@ AggregatedBOM AS (
         bom.Rate
 ),
 
--- ── Grand Total Cost — always 1 row per EnquiryId ──────────
-GrandTotalCost AS (
+-- ── SortOrder of the Total row per enquiry ─────────────────────────────────
+TotalRowSortOrder AS (
     SELECT
         EnquiryId,
-        SUM(Cost)               AS Grand_Total_Cost
+        MIN(SortOrder)              AS Total_SortOrder
     FROM ionfiltrabagfilters.BillOfMaterial
     WHERE Item = 'Total'
     GROUP BY EnquiryId
+),
+
+-- ── Supervision cost summed per enquiry ────────────────────────────────────
+SupervisionTotal AS (
+    SELECT
+        sv.EnquiryId,
+        COALESCE(sv.VisitEngineeringCharges,              0)
+        + COALESCE(sv.FreeManDays    * sv.FreeManDaysRate,   0)
+        + COALESCE(sv.FreeManDaysToAndFro,                0)
+        + COALESCE(sv.FreeManDaysLodgingBoarding,         0)
+        + COALESCE(sv.ChargeableDays * sv.ChargeableRate,    0)
+        + COALESCE(sv.ChargeableToAndFro,                 0)
+        + COALESCE(sv.ChargeableLodgingBoarding,          0)   AS Supervision_Total_Cost
+    FROM ionfiltrabagfilters.EnquirySupervisionCharges sv
+    WHERE sv.IsDeleted = 0
+),
+
+-- ── Grand Total Cost — BOM Total row + Supervision charges ─────────────────
+GrandTotalCost AS (
+    SELECT
+        bom.EnquiryId,
+        SUM(bom.Cost) + COALESCE(svt.Supervision_Total_Cost, 0)  AS Grand_Total_Cost
+    FROM ionfiltrabagfilters.BillOfMaterial bom
+    LEFT JOIN SupervisionTotal svt
+        ON svt.EnquiryId = bom.EnquiryId
+    WHERE bom.Item = 'Total'
+    GROUP BY bom.EnquiryId, svt.Supervision_Total_Cost
+),
+
+-- ── Supervision rows expanded into individual label/value rows ─────────────
+SupervisionRows AS (
+    SELECT
+        sv.EnquiryId,
+        COALESCE(ts.Total_SortOrder, 999) - 0.95   AS SortOrder,
+        '— SUPERVISION & VISIT CHARGES —'           AS Item,
+        ''                                          AS Material,
+        ''                                          AS Units,
+        NULL                                        AS Rate,
+        NULL                                        AS Total_Weight,
+        -- ── NEW: supervision rows carry no LabourCharge ──────────────────
+        NULL                                        AS Total_Labour_Charge,
+        NULL                                        AS Total_Cost,
+        'SECTION_HEADER'                            AS Section_Label,
+        0                                           AS Is_Summary_Row
+    FROM ionfiltrabagfilters.EnquirySupervisionCharges sv
+    LEFT JOIN TotalRowSortOrder ts ON ts.EnquiryId = sv.EnquiryId
+    WHERE sv.IsDeleted = 0
+
+    UNION ALL
+
+    SELECT sv.EnquiryId, COALESCE(ts.Total_SortOrder, 999) - 0.90,
+        'Visit and Engineering Charges',
+        '', '₹', NULL, NULL, NULL, sv.VisitEngineeringCharges,
+        'SUPERVISION', 1
+    FROM ionfiltrabagfilters.EnquirySupervisionCharges sv
+    LEFT JOIN TotalRowSortOrder ts ON ts.EnquiryId = sv.EnquiryId
+    WHERE sv.IsDeleted = 0
+
+    UNION ALL
+
+    SELECT sv.EnquiryId, COALESCE(ts.Total_SortOrder, 999) - 0.80,
+        'Supervision Free Man Days',
+        '', "No's", sv.FreeManDays, NULL, NULL, NULL,
+        'SUPERVISION', 1
+    FROM ionfiltrabagfilters.EnquirySupervisionCharges sv
+    LEFT JOIN TotalRowSortOrder ts ON ts.EnquiryId = sv.EnquiryId
+    WHERE sv.IsDeleted = 0
+
+    UNION ALL
+
+    SELECT sv.EnquiryId, COALESCE(ts.Total_SortOrder, 999) - 0.70,
+        'Supervision Free Man Days Rate',
+        '', '₹', sv.FreeManDaysRate, NULL, NULL,
+        sv.FreeManDays * sv.FreeManDaysRate,
+        'SUPERVISION', 1
+    FROM ionfiltrabagfilters.EnquirySupervisionCharges sv
+    LEFT JOIN TotalRowSortOrder ts ON ts.EnquiryId = sv.EnquiryId
+    WHERE sv.IsDeleted = 0
+
+    UNION ALL
+
+    SELECT sv.EnquiryId, COALESCE(ts.Total_SortOrder, 999) - 0.60,
+        'Supervision Free Man Days To and Fro',
+        '', '₹', NULL, NULL, NULL, sv.FreeManDaysToAndFro,
+        'SUPERVISION', 1
+    FROM ionfiltrabagfilters.EnquirySupervisionCharges sv
+    LEFT JOIN TotalRowSortOrder ts ON ts.EnquiryId = sv.EnquiryId
+    WHERE sv.IsDeleted = 0
+
+    UNION ALL
+
+    SELECT sv.EnquiryId, COALESCE(ts.Total_SortOrder, 999) - 0.50,
+        'Supervision Free Man Days Lodging & Boarding',
+        '', '₹', NULL, NULL, NULL, sv.FreeManDaysLodgingBoarding,
+        'SUPERVISION', 1
+    FROM ionfiltrabagfilters.EnquirySupervisionCharges sv
+    LEFT JOIN TotalRowSortOrder ts ON ts.EnquiryId = sv.EnquiryId
+    WHERE sv.IsDeleted = 0
+
+    UNION ALL
+
+    SELECT sv.EnquiryId, COALESCE(ts.Total_SortOrder, 999) - 0.40,
+        'Supervision Chargeable Basis Days',
+        '', "No's", sv.ChargeableDays, NULL, NULL, NULL,
+        'SUPERVISION', 1
+    FROM ionfiltrabagfilters.EnquirySupervisionCharges sv
+    LEFT JOIN TotalRowSortOrder ts ON ts.EnquiryId = sv.EnquiryId
+    WHERE sv.IsDeleted = 0
+
+    UNION ALL
+
+    SELECT sv.EnquiryId, COALESCE(ts.Total_SortOrder, 999) - 0.30,
+        'Supervision Chargeable Basis Rate',
+        '', '₹', sv.ChargeableRate, NULL, NULL,
+        sv.ChargeableDays * sv.ChargeableRate,
+        'SUPERVISION', 1
+    FROM ionfiltrabagfilters.EnquirySupervisionCharges sv
+    LEFT JOIN TotalRowSortOrder ts ON ts.EnquiryId = sv.EnquiryId
+    WHERE sv.IsDeleted = 0
+
+    UNION ALL
+
+    SELECT sv.EnquiryId, COALESCE(ts.Total_SortOrder, 999) - 0.20,
+        'Supervision Chargeable Basis To and Fro',
+        '', '₹', NULL, NULL, NULL, sv.ChargeableToAndFro,
+        'SUPERVISION', 1
+    FROM ionfiltrabagfilters.EnquirySupervisionCharges sv
+    LEFT JOIN TotalRowSortOrder ts ON ts.EnquiryId = sv.EnquiryId
+    WHERE sv.IsDeleted = 0
+
+    UNION ALL
+
+    SELECT sv.EnquiryId, COALESCE(ts.Total_SortOrder, 999) - 0.10,
+        'Supervision Chargeable Basis Lodging & Boarding',
+        '', '₹', NULL, NULL, NULL, sv.ChargeableLodgingBoarding,
+        'SUPERVISION', 1
+    FROM ionfiltrabagfilters.EnquirySupervisionCharges sv
+    LEFT JOIN TotalRowSortOrder ts ON ts.EnquiryId = sv.EnquiryId
+    WHERE sv.IsDeleted = 0
 )
 
--- ── Final SELECT with section header rows injected ─────────
+-- ── Final SELECT ───────────────────────────────────────────────────────────
 SELECT * FROM (
 
-    -- ✅ REAL BOM DATA ROWS (unchanged)
+    -- ① REAL BOM DATA ROWS
     SELECT
-        SC.EnquiryId,
-        SC.Enquiry_ExternalId,
-        SC.Customer,
-        SC.RequiredBagFilters,
-        SC.Total_Bag_Filters,
-        SC.Total_No_Of_Bags,
-        SC.Total_Structural_Weight,
-        COALESCE(GT.Grand_Total_Cost, 0)            AS Grand_Total_Cost,
-        CASE
-            WHEN SC.Total_Bag_Filters > 0
-            THEN COALESCE(GT.Grand_Total_Cost, 0) / SC.Total_Bag_Filters
-            ELSE 0
-        END                                         AS Avg_Cost_Per_BF,
-        CASE
-            WHEN SC.Total_No_Of_Bags > 0
-            THEN COALESCE(GT.Grand_Total_Cost, 0) / SC.Total_No_Of_Bags
-            ELSE 0
-        END                                         AS Avg_Cost_Per_Bag,
-        BOM.SortOrder,
-        BOM.Item,
-        BOM.Material,
-        BOM.Units,
-        BOM.Rate,
+        SC.EnquiryId, SC.Enquiry_ExternalId, SC.Customer, SC.RequiredBagFilters,
+        SC.Total_Bag_Filters, SC.Total_No_Of_Bags, SC.Total_Structural_Weight,
+        COALESCE(GT.Grand_Total_Cost, 0)                AS Grand_Total_Cost,
+        CASE WHEN SC.Total_Bag_Filters > 0
+            THEN COALESCE(GT.Grand_Total_Cost, 0) / SC.Total_Bag_Filters ELSE 0
+        END                                             AS Avg_Cost_Per_BF,
+        CASE WHEN SC.Total_No_Of_Bags > 0
+            THEN COALESCE(GT.Grand_Total_Cost, 0) / SC.Total_No_Of_Bags ELSE 0
+        END                                             AS Avg_Cost_Per_Bag,
+        BOM.SortOrder, BOM.Item, BOM.Material, BOM.Units, BOM.Rate,
         BOM.Total_Weight,
-        BOM.Total_Cost,
-        BOM.Section_Label,
-        BOM.Is_Summary_Row
+        BOM.Total_Labour_Charge,                        -- ← NEW
+        BOM.Total_Cost, BOM.Section_Label, BOM.Is_Summary_Row
     FROM SummaryCards SC
-    JOIN AggregatedBOM BOM
-        ON BOM.EnquiryId = SC.EnquiryId
-    LEFT JOIN GrandTotalCost GT
-        ON GT.EnquiryId = SC.EnquiryId
+    JOIN AggregatedBOM BOM ON BOM.EnquiryId = SC.EnquiryId
+    LEFT JOIN GrandTotalCost GT ON GT.EnquiryId = SC.EnquiryId
 
     UNION ALL
 
-    -- ✅ HEADER ROW 1: "— STRUCTURAL ITEMS —"
-    --    SortOrder = 0 so it appears before Casing (SortOrder 1)
+    -- ② SUPERVISION ROWS
     SELECT
-        SC.EnquiryId,
-        SC.Enquiry_ExternalId,
-        SC.Customer,
-        SC.RequiredBagFilters,
-        SC.Total_Bag_Filters,
-        SC.Total_No_Of_Bags,
-        SC.Total_Structural_Weight,
-        COALESCE(GT.Grand_Total_Cost, 0)            AS Grand_Total_Cost,
-        CASE
-            WHEN SC.Total_Bag_Filters > 0
-            THEN COALESCE(GT.Grand_Total_Cost, 0) / SC.Total_Bag_Filters
-            ELSE 0
-        END                                         AS Avg_Cost_Per_BF,
-        CASE
-            WHEN SC.Total_No_Of_Bags > 0
-            THEN COALESCE(GT.Grand_Total_Cost, 0) / SC.Total_No_Of_Bags
-            ELSE 0
-        END                                         AS Avg_Cost_Per_Bag,
-        0                                           AS SortOrder,
-        '— STRUCTURAL ITEMS —'                      AS Item,
-        ''                                          AS Material,
-        ''                                          AS Units,
-        NULL                                        AS Rate,
-        NULL                                        AS Total_Weight,
-        NULL                                        AS Total_Cost,
-        'SECTION_HEADER'                            AS Section_Label,
-        0                                           AS Is_Summary_Row
+        SC.EnquiryId, SC.Enquiry_ExternalId, SC.Customer, SC.RequiredBagFilters,
+        SC.Total_Bag_Filters, SC.Total_No_Of_Bags, SC.Total_Structural_Weight,
+        COALESCE(GT.Grand_Total_Cost, 0)                AS Grand_Total_Cost,
+        CASE WHEN SC.Total_Bag_Filters > 0
+            THEN COALESCE(GT.Grand_Total_Cost, 0) / SC.Total_Bag_Filters ELSE 0
+        END                                             AS Avg_Cost_Per_BF,
+        CASE WHEN SC.Total_No_Of_Bags > 0
+            THEN COALESCE(GT.Grand_Total_Cost, 0) / SC.Total_No_Of_Bags ELSE 0
+        END                                             AS Avg_Cost_Per_Bag,
+        SVR.SortOrder, SVR.Item, SVR.Material, SVR.Units, SVR.Rate,
+        SVR.Total_Weight,
+        SVR.Total_Labour_Charge,                        -- ← NEW (NULL for supervision rows)
+        SVR.Total_Cost, SVR.Section_Label, SVR.Is_Summary_Row
     FROM SummaryCards SC
-    LEFT JOIN GrandTotalCost GT
-        ON GT.EnquiryId = SC.EnquiryId
+    JOIN SupervisionRows SVR ON SVR.EnquiryId = SC.EnquiryId
+    LEFT JOIN GrandTotalCost GT ON GT.EnquiryId = SC.EnquiryId
 
     UNION ALL
 
-    -- ✅ HEADER ROW 2: "— COST COMPONENTS —"
-    --    SortOrder = 11.5 so it appears after structural items
-    --    (max SortOrder ~11) and before painting cost (SortOrder 12)
+    -- ③ HEADER ROW: "— STRUCTURAL ITEMS —" (SortOrder 0)
     SELECT
-        SC.EnquiryId,
-        SC.Enquiry_ExternalId,
-        SC.Customer,
-        SC.RequiredBagFilters,
-        SC.Total_Bag_Filters,
-        SC.Total_No_Of_Bags,
-        SC.Total_Structural_Weight,
-        COALESCE(GT.Grand_Total_Cost, 0)            AS Grand_Total_Cost,
-        CASE
-            WHEN SC.Total_Bag_Filters > 0
-            THEN COALESCE(GT.Grand_Total_Cost, 0) / SC.Total_Bag_Filters
-            ELSE 0
-        END                                         AS Avg_Cost_Per_BF,
-        CASE
-            WHEN SC.Total_No_Of_Bags > 0
-            THEN COALESCE(GT.Grand_Total_Cost, 0) / SC.Total_No_Of_Bags
-            ELSE 0
-        END                                         AS Avg_Cost_Per_Bag,
-        11.5                                        AS SortOrder,
-        '— COST COMPONENTS —'                       AS Item,
-        ''                                          AS Material,
-        ''                                          AS Units,
-        NULL                                        AS Rate,
-        NULL                                        AS Total_Weight,
-        NULL                                        AS Total_Cost,
-        'SECTION_HEADER'                            AS Section_Label,
-        0                                           AS Is_Summary_Row
+        SC.EnquiryId, SC.Enquiry_ExternalId, SC.Customer, SC.RequiredBagFilters,
+        SC.Total_Bag_Filters, SC.Total_No_Of_Bags, SC.Total_Structural_Weight,
+        COALESCE(GT.Grand_Total_Cost, 0)                AS Grand_Total_Cost,
+        CASE WHEN SC.Total_Bag_Filters > 0
+            THEN COALESCE(GT.Grand_Total_Cost, 0) / SC.Total_Bag_Filters ELSE 0
+        END                                             AS Avg_Cost_Per_BF,
+        CASE WHEN SC.Total_No_Of_Bags > 0
+            THEN COALESCE(GT.Grand_Total_Cost, 0) / SC.Total_No_Of_Bags ELSE 0
+        END                                             AS Avg_Cost_Per_Bag,
+        0         AS SortOrder,
+        '— STRUCTURAL ITEMS —' AS Item,
+        ''        AS Material,
+        ''        AS Units,
+        NULL      AS Rate,
+        NULL      AS Total_Weight,
+        NULL      AS Total_Labour_Charge,               -- ← NEW (NULL for header rows)
+        NULL      AS Total_Cost,
+        'SECTION_HEADER' AS Section_Label,
+        0         AS Is_Summary_Row
     FROM SummaryCards SC
-    LEFT JOIN GrandTotalCost GT
-        ON GT.EnquiryId = SC.EnquiryId
+    LEFT JOIN GrandTotalCost GT ON GT.EnquiryId = SC.EnquiryId
+
+    UNION ALL
+
+    -- ④ HEADER ROW: "— COST COMPONENTS —" (SortOrder 12.5)
+    SELECT
+        SC.EnquiryId, SC.Enquiry_ExternalId, SC.Customer, SC.RequiredBagFilters,
+        SC.Total_Bag_Filters, SC.Total_No_Of_Bags, SC.Total_Structural_Weight,
+        COALESCE(GT.Grand_Total_Cost, 0)                AS Grand_Total_Cost,
+        CASE WHEN SC.Total_Bag_Filters > 0
+            THEN COALESCE(GT.Grand_Total_Cost, 0) / SC.Total_Bag_Filters ELSE 0
+        END                                             AS Avg_Cost_Per_BF,
+        CASE WHEN SC.Total_No_Of_Bags > 0
+            THEN COALESCE(GT.Grand_Total_Cost, 0) / SC.Total_No_Of_Bags ELSE 0
+        END                                             AS Avg_Cost_Per_Bag,
+        12.5      AS SortOrder,
+        '— COST COMPONENTS —' AS Item,
+        ''        AS Material,
+        ''        AS Units,
+        NULL      AS Rate,
+        NULL      AS Total_Weight,
+        NULL      AS Total_Labour_Charge,               -- ← NEW (NULL for header rows)
+        NULL      AS Total_Cost,
+        'SECTION_HEADER' AS Section_Label,
+        0         AS Is_Summary_Row
+    FROM SummaryCards SC
+    LEFT JOIN GrandTotalCost GT ON GT.EnquiryId = SC.EnquiryId
 
 ) AS FinalResult
 
 ORDER BY
     EnquiryId,
     SortOrder;
+
+
+
+    CREATE OR REPLACE VIEW ionfiltrabagfilters.vw_PaintingCostSummaryDetails AS
+SELECT
+    bpcs.EnquiryId,
+    bpcs.BagfilterMasterId,
+    pi.Process_Volume_M3h,
+
+    -- optional but useful for header table
+    ROW_NUMBER() OVER (
+        PARTITION BY bpcs.EnquiryId
+        ORDER BY pi.Process_Volume_M3h
+    ) AS Qty,
+
+    e.RequiredBagFilters AS Enquiry_RequiredBagFilters,
+
+    bpcs.SchemeName,
+    bpcs.GrandTotal
+
+FROM ionfiltrabagfilters.BagfilterPaintingCostSummary bpcs
+JOIN ionfiltrabagfilters.ProcessInfo pi
+    ON pi.BagfilterMasterId = bpcs.BagfilterMasterId
+JOIN ionfiltrabagfilters.Enquiry e
+    ON e.Id = bpcs.EnquiryId
+
+WHERE bpcs.IsDeleted = 0;

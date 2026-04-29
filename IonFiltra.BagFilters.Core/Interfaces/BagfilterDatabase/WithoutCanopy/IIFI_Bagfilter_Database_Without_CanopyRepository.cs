@@ -17,6 +17,9 @@ namespace IonFiltra.BagFilters.Core.Interfaces.Repositories.BagfilterDatabase.Wi
             decimal? baysZ
         );
 
+        Task<bool> ExistsByProcessVolumeAsync(string processVolume);
+        Task<IFI_Bagfilter_Database_Without_Canopy?> GetByNextGreaterVolumeAsync(decimal processVolume);
+
     }
 }
     

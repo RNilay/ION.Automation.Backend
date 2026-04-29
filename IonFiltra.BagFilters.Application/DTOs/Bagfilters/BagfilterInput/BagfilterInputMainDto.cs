@@ -7,6 +7,7 @@ using IonFiltra.BagFilters.Application.DTOs.Bagfilters.Sections.Casing_Inputs;
 using IonFiltra.BagFilters.Application.DTOs.Bagfilters.Sections.DamperSize;
 using IonFiltra.BagFilters.Application.DTOs.Bagfilters.Sections.EV;
 using IonFiltra.BagFilters.Application.DTOs.Bagfilters.Sections.Hopper_Trough;
+using IonFiltra.BagFilters.Application.DTOs.Bagfilters.Sections.PaintCostSummary;
 using IonFiltra.BagFilters.Application.DTOs.Bagfilters.Sections.Painting;
 using IonFiltra.BagFilters.Application.DTOs.Bagfilters.Sections.Process_Info;
 using IonFiltra.BagFilters.Application.DTOs.Bagfilters.Sections.Roof_Door;
@@ -47,6 +48,7 @@ namespace IonFiltra.BagFilters.Application.DTOs.Bagfilters.BagfilterInputs
         = new List<BillOfMaterialDto>();
 
         //public PaintingCostDto? PaintingCost { get; set; }
+        public PaintingCostSummaryDto? PaintingCostSummary { get; set; }
 
         public List<BoughtOutItemSelectionDto>? BoughtOutItems { get; set; }
          = new List<BoughtOutItemSelectionDto>();

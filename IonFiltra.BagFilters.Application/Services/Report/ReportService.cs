@@ -272,62 +272,7 @@ namespace IonFiltra.BagFilters.Application.Services.Report
                 if (row == null)
                     continue;
 
-                //// ------ CASE: group row (new) ------
-                //if (row.Type?.Equals("group", StringComparison.OrdinalIgnoreCase) == true && row.RepeatRow != null)
-                //{
-                //    // get the source list for the group
-                //    if (!inputValues.TryGetValue(row.RepeatRow.SourceKey, out var srcObj) || srcObj == null)
-                //        continue;
-
-                //    var sourceList = ConvertToListOfDicts(srcObj);
-                //    if (sourceList == null || sourceList.Count == 0)
-                //        continue;
-
-                //    // For each record in the source list, render the group's ChildRows (in order)
-                //    for (int idx = 0; idx < sourceList.Count; idx++)
-                //    {
-                //        var record = sourceList[idx];
-                //        // child rows are ReportRow-like (tables typically)
-                //        foreach (var child in row.ChildRows ?? new List<ReportRow>())
-                //        {
-                //            // clone child so we don't mutate the template
-                //            var clonedChild = DeepClone(child);
-
-                //            // If child is a table with its own RepeatRow (rare for group usage), you may decide how to handle.
-                //            // For our group pattern, child tables are plain templates (no RepeatRow). We'll expand placeholders / blocks using the single record.
-                //            if (clonedChild.Type?.Equals("table", StringComparison.OrdinalIgnoreCase) == true)
-                //            {
-                //                // Create a new ReportRow to hold the expanded table result
-                //                var expandedTable = DeepClone(clonedChild); // clone structure
-                //                expandedTable.Rows = ExpandTableTemplateForItem(clonedChild, record);
-                //                newRowsList.Add(expandedTable);
-                //            }
-                //            else
-                //            {
-                //                // For non-table child types, do a simple placeholders pass on any string fields you expect (Title, Text etc.)
-                //                var cloned = DeepClone(clonedChild);
-                //                // Example: if child has Header/TextRows or Footer rows, you'd evaluate placeholders similarly.
-                //                newRowsList.Add(cloned);
-                //            }
-                //        }
-
-                //        // 🔹 add pagebreak only between records, not after the last one
-                //        if (idx < sourceList.Count - 1)
-                //        {
-                //            // and **optionally** only for this specific template:
-                //            // if (reportTemplate.ReportName == "Bagfilter Details")
-                //            newRowsList.Add(new ReportRow { Type = "pagebreak" });
-                //        }
-
-                //        //// Insert optional pagebreak separator between records.
-                //        //// The renderer must know how to treat Type == "pagebreak". If you already support this, uncomment.
-                //        //var pageBreakRow = new ReportRow { Type = "pagebreak" };
-                //        //newRowsList.Add(pageBreakRow);
-                //    }
-
-                //    // Done with group — continue to next original row (we replaced the group with expanded children)
-                //    continue;
-                //}
+               
 
                 // ------ CASE: group row (new) ------
                 if (row.Type?.Equals("group", StringComparison.OrdinalIgnoreCase) == true
@@ -443,6 +388,42 @@ namespace IonFiltra.BagFilters.Application.Services.Report
                                         newRowsList.Add(expandedTable);
                                     }
                                 }
+
+                                else if (
+                                reportTemplate.ReportName?.Equals("Painting Cost Summary", StringComparison.OrdinalIgnoreCase) == true
+                                && clonedChild.RepeatRow != null
+                                && string.Equals(clonedChild.RepeatRow.SourceKey,
+                                                 "PaintingSummaryRows",
+                                                 StringComparison.OrdinalIgnoreCase))
+                                {
+                                    var nestedRepeat = clonedChild.RepeatRow;
+
+                                    if (record.TryGetValue(nestedRepeat.SourceKey, out var nestedObj)
+                                        && nestedObj != null)
+                                    {
+                                        var nestedList = ConvertToListOfDicts(nestedObj);
+
+                                        var expandedRows = ExpandNestedRepeatTable(
+                                            clonedChild,
+                                            nestedRepeat,
+                                            nestedList
+                                        );
+
+                                        var expandedTable = DeepClone(clonedChild);
+                                        expandedTable.Rows = expandedRows;
+                                        expandedTable.RepeatRow = null; // 🔴 critical
+
+                                        newRowsList.Add(expandedTable);
+                                    }
+                                    else
+                                    {
+                                        // fallback (safe)
+                                        var expandedTable = DeepClone(clonedChild);
+                                        expandedTable.Rows = ExpandTableTemplateForItem(clonedChild, record);
+                                        expandedTable.RepeatRow = null;
+                                        newRowsList.Add(expandedTable);
+                                    }
+                                }
                                 else if (isDamperCost
                                  && clonedChild.RepeatRow != null
                                  && string.Equals(clonedChild.RepeatRow.SourceKey,
@@ -496,11 +477,11 @@ namespace IonFiltra.BagFilters.Application.Services.Report
                                     }
                                 }
                                 else if (isBoughtOutDetails
-         && clonedChild.RepeatRow != null
-         && string.Equals(
-             clonedChild.RepeatRow.SourceKey,
-             "BoughtOutRows",
-             StringComparison.OrdinalIgnoreCase))
+                                 && clonedChild.RepeatRow != null
+                                 && string.Equals(
+                                     clonedChild.RepeatRow.SourceKey,
+                                     "BoughtOutRows",
+                                     StringComparison.OrdinalIgnoreCase))
                                 {
                                     var nestedRepeat = clonedChild.RepeatRow;
 
@@ -1478,16 +1459,7 @@ namespace IonFiltra.BagFilters.Application.Services.Report
                 ["EnquiryId"] = enquiryId
             };
 
-            // // 👉 Only Bagfilter Details gets the extra Process_Volume
-            //bool isBagfilterDetails =
-            //    template.ReportName?.Equals("Bag Filter Details", StringComparison.OrdinalIgnoreCase) == true
-            //    || template.Order == 2
-            //    || template.EntityDbName?.Equals("vw_BagfilterDetails", StringComparison.OrdinalIgnoreCase) == true;
-
-            //if (isBagfilterDetails && request.ProcessVolumeM3h.HasValue)
-            //{
-            //    dataParams["Process_Volume_M3h"] = request.ProcessVolumeM3h.Value;
-            //}
+           
 
             // IMPORTANT: processVolume comes from orchestration now
             if (processVolume.HasValue && !nonVolumeDependentReports.Contains(template.Title))
@@ -1615,6 +1587,7 @@ namespace IonFiltra.BagFilters.Application.Services.Report
                                 ["Material"] = r.GetValueOrDefault("Material") ?? "",
                                 ["Total_Weight"] = r.GetValueOrDefault("Total_Weight") ?? "",
                                 ["Units"] = r.GetValueOrDefault("Units") ?? "",
+                                ["Total_Labour_Charge"] = r.GetValueOrDefault("Total_Labour_Charge") ?? "",
                                 ["Rate"] = r.GetValueOrDefault("Rate") ?? "",
                                 ["Total_Cost"] = r.GetValueOrDefault("Total_Cost") ?? "",
                                 ["Section_Label"] = r.GetValueOrDefault("Section_Label") ?? "",
@@ -1745,11 +1718,49 @@ namespace IonFiltra.BagFilters.Application.Services.Report
                 rowValues["cage_groups"] = cageGroups;
             }
             else if (
-string.Equals(template.EntityDbName, "vw_BoughtOutDetails",
-          StringComparison.OrdinalIgnoreCase)
-|| string.Equals(template.Title, "Bought Out Details",
-             StringComparison.OrdinalIgnoreCase)
-)
+                string.Equals(template.EntityDbName, "vw_PaintingCostSummaryDetails",
+                              StringComparison.OrdinalIgnoreCase)
+                || string.Equals(template.Title, "Painting Cost Summary",
+                                 StringComparison.OrdinalIgnoreCase)
+            )
+            {
+                var paintingSummaryGroups = listData
+                    .GroupBy(d => d["Process_Volume_M3h"])
+                    .Select(g =>
+                    {
+                        var first = g.First();
+
+                        var groupDict = new Dictionary<string, object>();
+
+                        // header fields
+                        groupDict["EnquiryId"] = first.GetValueOrDefault("EnquiryId");
+                        groupDict["BagfilterMasterId"] = first.GetValueOrDefault("BagfilterMasterId");
+                        groupDict["Process_Volume_M3h"] = first.GetValueOrDefault("Process_Volume_M3h");
+                        groupDict["Qty"] = first.GetValueOrDefault("Qty");
+                        groupDict["Enquiry_RequiredBagFilters"] = first.GetValueOrDefault("Enquiry_RequiredBagFilters");
+
+                        // 🔥 THIS is your table data
+                        groupDict["PaintingSummaryRows"] = g
+                            .Select(r => new Dictionary<string, object>
+                            {
+                                ["SchemeName"] = r.GetValueOrDefault("SchemeName"),
+                                ["GrandTotal"] = Convert.ToDecimal(r["GrandTotal"]).ToString("0.00")
+                            })
+                            .ToList();
+
+                        return groupDict;
+                    })
+                    .ToList();
+
+                rowValues["painting_summary_groups"] = paintingSummaryGroups;
+            }
+
+            else if (
+            string.Equals(template.EntityDbName, "vw_BoughtOutDetails",
+                      StringComparison.OrdinalIgnoreCase)
+            || string.Equals(template.Title, "Bought Out Details",
+                         StringComparison.OrdinalIgnoreCase)
+            )
             {
                 var boughtOutGroups = listData
                     .GroupBy(d => d["Process_Volume_M3h"])

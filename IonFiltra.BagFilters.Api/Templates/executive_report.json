@@ -35,8 +35,8 @@
 
                 {
                     "Type": "table",
-                    "LayoutColumns": [ "","", "", "" ,"" ,""],
-                    "ColumnWidths": [ 33,33, 34, 33 ,33 ,33],
+                    "LayoutColumns": [ "", "", "", "", "", "" ],
+                    "ColumnWidths": [ 33, 33, 34, 33, 33, 33 ],
                     "Rows": [
                         {
                             "RowData": [
@@ -80,8 +80,8 @@
                 },
                 {
                     "Type": "table",
-                    "LayoutColumns": [ "#", "ITEM", "MATERIAL", "TOTAL WEIGHT", "UNITS", "RATE (₹)", "TOTAL COST (₹)" ],
-                    "ColumnWidths": [ 5, 30, 12, 13, 8, 13, 19 ],
+                    "LayoutColumns": [ "#", "ITEM", "MATERIAL", "TOTAL WEIGHT", "UNITS", "LABOUR CHARGES (₹)", "RAW MATERIAL RATE (₹)", "TOTAL COST (₹)" ],
+                    "ColumnWidths": [ 6, 27, 11, 12, 8, 12, 10, 14 ],
                     "Rows": [
                         {
                             "RowData": [
@@ -90,7 +90,8 @@
                                 "MATERIAL",
                                 "TOTAL WEIGHT",
                                 "UNITS",
-                                "RATE (₹)",
+                                "LABOUR CHARGES (₹)",
+                                " RAW MATERIAL RATE (₹)",
                                 "TOTAL COST (₹)"
                             ],
                             "RowStyle": {
@@ -106,6 +107,7 @@
                                 "{Material}",
                                 "{Total_Weight}",
                                 "{Units}",
+                                "{Total_Labour_Charge}",
                                 "{Rate}",
                                 "{Total_Cost}"
                             ],
@@ -124,6 +126,7 @@
                             "Material",
                             "Total_Weight",
                             "Units",
+                            "Total_Labour_Charge",
                             "Rate",
                             "Total_Cost"
                         ]

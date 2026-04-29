@@ -19,12 +19,10 @@ namespace IonFiltra.BagFilters.Application.DTOs.BagfilterDatabase.WithCanopy
         public string? Member_Sizes_Bracing_Ties { get; set; }
         public string? Member_Sizes_RAV { get; set; }
         public string? Member_Sizes_Staging_Beam { get; set; }
-        public string? Member_Sizes_Grid_Beam { get; set; }
         public string? Member_Sizes_mm_Shed_Column_Rafter { get; set; }
         public string? Member_Sizes_mm_Shed_Girt_and_Purlin_along_X_axis { get; set; }
         public string? Member_Sizes_mm_Shed_Girt_Purlin_and_Ridge_along_Y_axis { get; set; }
         public string? Member_Sizes_mm_Shed_Shed_Bracings { get; set; }
-        public string? Member_Sizes_mm_Shed_Roof_Truss { get; set; }
         public decimal? Bolts_No_of_Bolt { get; set; }
         public decimal? Bolts_Dia_of_Bolt { get; set; }
         public decimal? Bolts_Grade_of_Bolt { get; set; }

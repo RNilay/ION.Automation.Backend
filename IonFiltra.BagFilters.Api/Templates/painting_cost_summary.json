@@ -1,33 +1,18 @@
-{
-    "Id": 4,
-    "Order": 4,
-    "ReportName": "Bill Of Material",
-    "Title": "Bill Of Material",
-    "EntityDbName": "vw_BillOfMaterialDetails",
-    "Logo": "wwwroot/images/company.png",
-    "Layout": {
-        "Columns": 1,
-        "ColumnWidths": [ "100%" ],
-        "ReportWidth": "210mm"
-    },
-    "Header": {
-        "TextRows": [
-            "<div style='background-color:#F2F2F2; padding:6px; border:1px solid #000;'>",
-            "<table style='width:100%; font-size:12px;'><tr><th style='text-align:left'>{Title}</th><th style='text-align:right'>{Date}</th></tr></table>",
-            "</div>"
-        ]
-    },
-    "Footer": {
-        "TextRows": [ "{Logo}", "Page Footer" ]
-    },
+﻿{
+    "Id": 5,
+    "Order": 5,
+    "ReportName": "Painting Cost Summary",
+    "Title": "Painting Cost Summary",
+    "EntityDbName": "vw_PaintingCostSummaryDetails",
 
     "Rows": [
         {
             "Type": "group",
             "RepeatRow": {
-                "SourceKey": "bom_groups",
+                "SourceKey": "painting_summary_groups",
                 "TemplateRowIndex": 0
             },
+
             "ChildRows": [
                 {
                     "Type": "table",
@@ -42,7 +27,7 @@
                             "RowStyle": {
                                 "FontSize": 12,
                                 "Bold": true,
-                                "InlineCss": "background-color:#008fd8; font-weight:bolder; color:#ffffff;"
+                                "InlineCss": "background-color:#008fd8;color:#fff;"
                             }
                         },
                         {
@@ -60,35 +45,25 @@
 
                 {
                     "Type": "table",
-                    "LayoutColumns": [ "", "", "", "", "", "", "" ],
-                    "ColumnWidths": [ 24, 8, 14, 8, 15, 12, 19 ],
+                    "LayoutColumns": [ "", "" ],
+                    "ColumnWidths": [ 70, 30 ],
 
                     "Rows": [
                         {
                             "RowData": [
-                                "Item",
-                                "Material",
-                                "Weight",
-                                "Units",
-                                "Labour Charges (₹)",
-                                "Raw Material Rate (₹)",
-                                "Cost (₹)"
+                                "Scheme Name",
+                                "Total Cost (₹)"
                             ],
                             "RowStyle": {
                                 "FontSize": 12,
                                 "Bold": true,
-                                "InlineCss": "background-color:#008fd8; color:#ffffff; font-weight:bolder;"
+                                "InlineCss": "background-color:#008fd8;color:#fff;"
                             }
                         },
                         {
                             "RowData": [
-                                "{Item}",
-                                "{Material}",
-                                "{Weight}",
-                                "{Units}",
-                                "{LabourCharge}",
-                                "{Rate}",
-                                "{Cost}"
+                                "{SchemeName}",
+                                "{GrandTotal}"
                             ],
                             "RowStyle": {
                                 "FontSize": 11
@@ -97,21 +72,15 @@
                     ],
 
                     "RepeatRow": {
-                        "SourceKey": "BomRows",
+                        "SourceKey": "PaintingSummaryRows",
                         "TemplateRowIndex": 1,
                         "Columns": [
-                            "Item",
-                            "Material",
-                            "Weight",
-                            "Units",
-                            "LabourCharge",
-                            "Rate",
-                            "Cost"
+                            "SchemeName",
+                            "GrandTotal"
                         ]
                     }
                 }
             ]
         }
     ]
-
 }

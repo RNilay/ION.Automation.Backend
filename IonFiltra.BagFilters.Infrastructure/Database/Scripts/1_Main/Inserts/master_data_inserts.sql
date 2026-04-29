@@ -1,4 +1,4 @@
-INSERT INTO ionfiltrabagfilters.FilterBag 
+ï»¿INSERT INTO ionfiltrabagfilters.FilterBag 
 (Material, Gsm, Size, Make, Cost, IsDefault) VALUES
 ('None', 0, '', '', 0, 1),
 ('Polyester oil & water repellent', 550, '150x3660', 'Supreme', 265, 0),
@@ -63,7 +63,7 @@ INSERT INTO ionfiltrabagfilters.HLDEntity (Make, Model, Cost, IsDefault) VALUES
 
 INSERT INTO ionfiltrabagfilters.RTDEntity (Make, Model, Cost, IsDefault) VALUES 
 ('None', '', 0, 1),
-('Tempsens', 'Tempsens Make Rtd With Thermowell (R-504-2-W3-6-316-16-316-½"Npt(M)-½" Npt(M)-50-50-50-150-A-15000)', 5000, 0),
+('Tempsens', 'Tempsens Make Rtd With Thermowell (R-504-2-W3-6-316-16-316-Â½"Npt(M)-Â½" Npt(M)-50-50-50-150-A-15000)', 5000, 0),
 ('Tempsens', 'Tempsens Make Rtd With Thermowell (Pt-100x2)', 3500, 0);
 
 
@@ -304,10 +304,29 @@ INSERT INTO ionfiltrabagfilters.FinalCoatingMaster (Model, CostPerLiter) VALUES
 ('(Type: Epoxy) Asian Paints Colour: Smoke Grey (RAL: IS 692)', 288),
 ('(Type: PU) Asian Paints Apcothane CF674 (RAL: 7000)', 450),
 ('(Type: Sigmacover) Sigmadur 550 (with Primer 21-06)', 670),
-('HRA Paint (250°C)', 252),
+('HRA Paint (250Â°C)', 252),
 ('None', 0);
 
 INSERT INTO  ionfiltrabagfilters.PaintingSchemeMaster (SchemeName, CostPerKg) VALUES
 ('Sand Blasting + Primer + Finish Paint', 4.50),
 ('Wire Brush + Primer + Finish Paint', 2.50),
 ('Wire Brush + Primer', 1.50);
+
+
+----
+
+-- Inserts for PlatesMaterialConfig
+INSERT INTO ionfiltrabagfilters.PlatesMaterialConfig
+(Material, Density, RatePerKg)
+VALUES
+('IS2062',    7850, 62),
+('SS304',     7930, 300),   -- corrected from 8000
+('SS316',     7980, 300),   -- corrected from 8000
+('Hardox400', 7800, 300),   -- corrected from 7850
+('Hardox500', 7850, 300);   -- unchanged âœ…
+
+-- Structures
+INSERT INTO ionfiltrabagfilters.StructuresMaterialConfig
+(Material, Density, RatePerKg)
+VALUES
+('IS2062', 7850, 65);

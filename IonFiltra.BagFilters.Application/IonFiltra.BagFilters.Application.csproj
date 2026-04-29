@@ -22,8 +22,11 @@
 
   <ItemGroup>
     <Folder Include="Heplers\Report\" />
+    <Folder Include="Interfaces\Bagfilters\Sections\PaintCostSummary\" />
+    <Folder Include="Mapper\Bagfilters\Sections\PaintCostSummary\" />
     <Folder Include="Mapper\Users\User\" />
     <Folder Include="Models\Report\" />
+    <Folder Include="Services\Bagfilters\Sections\PaintCostSummary\" />
   </ItemGroup>
 
   <PropertyGroup>

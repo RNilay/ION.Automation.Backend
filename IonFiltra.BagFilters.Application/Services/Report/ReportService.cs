@@ -1588,7 +1588,8 @@ namespace IonFiltra.BagFilters.Application.Services.Report
                                 ["Total_Weight"] = r.GetValueOrDefault("Total_Weight") ?? "",
                                 ["Units"] = r.GetValueOrDefault("Units") ?? "",
                                 ["Total_Labour_Charge"] = r.GetValueOrDefault("Total_Labour_Charge") ?? "",
-                                ["Rate"] = r.GetValueOrDefault("Rate") ?? "",
+                                //["Rate"] = r.GetValueOrDefault("Rate") ?? "",
+                                ["RawMaterialCost"] = r.GetValueOrDefault("RawMaterialCost") ?? "",
                                 ["Total_Cost"] = r.GetValueOrDefault("Total_Cost") ?? "",
                                 ["Section_Label"] = r.GetValueOrDefault("Section_Label") ?? "",
                                 ["Is_Summary_Row"] = r.GetValueOrDefault("Is_Summary_Row") ?? 0

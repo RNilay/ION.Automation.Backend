@@ -551,6 +551,7 @@ CREATE TABLE
     Units            VARCHAR(20)  NULL,
     LabourCharge     DECIMAL(18,2) NULL,
     Rate             DECIMAL(18,2) NULL,
+    RawMaterialCost     DECIMAL(18,2) NULL,
     Cost             DECIMAL(18,2) NULL,
     SortOrder        INT NULL,   -- to keep the same order as UI
     CreatedAt        DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,

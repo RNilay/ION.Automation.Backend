@@ -80,7 +80,7 @@
                 },
                 {
                     "Type": "table",
-                    "LayoutColumns": [ "#", "ITEM", "MATERIAL", "TOTAL WEIGHT", "UNITS", "LABOUR CHARGES (₹)", "RAW MATERIAL RATE (₹)", "TOTAL COST (₹)" ],
+                    "LayoutColumns": [ "#", "ITEM", "MATERIAL", "TOTAL WEIGHT", "UNITS", "LABOUR COST (₹)", "RAW MATERIAL COST (₹)", "TOTAL COST (₹)" ],
                     "ColumnWidths": [ 6, 27, 11, 12, 8, 12, 10, 14 ],
                     "Rows": [
                         {
@@ -90,8 +90,8 @@
                                 "MATERIAL",
                                 "TOTAL WEIGHT",
                                 "UNITS",
-                                "LABOUR CHARGES (₹)",
-                                " RAW MATERIAL RATE (₹)",
+                                "LABOUR COST (₹)",
+                                "RAW MATERIAL COST (₹)",
                                 "TOTAL COST (₹)"
                             ],
                             "RowStyle": {
@@ -108,7 +108,7 @@
                                 "{Total_Weight}",
                                 "{Units}",
                                 "{Total_Labour_Charge}",
-                                "{Rate}",
+                                "{RawMaterialCost}",
                                 "{Total_Cost}"
                             ],
                             "RowStyle": {
@@ -127,7 +127,7 @@
                             "Total_Weight",
                             "Units",
                             "Total_Labour_Charge",
-                            "Rate",
+                            "RawMaterialCost",
                             "Total_Cost"
                         ]
                     }

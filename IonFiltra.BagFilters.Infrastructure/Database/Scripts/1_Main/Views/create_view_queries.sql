@@ -505,6 +505,7 @@ SELECT
     bom.Units,
     bom.LabourCharge,
     bom.Rate,
+    bom.RawMaterialCost,
     bom.Cost,
     bom.SortOrder
 FROM DistinctVolumes dv
@@ -866,6 +867,7 @@ JOIN ionfiltrabagfilters.SecondaryBoughtOutItems s
 
 
 
+
 CREATE OR REPLACE VIEW ionfiltrabagfilters.vw_ExecutiveSummary AS
 WITH
 -- ── Summary Card Aggregations ──────────────────────────────────────────────
@@ -919,6 +921,7 @@ AggregatedBOM AS (
         bom.Material,
         bom.Units,
         bom.Rate,
+        SUM(bom.RawMaterialCost)        AS RawMaterialCost,            
         SUM(bom.Weight)                 AS Total_Weight,
         -- ── NEW: sum LabourCharge across all BFs for this line item ──────
         SUM(bom.LabourCharge)           AS Total_Labour_Charge,
@@ -1013,6 +1016,7 @@ SupervisionRows AS (
         ''                                          AS Material,
         ''                                          AS Units,
         NULL                                        AS Rate,
+        NULL                                        AS RawMaterialCost,
         NULL                                        AS Total_Weight,
         -- ── NEW: supervision rows carry no LabourCharge ──────────────────
         NULL                                        AS Total_Labour_Charge,
@@ -1027,7 +1031,7 @@ SupervisionRows AS (
 
     SELECT sv.EnquiryId, COALESCE(ts.Total_SortOrder, 999) - 0.90,
         'Visit and Engineering Charges',
-        '', '₹', NULL, NULL, NULL, sv.VisitEngineeringCharges,
+        '', '₹', NULL, NULL, NULL, NULL, sv.VisitEngineeringCharges,
         'SUPERVISION', 1
     FROM ionfiltrabagfilters.EnquirySupervisionCharges sv
     LEFT JOIN TotalRowSortOrder ts ON ts.EnquiryId = sv.EnquiryId
@@ -1037,7 +1041,7 @@ SupervisionRows AS (
 
     SELECT sv.EnquiryId, COALESCE(ts.Total_SortOrder, 999) - 0.80,
         'Supervision Free Man Days',
-        '', "No's", sv.FreeManDays, NULL, NULL, NULL,
+        '', "No's", NULL, sv.FreeManDays, NULL, NULL,NULL,
         'SUPERVISION', 1
     FROM ionfiltrabagfilters.EnquirySupervisionCharges sv
     LEFT JOIN TotalRowSortOrder ts ON ts.EnquiryId = sv.EnquiryId
@@ -1047,7 +1051,7 @@ SupervisionRows AS (
 
     SELECT sv.EnquiryId, COALESCE(ts.Total_SortOrder, 999) - 0.70,
         'Supervision Free Man Days Rate',
-        '', '₹', sv.FreeManDaysRate, NULL, NULL,
+        '', '₹', NULL, sv.FreeManDaysRate, NULL, NULL,
         sv.FreeManDays * sv.FreeManDaysRate,
         'SUPERVISION', 1
     FROM ionfiltrabagfilters.EnquirySupervisionCharges sv
@@ -1058,7 +1062,7 @@ SupervisionRows AS (
 
     SELECT sv.EnquiryId, COALESCE(ts.Total_SortOrder, 999) - 0.60,
         'Supervision Free Man Days To and Fro',
-        '', '₹', NULL, NULL, NULL, sv.FreeManDaysToAndFro,
+        '', '₹', NULL, NULL, NULL, NULL, sv.FreeManDaysToAndFro,
         'SUPERVISION', 1
     FROM ionfiltrabagfilters.EnquirySupervisionCharges sv
     LEFT JOIN TotalRowSortOrder ts ON ts.EnquiryId = sv.EnquiryId
@@ -1068,7 +1072,7 @@ SupervisionRows AS (
 
     SELECT sv.EnquiryId, COALESCE(ts.Total_SortOrder, 999) - 0.50,
         'Supervision Free Man Days Lodging & Boarding',
-        '', '₹', NULL, NULL, NULL, sv.FreeManDaysLodgingBoarding,
+        '', '₹', NULL, NULL, NULL, NULL, sv.FreeManDaysLodgingBoarding,
         'SUPERVISION', 1
     FROM ionfiltrabagfilters.EnquirySupervisionCharges sv
     LEFT JOIN TotalRowSortOrder ts ON ts.EnquiryId = sv.EnquiryId
@@ -1078,7 +1082,7 @@ SupervisionRows AS (
 
     SELECT sv.EnquiryId, COALESCE(ts.Total_SortOrder, 999) - 0.40,
         'Supervision Chargeable Basis Days',
-        '', "No's", sv.ChargeableDays, NULL, NULL, NULL,
+        '', "No's", NULL, sv.ChargeableDays, NULL, NULL, NULL,
         'SUPERVISION', 1
     FROM ionfiltrabagfilters.EnquirySupervisionCharges sv
     LEFT JOIN TotalRowSortOrder ts ON ts.EnquiryId = sv.EnquiryId
@@ -1088,7 +1092,7 @@ SupervisionRows AS (
 
     SELECT sv.EnquiryId, COALESCE(ts.Total_SortOrder, 999) - 0.30,
         'Supervision Chargeable Basis Rate',
-        '', '₹', sv.ChargeableRate, NULL, NULL,
+        '', '₹', NULL, sv.ChargeableRate, NULL, NULL,
         sv.ChargeableDays * sv.ChargeableRate,
         'SUPERVISION', 1
     FROM ionfiltrabagfilters.EnquirySupervisionCharges sv
@@ -1099,7 +1103,7 @@ SupervisionRows AS (
 
     SELECT sv.EnquiryId, COALESCE(ts.Total_SortOrder, 999) - 0.20,
         'Supervision Chargeable Basis To and Fro',
-        '', '₹', NULL, NULL, NULL, sv.ChargeableToAndFro,
+        '', '₹', NULL, NULL, NULL, NULL, sv.ChargeableToAndFro,
         'SUPERVISION', 1
     FROM ionfiltrabagfilters.EnquirySupervisionCharges sv
     LEFT JOIN TotalRowSortOrder ts ON ts.EnquiryId = sv.EnquiryId
@@ -1109,7 +1113,7 @@ SupervisionRows AS (
 
     SELECT sv.EnquiryId, COALESCE(ts.Total_SortOrder, 999) - 0.10,
         'Supervision Chargeable Basis Lodging & Boarding',
-        '', '₹', NULL, NULL, NULL, sv.ChargeableLodgingBoarding,
+        '', '₹', NULL, NULL, NULL, NULL, sv.ChargeableLodgingBoarding,
         'SUPERVISION', 1
     FROM ionfiltrabagfilters.EnquirySupervisionCharges sv
     LEFT JOIN TotalRowSortOrder ts ON ts.EnquiryId = sv.EnquiryId
@@ -1130,7 +1134,7 @@ SELECT * FROM (
         CASE WHEN SC.Total_No_Of_Bags > 0
             THEN COALESCE(GT.Grand_Total_Cost, 0) / SC.Total_No_Of_Bags ELSE 0
         END                                             AS Avg_Cost_Per_Bag,
-        BOM.SortOrder, BOM.Item, BOM.Material, BOM.Units, BOM.Rate,
+        BOM.SortOrder, BOM.Item, BOM.Material, BOM.Units, BOM.Rate, BOM.RawMaterialCost,
         BOM.Total_Weight,
         BOM.Total_Labour_Charge,                        -- ← NEW
         BOM.Total_Cost, BOM.Section_Label, BOM.Is_Summary_Row
@@ -1151,7 +1155,7 @@ SELECT * FROM (
         CASE WHEN SC.Total_No_Of_Bags > 0
             THEN COALESCE(GT.Grand_Total_Cost, 0) / SC.Total_No_Of_Bags ELSE 0
         END                                             AS Avg_Cost_Per_Bag,
-        SVR.SortOrder, SVR.Item, SVR.Material, SVR.Units, SVR.Rate,
+        SVR.SortOrder, SVR.Item, SVR.Material, SVR.Units, SVR.Rate, SVR.RawMaterialCost,
         SVR.Total_Weight,
         SVR.Total_Labour_Charge,                        -- ← NEW (NULL for supervision rows)
         SVR.Total_Cost, SVR.Section_Label, SVR.Is_Summary_Row
@@ -1177,6 +1181,7 @@ SELECT * FROM (
         ''        AS Material,
         ''        AS Units,
         NULL      AS Rate,
+        NULL      AS RawMaterialCost,                -- ← NEW (NULL for header rows)
         NULL      AS Total_Weight,
         NULL      AS Total_Labour_Charge,               -- ← NEW (NULL for header rows)
         NULL      AS Total_Cost,
@@ -1203,6 +1208,7 @@ SELECT * FROM (
         ''        AS Material,
         ''        AS Units,
         NULL      AS Rate,
+        NULL      AS RawMaterialCost,                -- ← NEW (NULL for header rows)
         NULL      AS Total_Weight,
         NULL      AS Total_Labour_Charge,               -- ← NEW (NULL for header rows)
         NULL      AS Total_Cost,

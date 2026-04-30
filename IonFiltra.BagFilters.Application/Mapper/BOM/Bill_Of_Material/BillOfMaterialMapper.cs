@@ -21,6 +21,7 @@ namespace IonFiltra.BagFilters.Application.Mappers.BOM.Bill_Of_Material
                     Units = entity.Units,
                     LabourCharge = entity.LabourCharge,
                     Rate = entity.Rate,
+                    RawMaterialCost = entity.RawMaterialCost,
                     Cost = entity.Cost,
                     SortOrder = entity.SortOrder,
                 },
@@ -42,6 +43,7 @@ namespace IonFiltra.BagFilters.Application.Mappers.BOM.Bill_Of_Material
                 Units = dto.BillOfMaterial.Units,
                 LabourCharge = dto.BillOfMaterial.LabourCharge,
                 Rate = dto.BillOfMaterial.Rate,
+                RawMaterialCost = dto.BillOfMaterial.RawMaterialCost,
                 Cost = dto.BillOfMaterial.Cost,
                 SortOrder = dto.BillOfMaterial.SortOrder,
 

@@ -70,9 +70,9 @@
                                 "Material",
                                 "Weight",
                                 "Units",
-                                "Labour Charges (₹)",
-                                "Raw Material Rate (₹)",
-                                "Cost (₹)"
+                                "Labour Cost (₹)",
+                                "Raw Material Cost (₹)",
+                                "Total Cost (₹)"
                             ],
                             "RowStyle": {
                                 "FontSize": 12,
@@ -87,7 +87,7 @@
                                 "{Weight}",
                                 "{Units}",
                                 "{LabourCharge}",
-                                "{Rate}",
+                                "{RawMaterialCost}",
                                 "{Cost}"
                             ],
                             "RowStyle": {
@@ -105,7 +105,7 @@
                             "Weight",
                             "Units",
                             "LabourCharge",
-                            "Rate",
+                            "RawMaterialCost",
                             "Cost"
                         ]
                     }

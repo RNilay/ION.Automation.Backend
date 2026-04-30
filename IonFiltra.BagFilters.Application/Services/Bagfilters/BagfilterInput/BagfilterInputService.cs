@@ -3152,6 +3152,7 @@ namespace IonFiltra.BagFilters.Application.Services.Bagfilters.BagfilterInputs
                 Units = dto.Units,
                 LabourCharge = dto.LabourCharge,
                 Rate = dto.Rate,
+                RawMaterialCost = dto.RawMaterialCost,
                 Cost = dto.Cost,
                 SortOrder = dto.SortOrder ?? sortOrder,
 

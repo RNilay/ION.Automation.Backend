@@ -56,6 +56,7 @@ namespace IonFiltra.BagFilters.Application.Services.GenericView
                 await RecalculateStandardCage(id, data);
             }
 
+
             return id;
         }
 
@@ -69,6 +70,11 @@ namespace IonFiltra.BagFilters.Application.Services.GenericView
             if (tableName == "CageMaterialConfig" || tableName == "CageMiscellaneousConfig")
             {
                 await RecalculateStandardCage(id, data); // 👈 pass updated row
+            }
+
+            if (tableName == "PlatesMaterialConfig" || tableName == "StructuresMaterialConfig")
+            {
+                await ProcessCrossTableTriggers(tableName, data); // 👈 new generic trigger engine
             }
 
             return result;
@@ -220,5 +226,214 @@ namespace IonFiltra.BagFilters.Application.Services.GenericView
             }
         }
 
+
+
+
+        // ─────────────────────────────────────────────────────────────────────
+        // Cross-table cascade engine  (NEW — replaces RecalculateStandardCage)
+        // ─────────────────────────────────────────────────────────────────────
+
+        /// <summary>
+        /// After a row in <paramref name="sourceTable"/> is saved, checks whether
+        /// the table's JSON config defines any <c>crossTableTriggers</c> and runs
+        /// them generically — no table-specific code required.
+        ///
+        /// Two trigger patterns are supported:
+        ///
+        /// 1. <b>Formula cascade</b> (e.g. StandardCageConfig):
+        ///    The trigger target has no SetField/ValueFrom — instead the engine
+        ///    re-runs ApplyCalculations on every row of the target table using
+        ///    the updated source row injected into the cache.
+        ///
+        /// 2. <b>Direct assignment</b> (e.g. BillOfMaterialRates):
+        ///    The trigger target has SetField + ValueFrom + IncludeKeys / ExcludeKeys.
+        ///    The engine writes newValue into SetField for the matching rows.
+        /// </summary>
+        private async Task ProcessCrossTableTriggers(
+            string sourceTable,
+            Dictionary<string, object> savedData)
+        {
+            if (!ConfigLoader.Configs.ContainsKey(sourceTable))
+                return;
+
+            var config = ConfigLoader.Configs[sourceTable];
+
+            if (config.crossTableTriggers == null || !config.crossTableTriggers.Any())
+                return;
+
+            foreach (var trigger in config.crossTableTriggers)
+            {
+                // ── 1. Condition check (e.g. material == "IS2062") ───────────
+                if (trigger.Condition != null)
+                {
+                    var actualValue = savedData.ContainsKey(trigger.Condition.Field)
+                        ? savedData[trigger.Condition.Field]?.ToString()
+                        : null;
+
+                    if (!string.Equals(actualValue, trigger.Condition.Value,
+                            StringComparison.OrdinalIgnoreCase))
+                        continue;
+                }
+
+                // ── 2. TriggerFields guard (optional whitelist of changed fields) ─
+                if (trigger.TriggerFields != null && trigger.TriggerFields.Any())
+                {
+                    bool anyPresent = trigger.TriggerFields.Any(f => savedData.ContainsKey(f));
+                    if (!anyPresent) continue;
+                }
+
+                // ── 3. Process each target ────────────────────────────────────
+                foreach (var target in trigger.Targets)
+                {
+                    if (!string.IsNullOrEmpty(target.SetField))
+                    {
+                        // Pattern 2 — Direct assignment with row filtering
+                        await ApplyDirectAssignment(savedData, target);
+                    }
+                    else
+                    {
+                        // Pattern 1 — Formula cascade (StandardCage style)
+                        await ApplyFormulaCascade(sourceTable, savedData, target);
+                    }
+                }
+            }
+        }
+
+        // ── Pattern 2 helper ──────────────────────────────────────────────────
+
+        /// <summary>
+        /// Writes <c>savedData[target.ValueFrom]</c> into <c>target.SetField</c>
+        /// for all rows in <c>target.Table</c> that match the IncludeKeys /
+        /// ExcludeKeys filter on <c>target.FilterField</c>.
+        ///
+        /// Example: update BillOfMaterialRates.rate = 75
+        ///          WHERE itemkey NOT IN ('structure','cage','scrap_holes')
+        /// </summary>
+        private async Task ApplyDirectAssignment(
+            Dictionary<string, object> savedData,
+            TriggerTarget target)
+        {
+            // Resolve the new value from the saved row
+            if (!savedData.ContainsKey(target.ValueFrom))
+                return;
+
+            var newValue = savedData[target.ValueFrom];
+
+            // Fetch all rows from the target table
+            var allRows = await _repository.GetViewData(target.Table);
+
+            foreach (var row in allRows)
+            {
+                // Apply IncludeKeys / ExcludeKeys filter
+                if (!ShouldUpdateRow(row, target))
+                    continue;
+
+                var payload = new Dictionary<string, object>
+                {
+                    [target.SetField] = newValue
+                };
+
+                var rowId = Convert.ToInt32(row["id"]);
+                await _repository.UpdateAsync(target.Table, rowId, payload);
+            }
+        }
+
+        /// <summary>
+        /// Returns true if the row should be updated based on the target's
+        /// IncludeKeys / ExcludeKeys filter.
+        /// </summary>
+        private static bool ShouldUpdateRow(
+            Dictionary<string, object> row,
+            TriggerTarget target)
+        {
+            // No filter at all → update every row
+            if (string.IsNullOrEmpty(target.FilterField))
+                return true;
+
+            var fieldValue = row.ContainsKey(target.FilterField)
+                ? row[target.FilterField]?.ToString() ?? ""
+                : "";
+
+            // IncludeKeys has priority when both are somehow defined
+            if (target.IncludeKeys != null && target.IncludeKeys.Any())
+            {
+                return target.IncludeKeys.Any(k =>
+                    string.Equals(k, fieldValue, StringComparison.OrdinalIgnoreCase));
+            }
+
+            if (target.ExcludeKeys != null && target.ExcludeKeys.Any())
+            {
+                return !target.ExcludeKeys.Any(k =>
+                    string.Equals(k, fieldValue, StringComparison.OrdinalIgnoreCase));
+            }
+
+            return true;
+        }
+
+        // ── Pattern 1 helper ──────────────────────────────────────────────────
+
+        /// <summary>
+        /// Re-runs ApplyCalculations on every row of the target table,
+        /// injecting the updated source row into the cache so the formula
+        /// picks up the latest values without an extra DB round-trip.
+        ///
+        /// This is the generic replacement for the old RecalculateStandardCage().
+        /// </summary>
+        private async Task ApplyFormulaCascade(
+            string sourceTable,
+            Dictionary<string, object> savedData,
+            TriggerTarget target)
+        {
+            // Fetch all rows from the target table (e.g. StandardCageConfig)
+            var targetRows = await _repository.GetViewData(target.Table);
+
+            // Build a cache that includes the just-updated source row
+            var sourceRows = await _repository.GetViewData(sourceTable);
+
+            // Patch the in-memory source list so the cache reflects the new value
+            var updatedSourceRows = sourceRows.Select(row =>
+            {
+                if (savedData.ContainsKey("id") &&
+                    Convert.ToInt32(row["id"]) == Convert.ToInt32(savedData["id"]))
+                {
+                    var patched = new Dictionary<string, object>(row);
+                    foreach (var kv in savedData)
+                        patched[kv.Key] = kv.Value;
+                    return patched;
+                }
+                return row;
+            }).ToList();
+
+            var cache = new Dictionary<string, List<Dictionary<string, object>>>
+            {
+                [sourceTable] = updatedSourceRows
+            };
+
+            // Also include any other cached tables already referenced by target's calculations
+            // (target.Table's own config will resolve external deps via the cache)
+
+            if (!ConfigLoader.Configs.ContainsKey(target.Table))
+                return;
+
+            var targetConfig = ConfigLoader.Configs[target.Table];
+
+            if (targetConfig.calculations == null || !targetConfig.calculations.Any())
+                return;
+
+            foreach (var targetRow in targetRows)
+            {
+                var updated = await ApplyCalculations(target.Table, targetRow, cache);
+
+                // Build an update payload containing only the recalculated fields
+                var updatePayload = new Dictionary<string, object>();
+                foreach (var calc in targetConfig.calculations)
+                    updatePayload[calc.Target] = updated[calc.Target];
+
+                await _repository.UpdateAsync(
+                    target.Table,
+                    Convert.ToInt32(targetRow["id"]),
+                    updatePayload);
+            }
+        }
     }
 }

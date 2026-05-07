@@ -39,6 +39,28 @@ namespace IonFiltra.BagFilters.Application.Services.EnquiryService
             return (dtos, totalCount);
         }
 
+        // ── Get paginated enquiries for ALL users EXCEPT the given userId ──────
+        /// <summary>
+        /// Returns enquiries that belong to every user other than <paramref name="userId"/>.
+        /// Used for the "All Enquiries" dashboard tab so the current user can
+        /// view and work on enquiries created by other users.
+        /// </summary>
+        public async Task<(List<EnquiryMainDto> Items, int TotalCount)> GetAllExceptUserId(
+            int userId,
+            int pageNumber,
+            int pageSize)
+        {
+            _logger.LogInformation(
+                "Fetching paginated Enquiries for all users excluding UserID {userId}",
+                userId);
+
+            var (entities, totalCount) =
+                await _repository.GetAllExceptUser(userId, pageNumber, pageSize);
+
+            var dtos = entities.Select(EnquiryMapper.ToMainDto).ToList();
+            return (dtos, totalCount);
+        }
+
 
         public async Task<int> AddAsync(EnquiryMainDto dto)
         {
@@ -55,6 +77,13 @@ namespace IonFiltra.BagFilters.Application.Services.EnquiryService
             await _repository.UpdateAsync(entity);
         }
 
+        // ── Update by EnquiryId + UserId ──────────────────────────────────────
+        /// <summary>
+        /// Updates editable fields (Customer, RequiredBagFilters) for the enquiry
+        /// identified by its EnquiryId and owner UserId.
+        /// The UserId in the DTO must be the OWNER's id, not necessarily the
+        /// currently-logged-in user's id, so that cross-user edits work correctly.
+        /// </summary>
         public async Task<bool> UpdateByEnquiryIdAsync(EnquiryMainDto dto)
         {
             if (dto == null || dto.Enquiry == null)

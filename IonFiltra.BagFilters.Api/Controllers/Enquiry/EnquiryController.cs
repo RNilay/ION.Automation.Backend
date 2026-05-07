@@ -124,6 +124,67 @@ namespace IonFiltra.BagFilters.Api.Controllers.Enquiry
             }
         }
 
+
+
+        /// <summary>
+        /// Returns paginated enquiries for ALL users EXCEPT the specified userId.
+        /// Used by the "All Enquiries" tab on the dashboard so the current user
+        /// can view and act on other users' enquiries without seeing their own.
+        /// </summary>
+        [HttpGet("pagenatedEnquiriesExcludingUser/{userId}")]
+        public async Task<IActionResult> GetAllExcludingUser(
+            int userId,
+            [FromQuery] int pageNumber = 1,
+            [FromQuery] int pageSize = 8)
+        {
+            _logger.LogInformation(
+                "GET: Fetching paginated Enquiries excluding User ID: {UserId}, Page: {PageNumber}",
+                userId, pageNumber);
+
+            try
+            {
+                var (items, totalCount) = await _service.GetAllExceptUserId(userId, pageNumber, pageSize);
+
+                if (items == null || !items.Any())
+                {
+                    _logger.LogWarning(
+                        "No Enquiries found (excluding User ID: {UserId}), Page: {PageNumber}",
+                        userId, pageNumber);
+
+                    return Ok(new
+                    {
+                        success = false,
+                        message = "No enquiries found for other users.",
+                        data = new { items = new List<EnquiryMainDto>(), totalCount = 0 }
+                    });
+                }
+
+                return Ok(new
+                {
+                    success = true,
+                    message = "Enquiries fetched successfully.",
+                    data = new { items, totalCount }
+                });
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(
+                    ex,
+                    "Error occurred while fetching Enquiries excluding User ID: {UserId}, Page: {PageNumber}",
+                    userId, pageNumber);
+
+                return StatusCode(500, new
+                {
+                    success = false,
+                    message = "An error occurred while processing your request.",
+                    data = (object?)null
+                });
+            }
+        }
+
+
+
+
         [HttpPut("update")]
         public async Task<IActionResult> Update([FromBody] EnquiryMainDto dto)
         {

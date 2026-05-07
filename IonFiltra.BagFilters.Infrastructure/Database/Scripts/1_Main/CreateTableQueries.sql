@@ -139,7 +139,7 @@ CREATE TABLE
         Tube_Sheet_Thickness DECIMAL(10, 2),
         Capsule_Wall_Thickness DECIMAL(10, 2),
         Canopy TEXT,
-        Solenoid_Valve_Maintainence TEXT,
+   
         Casing_Wall_Thickness DECIMAL(10, 2),
         Stiffening_Factor_Casing DECIMAL(10, 2),
         Hopper_Type TEXT,
@@ -154,7 +154,7 @@ CREATE TABLE
         Is_Distance_Piece TEXT,
         Distance_Piece_Height DECIMAL(10, 2),
         Stiffening_Factor_Hopper DECIMAL(10, 2),
-        Hopper DECIMAL(10, 2),
+        
         Discharge_Opening_Sqr DECIMAL(10, 2),
         Rav_Height DECIMAL(10, 2),
         Material_Handling TEXT,
@@ -366,7 +366,7 @@ CREATE TABLE
         Tube_Sheet_Thickness DECIMAL(10, 2),
         Capsule_Wall_Thickness DECIMAL(10, 2),
         Canopy TEXT,
-        Solenoid_Valve_Maintainence TEXT,
+       
         Capsule_Area DECIMAL(10, 2),
         Capsule_Weight DECIMAL(10, 2),
         Tubesheet_Area DECIMAL(10, 2),
@@ -410,7 +410,7 @@ CREATE TABLE
         Is_Distance_Piece TEXT,
         Distance_Piece_Height DECIMAL(10, 2),
         Stiffening_Factor_Hopper DECIMAL(10, 2),
-        Hopper DECIMAL(10, 2),
+       
         Discharge_Opening_Sqr DECIMAL(10, 2),
         Rav_Height DECIMAL(10, 2),
         Material_Handling TEXT,
@@ -1645,4 +1645,19 @@ CREATE TABLE ionfiltrabagfilters.EnquirySupervisionCharges (
     UNIQUE INDEX uq_esc_enquiry (EnquiryId, IsDeleted),
 
     INDEX idx_esc_enquiry (EnquiryId)
+);
+
+CREATE TABLE ionfiltrabagfilters.EnquiryTransportationSettings (
+    Id              INT             AUTO_INCREMENT PRIMARY KEY,
+    EnquiryId       INT             NOT NULL,
+    DefaultMode     VARCHAR(20)     NOT NULL DEFAULT 'EX works',  -- 'EX works' | 'DAP'
+    DapFixedCost    DECIMAL(14, 2)  NOT NULL DEFAULT 0.00,         -- ₹
+    CreatedAt       DATETIME        NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    UpdatedAt       DATETIME        NULL     ON UPDATE CURRENT_TIMESTAMP,
+    IsDeleted       TINYINT(1)      NOT NULL DEFAULT 0,
+    CONSTRAINT fk_ets_enquiry
+        FOREIGN KEY (EnquiryId) REFERENCES ionfiltrabagfilters.Enquiry(Id)
+            ON DELETE CASCADE,
+    UNIQUE INDEX uq_ets_enquiry (EnquiryId, IsDeleted),
+    INDEX idx_ets_enquiry (EnquiryId)
 );

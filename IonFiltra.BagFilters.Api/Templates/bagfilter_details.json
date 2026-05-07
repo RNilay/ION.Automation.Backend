@@ -657,11 +657,7 @@
                                     "ValueKey": "Canopy",
                                     "InlineCss": "{#USER}"
                                 },
-                                {
-                                    "Label": "Solenoid Valve Maintainance",
-                                    "ValueKey": "Solenoid_Valve_Maintainence",
-                                    "InlineCss": "{#USER}"
-                                },
+                               
                                 {
                                     "Label": "Area of Capsules (m<sup>2</sup>)",
                                     "ValueKey": "Capsule_Area",

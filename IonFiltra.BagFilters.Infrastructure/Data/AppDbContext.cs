@@ -36,6 +36,7 @@ using IonFiltra.BagFilters.Core.Entities.MasterData.TimerData;
 using IonFiltra.BagFilters.Core.Entities.PaintScheme;
 using IonFiltra.BagFilters.Core.Entities.SkyCivEntities;
 using IonFiltra.BagFilters.Core.Entities.Supervision_Charges;
+using IonFiltra.BagFilters.Core.Entities.Transportation_Settings;
 using IonFiltra.BagFilters.Core.Entities.Users.User;
 using IonFiltra.BagFilters.Core.Entities.Users.UserRoles;
 using Microsoft.EntityFrameworkCore;
@@ -136,6 +137,8 @@ namespace IonFiltra.BagFilters.Infrastructure.Data
         public DbSet<BagfilterPaintingCostSummary> BagfilterPaintingCostSummaries { get; set; }
 
         public DbSet<EnquirySupervisionCharges> EnquirySupervisionCharges { get; set; }
+
+        public DbSet<EnquiryTransportationSettings> EnquiryTransportationSettings { get; set; }
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
@@ -566,6 +569,41 @@ namespace IonFiltra.BagFilters.Infrastructure.Data
 
                 entity.HasIndex(e => e.EnquiryId)
                       .HasDatabaseName("idx_esc_enquiry");
+            });
+
+
+            modelBuilder.Entity<EnquiryTransportationSettings>(entity =>
+            {
+                entity.ToTable("EnquiryTransportationSettings", GlobalConstants.IONFILTRA_SCHEMA);
+                entity.HasKey(e => e.Id);
+
+                entity.Property(e => e.EnquiryId)
+                      .IsRequired();
+
+                entity.Property(e => e.DefaultMode)
+                      .IsRequired()
+                      .HasMaxLength(20)
+                      .HasDefaultValue("EX works");
+
+                entity.Property(e => e.DapFixedCost)
+                      .HasColumnType("decimal(14,2)")
+                      .HasDefaultValue(0.00m);
+
+                entity.Property(e => e.IsDeleted)
+                      .HasDefaultValue(false);
+
+                entity.Property(e => e.CreatedAt)
+                      .IsRequired();
+
+                entity.Property(e => e.UpdatedAt)
+                      .IsRequired(false);
+
+                entity.HasIndex(e => new { e.EnquiryId, e.IsDeleted })
+                      .IsUnique()
+                      .HasDatabaseName("uq_ets_enquiry");
+
+                entity.HasIndex(e => e.EnquiryId)
+                      .HasDatabaseName("idx_ets_enquiry");
             });
 
         }

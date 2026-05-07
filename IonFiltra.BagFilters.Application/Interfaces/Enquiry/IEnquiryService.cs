@@ -11,6 +11,11 @@ namespace IonFiltra.BagFilters.Application.Interfaces.Enquiry
     {
         Task<List<EnquiryMainDto>> GetByUserId(int userId);
         Task<(List<EnquiryMainDto> Items, int TotalCount)> GetByUserId(int userId, int pageNumber, int pageSize);
+
+        Task<(List<EnquiryMainDto> Items, int TotalCount)> GetAllExceptUserId(
+            int userId,
+            int pageNumber,
+            int pageSize);
         Task<int> AddAsync(EnquiryMainDto dto);
         Task UpdateAsync(EnquiryMainDto dto);
 

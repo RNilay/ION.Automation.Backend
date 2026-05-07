@@ -8,6 +8,7 @@ using IonFiltra.BagFilters.Application.Interfaces.MasterData.Master_Definition;
 using IonFiltra.BagFilters.Application.Interfaces.PaintScheme;
 using IonFiltra.BagFilters.Application.Interfaces.Report;
 using IonFiltra.BagFilters.Application.Interfaces.Supervision_Charges;
+using IonFiltra.BagFilters.Application.Interfaces.Transportation_Settings;
 using IonFiltra.BagFilters.Application.Interfaces.Users.User;
 using IonFiltra.BagFilters.Application.Services.Assignment;
 using IonFiltra.BagFilters.Application.Services.BagfilterDatabase.WithCanopy;
@@ -48,6 +49,7 @@ using IonFiltra.BagFilters.Application.Services.PaintScheme;
 using IonFiltra.BagFilters.Application.Services.Report;
 using IonFiltra.BagFilters.Application.Services.SkyCiv;
 using IonFiltra.BagFilters.Application.Services.Supervision_Charges;
+using IonFiltra.BagFilters.Application.Services.Transportation_Settings;
 using IonFiltra.BagFilters.Application.Services.Users.User;
 using IonFiltra.BagFilters.Application.Services.Users.UserRoles;
 using IonFiltra.BagFilters.Core.Interfaces.Bagfilters.BagfilterMasters;
@@ -89,6 +91,7 @@ using IonFiltra.BagFilters.Core.Interfaces.Repositories.MasterData.TimerData;
 using IonFiltra.BagFilters.Core.Interfaces.Repositories.Users.UserRoles;
 using IonFiltra.BagFilters.Core.Interfaces.SkyCiv;
 using IonFiltra.BagFilters.Core.Interfaces.Supervision_Charges;
+using IonFiltra.BagFilters.Core.Interfaces.Transportation_Settings;
 using IonFiltra.BagFilters.Core.Interfaces.Users.User;
 using IonFiltra.BagFilters.Infrastructure.Data;
 using IonFiltra.BagFilters.Infrastructure.EnquiryRepo;
@@ -129,6 +132,7 @@ using IonFiltra.BagFilters.Infrastructure.Repositories.MasterData.TimerData;
 using IonFiltra.BagFilters.Infrastructure.Repositories.PaintScheme;
 using IonFiltra.BagFilters.Infrastructure.Repositories.SkyCiv;
 using IonFiltra.BagFilters.Infrastructure.Repositories.Supervision_Charges;
+using IonFiltra.BagFilters.Infrastructure.Repositories.Transportation_Settings;
 using IonFiltra.BagFilters.Infrastructure.Repositories.Users.User;
 using IonFiltra.BagFilters.Infrastructure.Repositories.Users.UserRoles;
 using Microsoft.EntityFrameworkCore;
@@ -295,6 +299,9 @@ namespace IonFiltra.BagFilters.Infrastructure
 
             services.AddScoped<ISupervisionChargesRepository, SupervisionChargesRepository>();
             services.AddScoped<ISupervisionChargesService, SupervisionChargesService>();
+
+            services.AddScoped<ITransportationSettingsRepository, TransportationSettingsRepository>();
+            services.AddScoped<ITransportationSettingsService, TransportationSettingsService>();
 
 
             return services;

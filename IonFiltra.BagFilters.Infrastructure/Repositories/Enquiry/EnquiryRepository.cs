@@ -53,6 +53,39 @@ namespace IonFiltra.BagFilters.Infrastructure.EnquiryRepo
         }
 
 
+        // ── Fetch paginated enquiries for ALL users EXCEPT the given userId ───
+        /// <summary>
+        /// Returns enquiries that do NOT belong to <paramref name="userId"/>,
+        /// ordered newest-first with standard pagination.
+        /// This powers the "All Enquiries" dashboard tab.
+        /// </summary>
+        public async Task<(List<Enquiry> Items, int TotalCount)> GetAllExceptUser(
+            int userId,
+            int pageNumber,
+            int pageSize)
+        {
+            return await _transactionHelper.ExecuteAsync(async dbContext =>
+            {
+                _logger.LogInformation(
+                    "Fetching Enquiries (excluding UserId {userId}), Page {pageNumber}, Size {pageSize}",
+                    userId, pageNumber, pageSize);
+
+                var query = dbContext.Enquirys
+                    .AsNoTracking()
+                    .Where(x => x.UserId != userId)          // exclude current user's records
+                    .OrderByDescending(x => x.CreatedAt);
+
+                var totalCount = await query.CountAsync();
+
+                var items = await query
+                    .Skip((pageNumber - 1) * pageSize)
+                    .Take(pageSize)
+                    .ToListAsync();
+
+                return (items, totalCount);
+            });
+        }
+
 
         public async Task<int> AddAsync(Enquiry entity)
         {

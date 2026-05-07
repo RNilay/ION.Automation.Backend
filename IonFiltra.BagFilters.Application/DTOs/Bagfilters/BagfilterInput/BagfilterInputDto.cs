@@ -49,8 +49,7 @@ namespace IonFiltra.BagFilters.Application.DTOs.Bagfilters.BagfilterInputs
         public decimal? Tube_Sheet_Thickness { get; set; }
         public decimal? Capsule_Wall_Thickness { get; set; }
         public string? Canopy { get; set; }
-        public string? Solenoid_Valve_Maintainence { get; set; }
-        public decimal? Casing_Wall_Thickness { get; set; }
+                public decimal? Casing_Wall_Thickness { get; set; }
         public decimal? Stiffening_Factor_Casing { get; set; }
         public string? Hopper_Type { get; set; }
         public decimal? Process_Compartments { get; set; }
@@ -65,8 +64,7 @@ namespace IonFiltra.BagFilters.Application.DTOs.Bagfilters.BagfilterInputs
         public string? Is_Distance_Piece { get; set; }
         public decimal? Distance_Piece_Height { get; set; }
         public decimal? Stiffening_Factor_Hopper { get; set; }
-        public decimal? Hopper { get; set; }
-        public decimal? Discharge_Opening_Sqr { get; set; }
+                public decimal? Discharge_Opening_Sqr { get; set; }
         public decimal? Rav_Height { get; set; }
         public string? Material_Handling { get; set; }
         public decimal? Material_Handling_Qty { get; set; }

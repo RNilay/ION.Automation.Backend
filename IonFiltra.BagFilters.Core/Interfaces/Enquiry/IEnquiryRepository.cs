@@ -6,6 +6,11 @@ namespace IonFiltra.BagFilters.Core.Interfaces.EnquiryRep
     {
         Task<List<Enquiry>> GetByUserId(int userId);
         Task<(List<Enquiry> Items, int TotalCount)> GetByUserId(int userId, int pageNumber, int pageSize);
+
+        Task<(List<Enquiry> Items, int TotalCount)> GetAllExceptUser(
+            int userId,
+            int pageNumber,
+            int pageSize);
         Task<int> AddAsync(Enquiry entity);
         Task UpdateAsync(Enquiry entity);
 

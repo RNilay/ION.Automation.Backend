@@ -10,6 +10,7 @@ JOIN
 
 GO
 
+
 CREATE OR REPLACE VIEW ionfiltrabagfilters.vw_BagfilterDetails AS
 WITH DistinctPI AS (
     -- only distinct by Enquiry + Process_Volume_M3h (no BagfilterMasterId)
@@ -166,7 +167,6 @@ SELECT
     CAPS.Tube_Sheet_Thickness,
     CAPS.Capsule_Wall_Thickness,
     CAPS.Canopy,
-    CAPS.Solenoid_Valve_Maintainence,
     CAPS.Capsule_Area,
     CAPS.Capsule_Weight                 AS CapsuleInputs_Capsule_Weight,
     CAPS.Tubesheet_Area,
@@ -198,7 +198,6 @@ SELECT
     HOP.Is_Distance_Piece,
     HOP.Distance_Piece_Height,
     HOP.Stiffening_Factor_Hopper,
-    HOP.Hopper,
     HOP.Discharge_Opening_Sqr,
     HOP.Rav_Height,
     HOP.Material_Handling,

@@ -150,7 +150,7 @@ INSERT INTO ionfiltrabagfilters.DragChainConveyor (Make, IsDefault) VALUES
 
 
 INSERT INTO ionfiltrabagfilters.RAVGearedMotor (KW, Make, Cost, IsDefault) VALUES 
-('None', '', 0, 1),
+('None', 'None', 0, 1),
 ('0.75 kW, 20 rpm, IE3', 'PBL', 17000, 0);
 
 

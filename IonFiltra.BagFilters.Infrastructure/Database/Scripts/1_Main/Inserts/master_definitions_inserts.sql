@@ -644,7 +644,8 @@ INSERT INTO ionfiltrabagfilters.AdminCostConfig
 VALUES
 ('Cage Fabrication Cost', 10, '₹/kg'),
 ('Scrap Rate', 35, '₹/kg')
-('Fabrication Cost',34,'₹/kg');
+('Fabrication Cost',34,'₹/kg'),
+('Duct Engineering Cost',34,'₹');
 
 INSERT INTO ionfiltrabagfilters.StandardCageConfig
 (CageSpec, WeightKg, RawMaterialCost, FixedFabricationCost, BoughtOutCost, PackingCost, PaintCost, TarpolineCost, FinalCostINR)

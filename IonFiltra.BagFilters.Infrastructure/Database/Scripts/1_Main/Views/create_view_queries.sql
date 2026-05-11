@@ -11,6 +11,7 @@ JOIN
 GO
 
 
+
 CREATE OR REPLACE VIEW ionfiltrabagfilters.vw_BagfilterDetails AS
 WITH DistinctPI AS (
     -- only distinct by Enquiry + Process_Volume_M3h (no BagfilterMasterId)
@@ -303,6 +304,9 @@ SELECT
     DSI.Damper_Diameter,
     DSI.Damper_Qty,
     
+    -- Additional Cost from BagfilterInput
+    BI.Additional_Cost,
+    
     -- Explosion Vent
     EV.Explosion_Vent_Design_Pressure,
     EV.Explosion_Vent_Quantity,
@@ -389,17 +393,19 @@ LEFT JOIN ionfiltrabagfilters.DamperSizeInputs DSI
     ON DSI.BagfilterMasterId = BM.BagfilterMasterId
     AND DSI.EnquiryId = D.EnquiryId
 
+LEFT JOIN ionfiltrabagfilters.BagfilterInput BI
+    ON BI.BagfilterMasterId = BM.BagfilterMasterId
+    AND BI.EnquiryId = D.EnquiryId
+
 LEFT JOIN ionfiltrabagfilters.ExplosionVentEntity EV
     ON EV.BagfilterMasterId = BM.BagfilterMasterId
     AND EV.EnquiryId = D.EnquiryId;
-
 
 
 ---- Gropu by Volumes view
 
     CREATE OR REPLACE VIEW ionfiltrabagfilters.vw_EnquiryVolumeSummary AS
 WITH DistinctInputs AS (
-    -- all distinct rows from BagfilterInput (use the real table name)
     SELECT
         EnquiryId,
         BagfilterMasterId,
@@ -408,18 +414,16 @@ WITH DistinctInputs AS (
     WHERE Process_Volume_M3h IS NOT NULL
 ),
 Volumes AS (
-    -- group by enquiry + volume across all bagfilters, count qty
     SELECT
         EnquiryId,
         Process_Volume_M3h,
         COUNT(*) AS Qty,
-        GROUP_CONCAT(DISTINCT BagfilterMasterId) AS BagfilterMasterIds -- for debugging/inspection if needed
+        GROUP_CONCAT(DISTINCT BagfilterMasterId) AS BagfilterMasterIds
     FROM ionfiltrabagfilters.BagfilterInput
     WHERE Process_Volume_M3h IS NOT NULL
     GROUP BY EnquiryId, Process_Volume_M3h
 ),
 VolumeWeights AS (
-    -- sum Weight_Total from WeightSummary but only for bagfilters that have that volume
     SELECT
         V.EnquiryId,
         V.Process_Volume_M3h,
@@ -428,29 +432,82 @@ VolumeWeights AS (
     JOIN ionfiltrabagfilters.WeightSummary WS
       ON WS.EnquiryId = V.EnquiryId
       AND WS.BagfilterMasterId IN (
-          -- pick bagfiltermaster ids that correspond to this enquiry+volume
           SELECT DISTINCT BagfilterMasterId
           FROM ionfiltrabagfilters.BagfilterInput BI
           WHERE BI.EnquiryId = V.EnquiryId
             AND BI.Process_Volume_M3h = V.Process_Volume_M3h
       )
     GROUP BY V.EnquiryId, V.Process_Volume_M3h
+),
+
+-- ── BagfilterMasterIds that belong to each Enquiry+Volume ─────────────────
+VolumeBagfilters AS (
+    SELECT DISTINCT
+        EnquiryId,
+        Process_Volume_M3h,
+        BagfilterMasterId
+    FROM ionfiltrabagfilters.BagfilterInput
+    WHERE Process_Volume_M3h IS NOT NULL
+),
+
+-- ── Bought Out Items (Total) cost per Enquiry+Volume ──────────────────────
+-- Sums the BOM Cost rows where Item = 'Bought Out Items (Total)'
+-- only for BagfilterMasterIds that belong to that volume
+BoughtOutCost AS (
+    SELECT
+        VB.EnquiryId,
+        VB.Process_Volume_M3h,
+        SUM(BOM.Cost) AS BoughtOut_Cost
+    FROM VolumeBagfilters VB
+    JOIN ionfiltrabagfilters.BillOfMaterial BOM
+      ON BOM.EnquiryId         = VB.EnquiryId
+     AND BOM.BagfilterMasterId = VB.BagfilterMasterId
+     AND BOM.Item              = 'Bought Out Items (Total)'
+    GROUP BY VB.EnquiryId, VB.Process_Volume_M3h
+),
+
+-- ── Fab Cost = Total BOM Cost EXCLUDING Bought Out Items (Total) ──────────
+FabCost AS (
+    SELECT
+        VB.EnquiryId,
+        VB.Process_Volume_M3h,
+        SUM(BOM.Cost) AS Fab_Cost
+    FROM VolumeBagfilters VB
+    JOIN ionfiltrabagfilters.BillOfMaterial BOM
+      ON BOM.EnquiryId         = VB.EnquiryId
+     AND BOM.BagfilterMasterId = VB.BagfilterMasterId
+     AND BOM.Item              = 'Total'          -- the grand total row per BagfilterMaster
+    GROUP BY VB.EnquiryId, VB.Process_Volume_M3h
 )
+
 SELECT
-    E.Id                       AS EnquiryId,
-    E.EnquiryId                AS Enquiry_ExternalId,
-    V.Process_Volume_M3h       AS Volume_M3h,
-    V.Qty                      AS Qty,
-    COALESCE(W.WeightSum, 0)   AS Weight,
-    NULL                       AS Fab_Cost,
-    NULL                       AS BoughtOut,
-    NULL                       AS Total
+    E.Id                                                        AS EnquiryId,
+    E.EnquiryId                                                 AS Enquiry_ExternalId,
+    V.Process_Volume_M3h                                        AS Volume_M3h,
+    V.Qty                                                       AS Qty,
+    COALESCE(W.WeightSum,  0)                                   AS Weight,
+
+    -- Fab_Cost  = Total BOM cost  MINUS  Bought Out Items (Total)
+    COALESCE(FC.Fab_Cost, 0) - COALESCE(BC.BoughtOut_Cost, 0)  AS Fab_Cost,
+
+    -- BoughtOut = value of "Bought Out Items (Total)" line in BOM
+    COALESCE(BC.BoughtOut_Cost, 0)                              AS BoughtOut,
+
+    -- Total     = Fab_Cost + BoughtOut  (= full BOM Total row)
+    COALESCE(FC.Fab_Cost, 0)                                    AS Total
+
 FROM Volumes V
 JOIN ionfiltrabagfilters.Enquiry E
   ON E.Id = V.EnquiryId
 LEFT JOIN VolumeWeights W
-  ON W.EnquiryId = V.EnquiryId
- AND W.Process_Volume_M3h = V.Process_Volume_M3h;
+  ON W.EnquiryId         = V.EnquiryId
+ AND W.Process_Volume_M3h = V.Process_Volume_M3h
+LEFT JOIN FabCost FC
+  ON FC.EnquiryId         = V.EnquiryId
+ AND FC.Process_Volume_M3h = V.Process_Volume_M3h
+LEFT JOIN BoughtOutCost BC
+  ON BC.EnquiryId         = V.EnquiryId
+ AND BC.Process_Volume_M3h = V.Process_Volume_M3h;
 
  --- Bill Of Material Details View
 
@@ -516,67 +573,6 @@ ORDER BY
     dv.Process_Volume_M3h,
     dv.BagfilterMasterId,
     bom.SortOrder;
-
-
-    -----transportation cost view--:
-
-    
-CREATE OR REPLACE VIEW ionfiltrabagfilters.vw_TransportationCostDetails AS
-WITH PiBm AS (
-    SELECT
-        e.Id                 AS EnquiryId,
-        bm.BagfilterMasterId AS BagfilterMasterId,
-        pi.Process_Volume_M3h,
-        e.RequiredBagFilters AS Enquiry_RequiredBagFilters,
-
-        -- choose a single BagfilterMaster per (Enquiry, Process_Volume_M3h)
-        ROW_NUMBER() OVER (
-            PARTITION BY e.Id, pi.Process_Volume_M3h
-            ORDER BY bm.BagfilterMasterId
-        ) AS RnPerVolume
-    FROM ionfiltrabagfilters.ProcessInfo pi
-    JOIN ionfiltrabagfilters.BagfilterMaster bm
-          ON bm.BagfilterMasterId = pi.BagfilterMasterId
-         AND bm.EnquiryId          = pi.EnquiryId
-    JOIN ionfiltrabagfilters.Enquiry e
-          ON e.Id = pi.EnquiryId
-    WHERE pi.Process_Volume_M3h IS NOT NULL
-),
-DistinctVolumes AS (
-    SELECT
-        EnquiryId,
-        BagfilterMasterId,
-        Process_Volume_M3h,
-        Enquiry_RequiredBagFilters,
-
-        -- Qty = running number of distinct process volumes per enquiry
-        ROW_NUMBER() OVER (
-            PARTITION BY EnquiryId
-            ORDER BY Process_Volume_M3h, BagfilterMasterId
-        ) AS Qty
-    FROM PiBm
-    WHERE RnPerVolume = 1
-)
-SELECT
-    dv.EnquiryId,
-    dv.BagfilterMasterId,
-    dv.Process_Volume_M3h,
-    dv.Enquiry_RequiredBagFilters,
-    dv.Qty,
-
-    -- Transportation Cost rows
-    tc.Parameter,
-    tc.Value,
-    tc.Unit
-FROM DistinctVolumes dv
-JOIN ionfiltrabagfilters.TransportationCostEntity tc
-      ON tc.EnquiryId         = dv.EnquiryId
-     AND tc.BagfilterMasterId = dv.BagfilterMasterId
-ORDER BY
-    dv.EnquiryId,
-    dv.Process_Volume_M3h,
-    dv.BagfilterMasterId,
-    tc.Id;
 
 
     ---damper cost view
@@ -867,6 +863,7 @@ JOIN ionfiltrabagfilters.SecondaryBoughtOutItems s
 
 
 
+
 CREATE OR REPLACE VIEW ionfiltrabagfilters.vw_ExecutiveSummary AS
 WITH
 -- ── Summary Card Aggregations ──────────────────────────────────────────────
@@ -920,26 +917,42 @@ AggregatedBOM AS (
         bom.Material,
         bom.Units,
         bom.Rate,
-        SUM(bom.RawMaterialCost)        AS RawMaterialCost,            
+        SUM(bom.RawMaterialCost)        AS RawMaterialCost,
         SUM(bom.Weight)                 AS Total_Weight,
-        -- ── NEW: sum LabourCharge across all BFs for this line item ──────
         SUM(bom.LabourCharge)           AS Total_Labour_Charge,
-        -- ── Cost: Grand Total row gets supervision charges added ─────────
+        -- ── Cost: Grand Total row gets supervision + transportation
+        --         + duct engineering charges added ──────────────────────────
         CASE
             WHEN bom.Item = 'Total'
-            THEN SUM(bom.Cost) + COALESCE((
-                SELECT
-                    COALESCE(sv.VisitEngineeringCharges,              0)
-                    + COALESCE(sv.FreeManDays    * sv.FreeManDaysRate,   0)
-                    + COALESCE(sv.FreeManDaysToAndFro,                0)
-                    + COALESCE(sv.FreeManDaysLodgingBoarding,         0)
-                    + COALESCE(sv.ChargeableDays * sv.ChargeableRate,    0)
-                    + COALESCE(sv.ChargeableToAndFro,                 0)
-                    + COALESCE(sv.ChargeableLodgingBoarding,          0)
-                FROM ionfiltrabagfilters.EnquirySupervisionCharges sv
-                WHERE sv.EnquiryId = bom.EnquiryId
-                  AND sv.IsDeleted = 0
-            ), 0)
+            THEN SUM(bom.Cost)
+                + COALESCE((
+                    SELECT
+                        COALESCE(sv.VisitEngineeringCharges,              0)
+                        + COALESCE(sv.FreeManDays    * sv.FreeManDaysRate,   0)
+                        + COALESCE(sv.FreeManDaysToAndFro,                0)
+                        + COALESCE(sv.FreeManDaysLodgingBoarding,         0)
+                        + COALESCE(sv.ChargeableDays * sv.ChargeableRate,    0)
+                        + COALESCE(sv.ChargeableToAndFro,                 0)
+                        + COALESCE(sv.ChargeableLodgingBoarding,          0)
+                    FROM ionfiltrabagfilters.EnquirySupervisionCharges sv
+                    WHERE sv.EnquiryId = bom.EnquiryId
+                      AND sv.IsDeleted = 0
+                ), 0)
+                + COALESCE((
+                    SELECT ets.DapFixedCost
+                    FROM ionfiltrabagfilters.EnquiryTransportationSettings ets
+                    WHERE ets.EnquiryId = bom.EnquiryId
+                      AND ets.IsDeleted = 0
+                    LIMIT 1
+                ), 0)
+                -- ── CHANGE A: add duct engineering cost to Grand Total row ─
+                + COALESCE((
+                    SELECT CASE WHEN de.IsDuctEngineering = 1 THEN de.Cost ELSE 0 END
+                    FROM ionfiltrabagfilters.EnquiryDuctEngineering de
+                    WHERE de.EnquiryId = bom.EnquiryId
+                      AND de.IsDeleted = 0
+                    LIMIT 1
+                ), 0)
             ELSE SUM(bom.Cost)
         END                             AS Total_Cost,
         CASE
@@ -994,30 +1007,64 @@ SupervisionTotal AS (
     WHERE sv.IsDeleted = 0
 ),
 
--- ── Grand Total Cost — BOM Total row + Supervision charges ─────────────────
+-- ── Transportation cost per enquiry ───────────────────────────────────────
+TransportationTotal AS (
+    SELECT
+        ets.EnquiryId,
+        COALESCE(ets.DapFixedCost, 0)   AS Transportation_Total_Cost
+    FROM ionfiltrabagfilters.EnquiryTransportationSettings ets
+    WHERE ets.IsDeleted = 0
+),
+
+-- ── CHANGE B: Duct Engineering cost per enquiry ────────────────────────────
+-- IsDuctEngineering = 0 → cost treated as 0; = 1 → cost is the stored value.
+DuctEngineeringTotal AS (
+    SELECT
+        de.EnquiryId,
+        CASE WHEN de.IsDuctEngineering = 1
+             THEN COALESCE(de.Cost, 0)
+             ELSE 0
+        END                             AS DuctEngineering_Total_Cost
+    FROM ionfiltrabagfilters.EnquiryDuctEngineering de
+    WHERE de.IsDeleted = 0
+),
+
+-- ── Grand Total Cost — BOM Total + Supervision + Transportation
+--                       + Duct Engineering charges ──────────────────────────
+-- ── CHANGE C: added DuctEngineering_Total_Cost ────────────────────────────
 GrandTotalCost AS (
     SELECT
         bom.EnquiryId,
-        SUM(bom.Cost) + COALESCE(svt.Supervision_Total_Cost, 0)  AS Grand_Total_Cost
+        SUM(bom.Cost)
+        + COALESCE(svt.Supervision_Total_Cost,      0)
+        + COALESCE(tt.Transportation_Total_Cost,    0)
+        + COALESCE(dt.DuctEngineering_Total_Cost,   0)  AS Grand_Total_Cost
     FROM ionfiltrabagfilters.BillOfMaterial bom
     LEFT JOIN SupervisionTotal svt
         ON svt.EnquiryId = bom.EnquiryId
+    LEFT JOIN TransportationTotal tt
+        ON tt.EnquiryId = bom.EnquiryId
+    LEFT JOIN DuctEngineeringTotal dt                   -- ← CHANGE C
+        ON dt.EnquiryId = bom.EnquiryId
     WHERE bom.Item = 'Total'
-    GROUP BY bom.EnquiryId, svt.Supervision_Total_Cost
+    GROUP BY
+        bom.EnquiryId,
+        svt.Supervision_Total_Cost,
+        tt.Transportation_Total_Cost,
+        dt.DuctEngineering_Total_Cost
 ),
 
 -- ── Supervision rows expanded into individual label/value rows ─────────────
 SupervisionRows AS (
     SELECT
         sv.EnquiryId,
-        COALESCE(ts.Total_SortOrder, 999) - 0.95   AS SortOrder,
+        COALESCE(ts.Total_SortOrder, 999) - 0.965   AS SortOrder,
         '— SUPERVISION & VISIT CHARGES —'           AS Item,
         ''                                          AS Material,
         ''                                          AS Units,
         NULL                                        AS Rate,
         NULL                                        AS RawMaterialCost,
         NULL                                        AS Total_Weight,
-        -- ── NEW: supervision rows carry no LabourCharge ──────────────────
         NULL                                        AS Total_Labour_Charge,
         NULL                                        AS Total_Cost,
         'SECTION_HEADER'                            AS Section_Label,
@@ -1028,7 +1075,7 @@ SupervisionRows AS (
 
     UNION ALL
 
-    SELECT sv.EnquiryId, COALESCE(ts.Total_SortOrder, 999) - 0.90,
+    SELECT sv.EnquiryId, COALESCE(ts.Total_SortOrder, 999) - 0.96,
         'Visit and Engineering Charges',
         '', '₹', NULL, NULL, NULL, NULL, sv.VisitEngineeringCharges,
         'SUPERVISION', 1
@@ -1038,9 +1085,9 @@ SupervisionRows AS (
 
     UNION ALL
 
-    SELECT sv.EnquiryId, COALESCE(ts.Total_SortOrder, 999) - 0.80,
+    SELECT sv.EnquiryId, COALESCE(ts.Total_SortOrder, 999) - 0.95,
         'Supervision Free Man Days',
-        '', "No's", NULL, sv.FreeManDays, NULL, NULL,NULL,
+        '', "No's", NULL, sv.FreeManDays, NULL, NULL, NULL,
         'SUPERVISION', 1
     FROM ionfiltrabagfilters.EnquirySupervisionCharges sv
     LEFT JOIN TotalRowSortOrder ts ON ts.EnquiryId = sv.EnquiryId
@@ -1048,7 +1095,7 @@ SupervisionRows AS (
 
     UNION ALL
 
-    SELECT sv.EnquiryId, COALESCE(ts.Total_SortOrder, 999) - 0.70,
+    SELECT sv.EnquiryId, COALESCE(ts.Total_SortOrder, 999) - 0.94,
         'Supervision Free Man Days Rate',
         '', '₹', NULL, sv.FreeManDaysRate, NULL, NULL,
         sv.FreeManDays * sv.FreeManDaysRate,
@@ -1059,7 +1106,7 @@ SupervisionRows AS (
 
     UNION ALL
 
-    SELECT sv.EnquiryId, COALESCE(ts.Total_SortOrder, 999) - 0.60,
+    SELECT sv.EnquiryId, COALESCE(ts.Total_SortOrder, 999) - 0.93,
         'Supervision Free Man Days To and Fro',
         '', '₹', NULL, NULL, NULL, NULL, sv.FreeManDaysToAndFro,
         'SUPERVISION', 1
@@ -1069,7 +1116,7 @@ SupervisionRows AS (
 
     UNION ALL
 
-    SELECT sv.EnquiryId, COALESCE(ts.Total_SortOrder, 999) - 0.50,
+    SELECT sv.EnquiryId, COALESCE(ts.Total_SortOrder, 999) - 0.92,
         'Supervision Free Man Days Lodging & Boarding',
         '', '₹', NULL, NULL, NULL, NULL, sv.FreeManDaysLodgingBoarding,
         'SUPERVISION', 1
@@ -1079,7 +1126,7 @@ SupervisionRows AS (
 
     UNION ALL
 
-    SELECT sv.EnquiryId, COALESCE(ts.Total_SortOrder, 999) - 0.40,
+    SELECT sv.EnquiryId, COALESCE(ts.Total_SortOrder, 999) - 0.91,
         'Supervision Chargeable Basis Days',
         '', "No's", NULL, sv.ChargeableDays, NULL, NULL, NULL,
         'SUPERVISION', 1
@@ -1089,7 +1136,7 @@ SupervisionRows AS (
 
     UNION ALL
 
-    SELECT sv.EnquiryId, COALESCE(ts.Total_SortOrder, 999) - 0.30,
+    SELECT sv.EnquiryId, COALESCE(ts.Total_SortOrder, 999) - 0.90,
         'Supervision Chargeable Basis Rate',
         '', '₹', NULL, sv.ChargeableRate, NULL, NULL,
         sv.ChargeableDays * sv.ChargeableRate,
@@ -1100,7 +1147,7 @@ SupervisionRows AS (
 
     UNION ALL
 
-    SELECT sv.EnquiryId, COALESCE(ts.Total_SortOrder, 999) - 0.20,
+    SELECT sv.EnquiryId, COALESCE(ts.Total_SortOrder, 999) - 0.89,
         'Supervision Chargeable Basis To and Fro',
         '', '₹', NULL, NULL, NULL, NULL, sv.ChargeableToAndFro,
         'SUPERVISION', 1
@@ -1110,13 +1157,115 @@ SupervisionRows AS (
 
     UNION ALL
 
-    SELECT sv.EnquiryId, COALESCE(ts.Total_SortOrder, 999) - 0.10,
+    SELECT sv.EnquiryId, COALESCE(ts.Total_SortOrder, 999) - 0.88,
         'Supervision Chargeable Basis Lodging & Boarding',
         '', '₹', NULL, NULL, NULL, NULL, sv.ChargeableLodgingBoarding,
         'SUPERVISION', 1
     FROM ionfiltrabagfilters.EnquirySupervisionCharges sv
     LEFT JOIN TotalRowSortOrder ts ON ts.EnquiryId = sv.EnquiryId
     WHERE sv.IsDeleted = 0
+),
+
+-- ── Transportation Settings rows ───────────────────────────────────────────
+TransportationSettingsRows AS (
+
+    SELECT
+        ets.EnquiryId,
+        COALESCE(ts.Total_SortOrder, 999) - 0.985   AS SortOrder,
+        '— TRANSPORTATION SETTINGS —'               AS Item,
+        ''                                          AS Material,
+        ''                                          AS Units,
+        NULL                                        AS Rate,
+        NULL                                        AS RawMaterialCost,
+        NULL                                        AS Total_Weight,
+        NULL                                        AS Total_Labour_Charge,
+        NULL                                        AS Total_Cost,
+        'SECTION_HEADER'                            AS Section_Label,
+        0                                           AS Is_Summary_Row
+    FROM ionfiltrabagfilters.EnquiryTransportationSettings ets
+    LEFT JOIN TotalRowSortOrder ts ON ts.EnquiryId = ets.EnquiryId
+    WHERE ets.IsDeleted = 0
+
+    UNION ALL
+
+    SELECT
+        ets.EnquiryId,
+        COALESCE(ts.Total_SortOrder, 999) - 0.98,
+        'Delivery Term',
+        ets.DefaultMode,
+        '',
+        NULL, NULL, NULL, NULL,
+        NULL,
+        'TRANSPORTATION SETTINGS',
+        1
+    FROM ionfiltrabagfilters.EnquiryTransportationSettings ets
+    LEFT JOIN TotalRowSortOrder ts ON ts.EnquiryId = ets.EnquiryId
+    WHERE ets.IsDeleted = 0
+
+    UNION ALL
+
+    SELECT
+        ets.EnquiryId,
+        COALESCE(ts.Total_SortOrder, 999) - 0.97,
+        'Transportation Cost',
+        '',
+        '₹',
+        NULL, NULL, NULL, NULL,
+        ets.DapFixedCost,
+        'TRANSPORTATION SETTINGS',
+        1
+    FROM ionfiltrabagfilters.EnquiryTransportationSettings ets
+    LEFT JOIN TotalRowSortOrder ts ON ts.EnquiryId = ets.EnquiryId
+    WHERE ets.IsDeleted = 0
+),
+
+-- ── CHANGE D: Duct Engineering rows ───────────────────────────────────────
+-- Appears just above the Transportation section (offsets -2.99 → -2.90).
+-- 2 rows: section header + Duct Engineering Cost.
+-- When IsDuctEngineering = 0 the cost row shows 0; when 1 it shows the stored Cost.
+DuctEngineeringRows AS (
+
+    -- Section header
+    SELECT
+        de.EnquiryId,
+        COALESCE(ts.Total_SortOrder, 999) - 0.999   AS SortOrder,
+        '— DUCT ENGINEERING —'                      AS Item,
+        ''                                          AS Material,
+        ''                                          AS Units,
+        NULL                                        AS Rate,
+        NULL                                        AS RawMaterialCost,
+        NULL                                        AS Total_Weight,
+        NULL                                        AS Total_Labour_Charge,
+        NULL                                        AS Total_Cost,
+        'SECTION_HEADER'                            AS Section_Label,
+        0                                           AS Is_Summary_Row
+    FROM ionfiltrabagfilters.EnquiryDuctEngineering de
+    LEFT JOIN TotalRowSortOrder ts ON ts.EnquiryId = de.EnquiryId
+    WHERE de.IsDeleted = 0
+
+    UNION ALL
+
+    -- Duct Engineering Cost row
+    SELECT
+        de.EnquiryId,
+        COALESCE(ts.Total_SortOrder, 999) - 0.99,
+        'Duct Engineering Cost',
+        '',
+        '₹',
+        NULL,
+        NULL,
+        NULL,
+        NULL,
+        -- IsDuctEngineering = 0 → show 0; = 1 → show the stored Cost value
+        CASE WHEN de.IsDuctEngineering = 1
+             THEN COALESCE(de.Cost, 0)
+             ELSE 0
+        END,
+        'DUCT ENGINEERING',
+        1
+    FROM ionfiltrabagfilters.EnquiryDuctEngineering de
+    LEFT JOIN TotalRowSortOrder ts ON ts.EnquiryId = de.EnquiryId
+    WHERE de.IsDeleted = 0
 )
 
 -- ── Final SELECT ───────────────────────────────────────────────────────────
@@ -1135,7 +1284,7 @@ SELECT * FROM (
         END                                             AS Avg_Cost_Per_Bag,
         BOM.SortOrder, BOM.Item, BOM.Material, BOM.Units, BOM.Rate, BOM.RawMaterialCost,
         BOM.Total_Weight,
-        BOM.Total_Labour_Charge,                        -- ← NEW
+        BOM.Total_Labour_Charge,
         BOM.Total_Cost, BOM.Section_Label, BOM.Is_Summary_Row
     FROM SummaryCards SC
     JOIN AggregatedBOM BOM ON BOM.EnquiryId = SC.EnquiryId
@@ -1156,7 +1305,7 @@ SELECT * FROM (
         END                                             AS Avg_Cost_Per_Bag,
         SVR.SortOrder, SVR.Item, SVR.Material, SVR.Units, SVR.Rate, SVR.RawMaterialCost,
         SVR.Total_Weight,
-        SVR.Total_Labour_Charge,                        -- ← NEW (NULL for supervision rows)
+        SVR.Total_Labour_Charge,
         SVR.Total_Cost, SVR.Section_Label, SVR.Is_Summary_Row
     FROM SummaryCards SC
     JOIN SupervisionRows SVR ON SVR.EnquiryId = SC.EnquiryId
@@ -1180,9 +1329,9 @@ SELECT * FROM (
         ''        AS Material,
         ''        AS Units,
         NULL      AS Rate,
-        NULL      AS RawMaterialCost,                -- ← NEW (NULL for header rows)
+        NULL      AS RawMaterialCost,
         NULL      AS Total_Weight,
-        NULL      AS Total_Labour_Charge,               -- ← NEW (NULL for header rows)
+        NULL      AS Total_Labour_Charge,
         NULL      AS Total_Cost,
         'SECTION_HEADER' AS Section_Label,
         0         AS Is_Summary_Row
@@ -1207,13 +1356,55 @@ SELECT * FROM (
         ''        AS Material,
         ''        AS Units,
         NULL      AS Rate,
-        NULL      AS RawMaterialCost,                -- ← NEW (NULL for header rows)
+        NULL      AS RawMaterialCost,
         NULL      AS Total_Weight,
-        NULL      AS Total_Labour_Charge,               -- ← NEW (NULL for header rows)
+        NULL      AS Total_Labour_Charge,
         NULL      AS Total_Cost,
         'SECTION_HEADER' AS Section_Label,
         0         AS Is_Summary_Row
     FROM SummaryCards SC
+    LEFT JOIN GrandTotalCost GT ON GT.EnquiryId = SC.EnquiryId
+
+    UNION ALL
+
+    -- ⑤ TRANSPORTATION SETTINGS ROWS
+    SELECT
+        SC.EnquiryId, SC.Enquiry_ExternalId, SC.Customer, SC.RequiredBagFilters,
+        SC.Total_Bag_Filters, SC.Total_No_Of_Bags, SC.Total_Structural_Weight,
+        COALESCE(GT.Grand_Total_Cost, 0)                AS Grand_Total_Cost,
+        CASE WHEN SC.Total_Bag_Filters > 0
+            THEN COALESCE(GT.Grand_Total_Cost, 0) / SC.Total_Bag_Filters ELSE 0
+        END                                             AS Avg_Cost_Per_BF,
+        CASE WHEN SC.Total_No_Of_Bags > 0
+            THEN COALESCE(GT.Grand_Total_Cost, 0) / SC.Total_No_Of_Bags ELSE 0
+        END                                             AS Avg_Cost_Per_Bag,
+        TSR.SortOrder, TSR.Item, TSR.Material, TSR.Units, TSR.Rate, TSR.RawMaterialCost,
+        TSR.Total_Weight,
+        TSR.Total_Labour_Charge,
+        TSR.Total_Cost, TSR.Section_Label, TSR.Is_Summary_Row
+    FROM SummaryCards SC
+    JOIN TransportationSettingsRows TSR ON TSR.EnquiryId = SC.EnquiryId
+    LEFT JOIN GrandTotalCost GT ON GT.EnquiryId = SC.EnquiryId
+
+    UNION ALL
+
+    -- ── CHANGE D (continued): ⑥ DUCT ENGINEERING ROWS ────────────────────
+    SELECT
+        SC.EnquiryId, SC.Enquiry_ExternalId, SC.Customer, SC.RequiredBagFilters,
+        SC.Total_Bag_Filters, SC.Total_No_Of_Bags, SC.Total_Structural_Weight,
+        COALESCE(GT.Grand_Total_Cost, 0)                AS Grand_Total_Cost,
+        CASE WHEN SC.Total_Bag_Filters > 0
+            THEN COALESCE(GT.Grand_Total_Cost, 0) / SC.Total_Bag_Filters ELSE 0
+        END                                             AS Avg_Cost_Per_BF,
+        CASE WHEN SC.Total_No_Of_Bags > 0
+            THEN COALESCE(GT.Grand_Total_Cost, 0) / SC.Total_No_Of_Bags ELSE 0
+        END                                             AS Avg_Cost_Per_Bag,
+        DER.SortOrder, DER.Item, DER.Material, DER.Units, DER.Rate, DER.RawMaterialCost,
+        DER.Total_Weight,
+        DER.Total_Labour_Charge,
+        DER.Total_Cost, DER.Section_Label, DER.Is_Summary_Row
+    FROM SummaryCards SC
+    JOIN DuctEngineeringRows DER ON DER.EnquiryId = SC.EnquiryId
     LEFT JOIN GrandTotalCost GT ON GT.EnquiryId = SC.EnquiryId
 
 ) AS FinalResult
@@ -1221,6 +1412,7 @@ SELECT * FROM (
 ORDER BY
     EnquiryId,
     SortOrder;
+
 
 
 

@@ -101,6 +101,8 @@ namespace IonFiltra.BagFilters.Application.DTOs.Bagfilters.BagfilterInputs
         public decimal? Damper_Diameter { get; set; }
         public int? Damper_Qty { get; set; }
 
+        public decimal? Additional_Cost { get; set; }
+
         public string? S3dModel { get; set; }
         //new fields
 

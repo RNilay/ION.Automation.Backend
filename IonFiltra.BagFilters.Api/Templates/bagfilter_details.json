@@ -215,20 +215,7 @@
                                     "ValueKey": "Location",
                                     "InlineCss": "{#USER}"
                                 },
-                                {
-                                    "Label": "Delivery Terms [EX works / DAP]",
-                                    "ValueKey": "Transportation_Select",
-                                    "InlineCss": "{#USER}"
-                                },
-                                {
-                                    "Label": "Total Transportation Cost",
-                                    "ValueKey": "Transportation_Cost",
-                                    "InlineCss": "{#USER}",
-                                    "VisibleWhen": {
-                                        "Key": "Transportation_Select",
-                                        "Equals": "DAP"
-                                    }
-                                },
+                                
                                 {
                                     "Label": "Process Volume Min (m<sup>3</sup>/min)",
                                     "ValueKey": "ProcessVolumeMin",
@@ -657,7 +644,7 @@
                                     "ValueKey": "Canopy",
                                     "InlineCss": "{#USER}"
                                 },
-                               
+
                                 {
                                     "Label": "Area of Capsules (m<sup>2</sup>)",
                                     "ValueKey": "Capsule_Area",
@@ -1277,6 +1264,19 @@
                                     "Label": "Vent Size",
                                     "ValueKey": "Explosion_Vent_Size",
                                     "InlineCss": "{#USER}"
+                                },
+
+                                {
+                                    "Label": "Additional Cost",
+                                    "ValueKey": null,
+                                    "IsHeader": true,
+                                    "InlineCss": "background-color:#92D050; font-weight:bold;",
+                                    "ColSpan": 2
+                                },
+                                {
+                                    "Label": "Additional Cost (₹)",
+                                    "ValueKey": "Additional_Cost",
+                                    "InlineCss": "{#USER}"
                                 }
 
                             ]
@@ -1435,14 +1435,7 @@
                             ],
                             "RowStyle": { "FontSize": 10 }
                         },
-                        //{
-                        //    "RowData": [
-                        //        "Purge Pipe",
-                        //        "{Outside_Area_Purge_Pipe_Mm2}",
-                        //        "{Outside_Area_Purge_Pipe_M2}"
-                        //    ],
-                        //    "RowStyle": { "FontSize": 10 }
-                        //},
+                     
                         {
                             "RowData": [
                                 "Roof Door",
@@ -1451,14 +1444,7 @@
                             ],
                             "RowStyle": { "FontSize": 10 }
                         },
-                        //{
-                        //    "RowData": [
-                        //        "Tube Sheet",
-                        //        "{Outside_Area_Tube_Sheet_Mm2}",
-                        //        "{Outside_Area_Tube_Sheet_M2}"
-                        //    ],
-                        //    "RowStyle": { "FontSize": 10 }
-                        //},
+                      
                         {
                             "RowData": [
                                 "Total Outside Area",

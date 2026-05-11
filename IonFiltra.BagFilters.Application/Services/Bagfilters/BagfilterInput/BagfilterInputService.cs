@@ -2406,6 +2406,7 @@ namespace IonFiltra.BagFilters.Application.Services.Bagfilters.BagfilterInputs
                 Damper_Series = dto.Damper_Series,
                 Damper_Diameter = dto.Damper_Diameter,
                 Damper_Qty = dto.Damper_Qty,
+                Additional_Cost = dto.Additional_Cost,
                 Column_Section = dto.Column_Section,
                 Beam_Tie_Section = dto.Beam_Tie_Section,
                 Rav_Section = dto.Rav_Section,

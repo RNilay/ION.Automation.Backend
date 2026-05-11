@@ -189,6 +189,7 @@ CREATE TABLE
         Damper_Series VARCHAR(100),
         Damper_Diameter DECIMAL(10, 2),
         Damper_Qty INT,
+        Additional_Cost DECIMAL(18, 2) NULL,
         --new fields
         Column_Section NVARCHAR(250),
         Beam_Tie_Section NVARCHAR(250),
@@ -1660,4 +1661,45 @@ CREATE TABLE ionfiltrabagfilters.EnquiryTransportationSettings (
             ON DELETE CASCADE,
     UNIQUE INDEX uq_ets_enquiry (EnquiryId, IsDeleted),
     INDEX idx_ets_enquiry (EnquiryId)
+);
+
+CREATE TABLE ionfiltrabagfilters.EnquiryApprovedMakes (
+    Id          INT          NOT NULL AUTO_INCREMENT,
+    EnquiryId   INT          NOT NULL,
+    CreatedAt   DATETIME     NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    UpdatedAt   DATETIME     NULL,
+    IsDeleted   TINYINT(1)   NOT NULL DEFAULT 0,
+
+    PRIMARY KEY (Id),
+    UNIQUE  KEY UK_EnquiryApprovedMakes_EnquiryId (EnquiryId)
+);
+
+CREATE TABLE EnquiryApprovedMakeItems (
+    Id                      INT           NOT NULL AUTO_INCREMENT,
+    EnquiryApprovedMakeId   INT           NOT NULL,
+    MasterKey               VARCHAR(100)  NOT NULL,   -- e.g. "CENTRIFUGAL_FAN"
+    MakeValue               VARCHAR(255)  NOT NULL,   -- e.g. "Kirloskar"
+    ItemType                VARCHAR(20)   NOT NULL DEFAULT 'primary',  -- 'primary' | 'secondary'
+    CreatedAt               DATETIME      NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    UpdatedAt               DATETIME      NULL,
+
+    PRIMARY KEY (Id),
+    INDEX  IX_EnquiryApprovedMakeItems_HeaderId (EnquiryApprovedMakeId),
+    CONSTRAINT FK_EnquiryApprovedMakeItems_Header
+        FOREIGN KEY (EnquiryApprovedMakeId)
+        REFERENCES EnquiryApprovedMakes (Id)
+        ON DELETE CASCADE
+);
+
+CREATE TABLE ionfiltrabagfilters.EnquiryDuctEngineering (
+    Id                INT          NOT NULL AUTO_INCREMENT,
+    EnquiryId         INT          NOT NULL,
+    IsDuctEngineering TINYINT(1)   NOT NULL DEFAULT 0,   -- 0 = No, 1 = Yes
+    Cost              DECIMAL(18,2) NOT NULL DEFAULT 0,   -- snapshot from AdminCostConfig
+    CreatedAt         DATETIME     NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    UpdatedAt         DATETIME     NULL,
+    IsDeleted         TINYINT(1)   NOT NULL DEFAULT 0,
+
+    PRIMARY KEY (Id),
+    UNIQUE KEY UK_EnquiryDuctEngineering_EnquiryId (EnquiryId)
 );

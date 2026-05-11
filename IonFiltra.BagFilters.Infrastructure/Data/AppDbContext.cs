@@ -1,4 +1,5 @@
 ﻿using IonFiltra.BagFilters.Core.Common;
+using IonFiltra.BagFilters.Core.Entities.ApprovedMakes;
 using IonFiltra.BagFilters.Core.Entities.Assignment;
 using IonFiltra.BagFilters.Core.Entities.BagfilterDatabase.WithCanopy;
 using IonFiltra.BagFilters.Core.Entities.BagfilterDatabase.WithoutCanopy;
@@ -26,6 +27,7 @@ using IonFiltra.BagFilters.Core.Entities.BOM.Painting_Cost;
 using IonFiltra.BagFilters.Core.Entities.BOM.PaintingRates;
 using IonFiltra.BagFilters.Core.Entities.BOM.Rates;
 using IonFiltra.BagFilters.Core.Entities.BOM.Transp_Cost;
+using IonFiltra.BagFilters.Core.Entities.DuctEngineering;
 using IonFiltra.BagFilters.Core.Entities.EnquiryEntity;
 using IonFiltra.BagFilters.Core.Entities.MasterData.BoughtOutItems;
 using IonFiltra.BagFilters.Core.Entities.MasterData.DPTData;
@@ -139,6 +141,12 @@ namespace IonFiltra.BagFilters.Infrastructure.Data
         public DbSet<EnquirySupervisionCharges> EnquirySupervisionCharges { get; set; }
 
         public DbSet<EnquiryTransportationSettings> EnquiryTransportationSettings { get; set; }
+
+        public DbSet<EnquiryApprovedMake> EnquiryApprovedMakes { get; set; }
+        public DbSet<EnquiryApprovedMakeItem> EnquiryApprovedMakeItems { get; set; }
+
+        // ── Duct Engineering ─────────────────────────────────────────────────────
+        public DbSet<EnquiryDuctEngineering> EnquiryDuctEngineerings { get; set; }
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
@@ -604,6 +612,36 @@ namespace IonFiltra.BagFilters.Infrastructure.Data
 
                 entity.HasIndex(e => e.EnquiryId)
                       .HasDatabaseName("idx_ets_enquiry");
+            });
+
+
+            modelBuilder.Entity<EnquiryApprovedMake>(entity =>
+            {
+                entity.ToTable("EnquiryApprovedMakes");
+                entity.HasKey(e => e.Id);
+                entity.HasIndex(e => e.EnquiryId).IsUnique();
+                entity.Property(e => e.CreatedAt).HasDefaultValueSql("CURRENT_TIMESTAMP");
+            });
+
+            // ── EnquiryApprovedMakeItems ─────────────────────────────────────────────
+            modelBuilder.Entity<EnquiryApprovedMakeItem>(entity =>
+            {
+                entity.ToTable("EnquiryApprovedMakeItems");
+                entity.HasKey(e => e.Id);
+                entity.Property(e => e.MasterKey).HasMaxLength(100).IsRequired();
+                entity.Property(e => e.MakeValue).HasMaxLength(255).IsRequired();
+                entity.Property(e => e.ItemType).HasMaxLength(20).HasDefaultValue("primary");
+                entity.Property(e => e.CreatedAt).HasDefaultValueSql("CURRENT_TIMESTAMP");
+                entity.HasIndex(e => e.EnquiryApprovedMakeId);
+            });
+
+            modelBuilder.Entity<EnquiryDuctEngineering>(entity =>
+            {
+                entity.ToTable("EnquiryDuctEngineering");
+                entity.HasKey(e => e.Id);
+                entity.HasIndex(e => e.EnquiryId).IsUnique();
+                entity.Property(e => e.Cost).HasPrecision(18, 2);
+                entity.Property(e => e.CreatedAt).HasDefaultValueSql("CURRENT_TIMESTAMP");
             });
 
         }

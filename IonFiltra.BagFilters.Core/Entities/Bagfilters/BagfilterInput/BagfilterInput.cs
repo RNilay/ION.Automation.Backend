@@ -103,6 +103,8 @@ namespace IonFiltra.BagFilters.Core.Entities.Bagfilters.BagfilterInputs
         public decimal? Damper_Diameter { get; set; }
         public int? Damper_Qty { get; set; }
 
+        public decimal? Additional_Cost { get; set; }
+
         //new
         public bool IsMatched { get; set; } = false;
         public int? MatchedBagfilterInputId { get; set; }

@@ -1,7 +1,9 @@
 ﻿using IonFiltra.BagFilters.Application.Interfaces;
+using IonFiltra.BagFilters.Application.Interfaces.ApprovedMakes;
 using IonFiltra.BagFilters.Application.Interfaces.Bagfilters.BagfilterMaster;
 using IonFiltra.BagFilters.Application.Interfaces.Bagfilters.Sections.Bag_Selection;
 using IonFiltra.BagFilters.Application.Interfaces.BoughtOutItems;
+using IonFiltra.BagFilters.Application.Interfaces.DuctEngineering;
 using IonFiltra.BagFilters.Application.Interfaces.Enquiry;
 using IonFiltra.BagFilters.Application.Interfaces.GenericView;
 using IonFiltra.BagFilters.Application.Interfaces.MasterData.Master_Definition;
@@ -10,6 +12,7 @@ using IonFiltra.BagFilters.Application.Interfaces.Report;
 using IonFiltra.BagFilters.Application.Interfaces.Supervision_Charges;
 using IonFiltra.BagFilters.Application.Interfaces.Transportation_Settings;
 using IonFiltra.BagFilters.Application.Interfaces.Users.User;
+using IonFiltra.BagFilters.Application.Services.ApprovedMakes;
 using IonFiltra.BagFilters.Application.Services.Assignment;
 using IonFiltra.BagFilters.Application.Services.BagfilterDatabase.WithCanopy;
 using IonFiltra.BagFilters.Application.Services.BagfilterDatabase.WithoutCanopy;
@@ -37,6 +40,7 @@ using IonFiltra.BagFilters.Application.Services.BOM.PaintingRates;
 using IonFiltra.BagFilters.Application.Services.BOM.Rates;
 using IonFiltra.BagFilters.Application.Services.BOM.Transp_Cost;
 using IonFiltra.BagFilters.Application.Services.BoughtOutItems;
+using IonFiltra.BagFilters.Application.Services.DuctEngineering;
 using IonFiltra.BagFilters.Application.Services.EnquiryService;
 using IonFiltra.BagFilters.Application.Services.GenericView;
 using IonFiltra.BagFilters.Application.Services.MasterData.BoughtOutItems;
@@ -52,8 +56,10 @@ using IonFiltra.BagFilters.Application.Services.Supervision_Charges;
 using IonFiltra.BagFilters.Application.Services.Transportation_Settings;
 using IonFiltra.BagFilters.Application.Services.Users.User;
 using IonFiltra.BagFilters.Application.Services.Users.UserRoles;
+using IonFiltra.BagFilters.Core.Interfaces.ApprovedMakes;
 using IonFiltra.BagFilters.Core.Interfaces.Bagfilters.BagfilterMasters;
 using IonFiltra.BagFilters.Core.Interfaces.Bagfilters.Sections.PaintCostSummary;
+using IonFiltra.BagFilters.Core.Interfaces.DuctEngineering;
 using IonFiltra.BagFilters.Core.Interfaces.EnquiryRep;
 using IonFiltra.BagFilters.Core.Interfaces.GenericView;
 using IonFiltra.BagFilters.Core.Interfaces.MasterData.Master_Definition;
@@ -95,6 +101,7 @@ using IonFiltra.BagFilters.Core.Interfaces.Transportation_Settings;
 using IonFiltra.BagFilters.Core.Interfaces.Users.User;
 using IonFiltra.BagFilters.Infrastructure.Data;
 using IonFiltra.BagFilters.Infrastructure.EnquiryRepo;
+using IonFiltra.BagFilters.Infrastructure.Repositories.ApprovedMakes;
 using IonFiltra.BagFilters.Infrastructure.Repositories.Assignment;
 using IonFiltra.BagFilters.Infrastructure.Repositories.BagfilterDatabase.WithCanopy;
 using IonFiltra.BagFilters.Infrastructure.Repositories.BagfilterDatabase.WithoutCanopy;
@@ -122,6 +129,7 @@ using IonFiltra.BagFilters.Infrastructure.Repositories.BOM.Painting_Cost;
 using IonFiltra.BagFilters.Infrastructure.Repositories.BOM.PaintingRates;
 using IonFiltra.BagFilters.Infrastructure.Repositories.BOM.Rates;
 using IonFiltra.BagFilters.Infrastructure.Repositories.BOM.Transp_Cost;
+using IonFiltra.BagFilters.Infrastructure.Repositories.DuctEngineering;
 using IonFiltra.BagFilters.Infrastructure.Repositories.GenericView;
 using IonFiltra.BagFilters.Infrastructure.Repositories.MasterData.BoughtOutItems;
 using IonFiltra.BagFilters.Infrastructure.Repositories.MasterData.DPTData;
@@ -303,6 +311,12 @@ namespace IonFiltra.BagFilters.Infrastructure
             services.AddScoped<ITransportationSettingsRepository, TransportationSettingsRepository>();
             services.AddScoped<ITransportationSettingsService, TransportationSettingsService>();
 
+
+            services.AddScoped<IApprovedMakesService, ApprovedMakesService>();
+            services.AddScoped<IEnquiryApprovedMakesRepository, EnquiryApprovedMakesRepository>();
+
+            services.AddScoped<IDuctEngineeringService, DuctEngineeringService>();
+            services.AddScoped<IEnquiryDuctEngineeringRepository, EnquiryDuctEngineeringRepository>();
 
             return services;
         }

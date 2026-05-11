@@ -30,9 +30,9 @@
                     "RowData": [
                         "Volume",
                         "Quantity",
-                        "Weight (Kg)",
-                        "Fab Cost (₹)",
-                        "Boughtout (₹)",
+                        "Weight(Kg) of BF",
+                        "Bagfilter Cost (₹)",
+                        "Boughtout Cost (₹)",
                         "Total (₹)"
                     ],
                     "RowStyle": {

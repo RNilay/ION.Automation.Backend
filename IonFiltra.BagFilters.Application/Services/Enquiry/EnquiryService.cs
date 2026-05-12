@@ -103,6 +103,21 @@ namespace IonFiltra.BagFilters.Application.Services.EnquiryService
             );
         }
 
+        // ── Soft Delete ───────────────────────────────────────────────────────
+        /// <summary>
+        /// Soft-deletes the enquiry identified by its business-key EnquiryId.
+        /// The row is never physically removed from the database.
+        /// </summary>
+        public async Task<bool> SoftDeleteByEnquiryIdAsync(string enquiryId)
+        {
+            if (string.IsNullOrWhiteSpace(enquiryId))
+                throw new ArgumentException("EnquiryId cannot be empty.", nameof(enquiryId));
+
+            _logger.LogInformation("Soft-deleting Enquiry {EnquiryId}", enquiryId);
+
+            return await _repository.SoftDeleteByEnquiryIdAsync(enquiryId);
+        }
+
         public async Task<bool> UpdateRequiredBagFiltersAsync(
         int enquiryId,
         int requiredBagFilters,

@@ -61,6 +61,18 @@ namespace IonFiltra.BagFilters.Api.Controllers.MasterData.Master_Definition
                 });
             }
         }
+
+        // ── POST /api/masters/invalidate-cache ─────────────────────────────────
+        /// <summary>
+        /// Invalidates the server-side master definitions cache.
+        /// Call this after updating MasterDefinitions in the admin panel.
+        /// </summary>
+        [HttpPost("invalidate-cache")]
+        public IActionResult InvalidateCache()
+        {
+            _service.InvalidateCache();
+            return Ok(new { success = true, message = "Master definitions cache cleared." });
+        }
     }
 
 }

@@ -22,6 +22,7 @@ namespace IonFiltra.BagFilters.Application.Interfaces.Enquiry
 
         Task<bool> UpdateByEnquiryIdAsync(EnquiryMainDto dto);
 
+        Task<bool> SoftDeleteByEnquiryIdAsync(string enquiryId);
         Task<bool> UpdateRequiredBagFiltersAsync(
             int enquiryId,
             int requiredBagFilters,

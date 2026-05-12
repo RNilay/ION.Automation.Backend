@@ -1,4 +1,4 @@
-namespace IonFiltra.BagFilters.Core.Entities.EnquiryEntity
+﻿namespace IonFiltra.BagFilters.Core.Entities.EnquiryEntity
 {
     public class Enquiry
     {
@@ -11,6 +11,18 @@ namespace IonFiltra.BagFilters.Core.Entities.EnquiryEntity
 
         public DateTime CreatedAt { get; set; }
         public DateTime? UpdatedAt { get; set; }
+
+        // ── Soft-delete fields ─────────────────────────────────────────────────
+        /// <summary>
+        /// True once the record has been soft-deleted.
+        /// All queries must filter WHERE IsDeleted = false.
+        /// </summary>
+        public bool IsDeleted { get; set; } = false;
+
+        /// <summary>
+        /// Timestamp of when the soft-delete was performed. Null while active.
+        /// </summary>
+        public DateTime? DeletedAt { get; set; }
     }
 
 }

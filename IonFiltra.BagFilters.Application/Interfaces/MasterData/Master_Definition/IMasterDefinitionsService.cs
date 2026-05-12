@@ -10,5 +10,6 @@ namespace IonFiltra.BagFilters.Application.Interfaces.MasterData.Master_Definiti
     public interface IMasterDefinitionsService
     {
         Task<IEnumerable<MasterDefinitionsDto>> GetAllActiveAsync();
+        void InvalidateCache();
     }
 }

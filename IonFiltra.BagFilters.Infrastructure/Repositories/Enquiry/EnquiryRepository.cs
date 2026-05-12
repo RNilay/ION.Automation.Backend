@@ -24,7 +24,7 @@ namespace IonFiltra.BagFilters.Infrastructure.EnquiryRepo
                 _logger.LogInformation("Fetching Enquiries for UserId {userId}", userId);
                 return await dbContext.Enquirys
                     .AsNoTracking()
-                    .Where(x => x.UserId == userId)
+                    .Where(x => x.UserId == userId && !x.IsDeleted) // ← soft-delete filter
                     .ToListAsync();
             });
         }
@@ -38,7 +38,7 @@ namespace IonFiltra.BagFilters.Infrastructure.EnquiryRepo
 
                 var query = dbContext.Enquirys
                     .AsNoTracking()
-                    .Where(x => x.UserId == userId)
+                    .Where(x => x.UserId == userId && !x.IsDeleted) // ← soft-delete filter
                     .OrderByDescending(x => x.CreatedAt);
 
                 var totalCount = await query.CountAsync();
@@ -72,7 +72,7 @@ namespace IonFiltra.BagFilters.Infrastructure.EnquiryRepo
 
                 var query = dbContext.Enquirys
                     .AsNoTracking()
-                    .Where(x => x.UserId != userId)          // exclude current user's records
+                    .Where(x => x.UserId != userId && !x.IsDeleted) // ← soft-delete filter
                     .OrderByDescending(x => x.CreatedAt);
 
                 var totalCount = await query.CountAsync();
@@ -109,9 +109,11 @@ namespace IonFiltra.BagFilters.Infrastructure.EnquiryRepo
                 if (existingEntity != null)
                 {
                     var createdAt = existingEntity.CreatedAt;
+                    var isDeleted = existingEntity.IsDeleted; // preserve soft-delete state
                     dbContext.Entry(existingEntity).CurrentValues.SetValues(entity);
                     existingEntity.UpdatedAt = DateTime.Now; // Assuming UpdatedDate exists
                     existingEntity.CreatedAt = createdAt;
+                    existingEntity.IsDeleted = isDeleted; // never overwrite via generic update
                     await dbContext.SaveChangesAsync();
                 }
                 else
@@ -139,8 +141,8 @@ namespace IonFiltra.BagFilters.Infrastructure.EnquiryRepo
                 var existing = await dbContext.Enquirys
                     .FirstOrDefaultAsync(e =>
                         e.EnquiryId == enquiryId &&
-                        e.UserId == userId
-                    );
+                        e.UserId == userId &&
+                        !e.IsDeleted); // ← do not allow editing a soft-deleted record
 
                 if (existing == null)
                 {
@@ -162,6 +164,38 @@ namespace IonFiltra.BagFilters.Infrastructure.EnquiryRepo
             });
         }
 
+
+        // ── Soft Delete by EnquiryId ───────────────────────────────────────────
+        /// <summary>
+        /// Marks the enquiry as deleted by setting IsDeleted = true and
+        /// recording the timestamp. The row is never physically removed.
+        /// </summary>
+        public async Task<bool> SoftDeleteByEnquiryIdAsync(string enquiryId)
+        {
+            return await _transactionHelper.ExecuteAsync(async dbContext =>
+            {
+                _logger.LogInformation("Soft-deleting Enquiry {EnquiryId}", enquiryId);
+
+                var existing = await dbContext.Enquirys
+                    .FirstOrDefaultAsync(e =>
+                        e.EnquiryId == enquiryId &&
+                        !e.IsDeleted); // guard: don't double-delete
+
+                if (existing == null)
+                {
+                    _logger.LogWarning(
+                        "Enquiry {EnquiryId} not found or already deleted", enquiryId);
+                    return false;
+                }
+
+                existing.IsDeleted = true;
+                existing.DeletedAt = DateTime.Now;
+
+                await dbContext.SaveChangesAsync();
+                return true;
+            });
+        }
+
         public async Task<bool> UpdateRequiredBagFiltersAsync(
         int enquiryId,
         int requiredBagFilters,
@@ -170,9 +204,7 @@ namespace IonFiltra.BagFilters.Infrastructure.EnquiryRepo
             return await _transactionHelper.ExecuteAsync(async dbContext =>
             {
                 var enquiry = await dbContext.Enquirys
-                    .FirstOrDefaultAsync(e =>
-                        e.Id == enquiryId,
-                        ct);
+                    .FirstOrDefaultAsync(e => e.Id == enquiryId && !e.IsDeleted, ct);
 
                 if (enquiry == null)
                 {

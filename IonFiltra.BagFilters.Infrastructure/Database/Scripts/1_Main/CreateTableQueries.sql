@@ -65,6 +65,8 @@ CREATE TABLE Enquiry (
     RequiredBagFilters INT,
     CreatedAt DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
     UpdatedAt DATETIME NULL ON UPDATE CURRENT_TIMESTAMP,
+    IsDeleted TINYINT(1) NOT NULL DEFAULT 0,
+    DeletedAt DATETIME NULL ON UPDATE CURRENT_TIMESTAMP,
     UNIQUE (EnquiryId)
 );
 
@@ -89,7 +91,8 @@ CREATE TABLE
         Status TEXT NULL,
         Revision INT NULL,
         CreatedAt DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
-        UpdatedAt DATETIME NULL ON UPDATE CURRENT_TIMESTAMP
+        UpdatedAt DATETIME NULL ON UPDATE CURRENT_TIMESTAMP,
+        FOREIGN KEY (EnquiryId) REFERENCES ionfiltrabagfilters.Enquiry(Id) ON DELETE CASCADE
     );
 
 
@@ -204,7 +207,8 @@ CREATE TABLE
         AnalysisResult JSON NULL,
         CreatedAt DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
         UpdatedAt DATETIME NULL ON UPDATE CURRENT_TIMESTAMP,
-        FOREIGN KEY (BagfilterMasterId) REFERENCES ionfiltrabagfilters.BagfilterMaster (BagfilterMasterId) ON DELETE CASCADE
+        FOREIGN KEY (BagfilterMasterId) REFERENCES ionfiltrabagfilters.BagfilterMaster (BagfilterMasterId) ON DELETE CASCADE,
+        FOREIGN KEY (EnquiryId) REFERENCES ionfiltrabagfilters.Enquiry(Id) ON DELETE CASCADE
     );
 
     -- index for the above table:

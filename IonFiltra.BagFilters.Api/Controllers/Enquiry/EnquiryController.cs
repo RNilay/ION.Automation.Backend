@@ -227,7 +227,54 @@ namespace IonFiltra.BagFilters.Api.Controllers.Enquiry
         }
 
 
+        // ── DELETE /api/enquiries/soft-delete/{enquiryId} ─────────────────────
+        /// <summary>
+        /// Soft-deletes an enquiry by its business-key EnquiryId.
+        /// Sets IsDeleted = true and records DeletedAt timestamp.
+        /// The row is never physically removed from the database.
+        /// </summary>
+        [HttpDelete("soft-delete/{enquiryId}")]
+        public async Task<IActionResult> SoftDelete(string enquiryId)
+        {
+            if (string.IsNullOrWhiteSpace(enquiryId))
+            {
+                _logger.LogWarning("DELETE: Received empty enquiryId.");
+                return BadRequest("EnquiryId cannot be empty.");
+            }
 
+            try
+            {
+                _logger.LogInformation(
+                    "DELETE: Soft-deleting Enquiry {EnquiryId}", enquiryId);
+
+                var deleted = await _service.SoftDeleteByEnquiryIdAsync(enquiryId);
+
+                if (!deleted)
+                {
+                    return NotFound(new
+                    {
+                        success = false,
+                        message = $"Enquiry '{enquiryId}' not found or already deleted."
+                    });
+                }
+
+                return Ok(new
+                {
+                    success = true,
+                    message = "Enquiry deleted successfully."
+                });
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex,
+                    "Error occurred while soft-deleting Enquiry {EnquiryId}", enquiryId);
+                return StatusCode(500, new
+                {
+                    success = false,
+                    message = "An error occurred while processing your request."
+                });
+            }
+        }
 
     }
 }
